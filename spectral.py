@@ -115,3 +115,19 @@ def coherence(darray, other_darray, fs=None, seglen=None, overlap_ratio=2,
     coh.name = 'coherence_{}_{}'.format(darray.name, other_darray.name)
     return coh
 
+
+def hilbert(darray, N=None, dim=None):
+    dim, axis = get_maybe_last_dim_axis(darray, dim)
+    n_orig = darray.shape[axis]
+    N_unspecified = N is None
+    if N_unspecified:
+        N = next_fast_len(n_orig)
+    out = scipy.signal.hilbert(np.asarray(darray), N, axis=axis)
+    if n_orig != N and N_unspecified:
+        sl = [slice(None)] * out.ndim
+        sl[axis] = slice(None, n_orig)
+        out = out[sl]
+    if not N_unspecified and N != n_orig:
+        return out
+    else:
+        return darray.__array_wrap__(out)
