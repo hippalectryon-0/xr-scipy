@@ -2,9 +2,11 @@ import xarray
 import numpy as np
 import scipy.interpolate
 
-def interp1d(darray, other_darray, fill_value=np.nan, mask_null=True,
+def interp1d(darray, other_darray=None, fill_value=np.nan, mask_null=True,
              return_interpolator=False,
              interp_class=scipy.interpolate.UnivariateSpline, **class_kwargs):
+    if other_darray is None:
+        other_darray = darray
     if darray.ndim != 1:
         raise ValueError(
             'Signal has %i dimensions, need 1 for interpolation' % darray.ndim)
