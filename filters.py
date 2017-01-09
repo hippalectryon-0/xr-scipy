@@ -124,10 +124,12 @@ def medfilt(darray, kernel_size=None):
 
 def savgol_filter(darray, window_length, polyorder, deriv=0, delta=None,
                   dim=None, mode='interp', cval=0.0):
-    axis, dim = get_maybe_last_dim_axis(darray, dim)
+    dim, axis = get_maybe_last_dim_axis(darray, dim)
     if delta is None:
         delta = get_sampling_step(darray, dim)
         window_length = int(np.rint(window_length / delta))
+        if window_length % 2 == 0:  # must be odd
+            window_length += 1
     ret = scipy.signal.savgol_filter(np.asarray(darray), window_length,
                                      polyorder, deriv, delta, axis, mode, cval)
     return darray.__array_wrap__(ret)
