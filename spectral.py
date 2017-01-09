@@ -50,8 +50,8 @@ def csd(darray, other_darray, fs=None, seglen=None, overlap_ratio=2,
         window='hann', nperseg=256, noverlap=None, nfft=None,
         detrend='constant', return_onesided=True, scaling='density', dim=None,
         mode='psd'):
-    Pxy = crossspectrogram(darray, other_darray, fs, window, seglen,
-                           overlap_ratio, nperseg, noverlap, nfft, detrend,
+    Pxy = crossspectrogram(darray, other_darray, fs, seglen,
+                           overlap_ratio, window, nperseg, noverlap, nfft, detrend,
                            return_onesided, scaling, dim, mode)
     dim, axis = get_maybe_last_dim_axis(darray, dim)
     Pxy = Pxy.mean(dim=dim)
