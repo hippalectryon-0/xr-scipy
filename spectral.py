@@ -38,10 +38,13 @@ def crossspectrogram(darray, other_darray, fs=None, seglen=None,
                                                        scaling, axis, mode)
     t_0 = float(darray.coords[dim][0])
     t_axis = t + t_0
-    new_dims = darray.dims[:axis] + (_FREQUENCY_DIM, darray.dims[axis])
-    new_coords = {dim: t_axis, _FREQUENCY_DIM: f}
-    # add additional coordinates, TODO: align and add  also extra coordinates
-    new_coords.update({d:darray.coords[d] for d in new_dims[:-2]})
+    # new dimensions and coordinates construction
+    new_dims = list(darray.dims)
+    new_dims.insert(0, _FREQUENCY_DIM)  # frequency is first dimension
+    new_dims.remove(dim)                # remove dim, will be last
+    new_dims.append(dim)                # make it last
+    new_coords = dict(darray.coords)
+    new_coords.update({dim: t_axis, _FREQUENCY_DIM: f})  # replace new dims
     new_name = 'crossspectrogram_{}_{}'.format(darray.name, other_darray.name)
     return xarray.DataArray(Pxy, name=new_name,
                             dims=new_dims, coords=new_coords)
