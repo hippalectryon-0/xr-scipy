@@ -43,11 +43,14 @@ def crossspectrogram(darray, other_darray, fs=None, seglen=None,
     new_dims.insert(0, _FREQUENCY_DIM)  # frequency is first dimension
     new_dims.remove(dim)                # remove dim, will be last
     new_dims.append(dim)                # make it last
-    new_coords = dict(darray.coords)
-    new_coords.update({dim: t_axis, _FREQUENCY_DIM: f})  # replace new dims
+    # select nearest times on other possible coordinates
+    coords_ds = darray.coords.to_dataset()
+    coords_ds = coords_ds.sel(**{dim:t_axis, 'method':'nearest'})
+    coords_ds[dim] = t_axis
+    coords_ds[_FREQUENCY_DIM] = f
     new_name = 'crossspectrogram_{}_{}'.format(darray.name, other_darray.name)
     return xarray.DataArray(Pxy, name=new_name,
-                            dims=new_dims, coords=new_coords)
+                            dims=new_dims, coords=coords_ds)
 
 def csd(darray, other_darray, fs=None, seglen=None, overlap_ratio=2,
         window='hann', nperseg=256, noverlap=None, nfft=None,
