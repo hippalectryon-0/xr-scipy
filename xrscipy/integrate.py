@@ -1,8 +1,9 @@
 from __future__ import absolute_import, division, print_function
 from functools import partial
-import scipy.integrate as integrate
+from scipy import integrate
 import xarray as xr
 from . import errors
+from . import utils
 
 
 def _wrap(func, reduces, y, dim, **kwargs):
@@ -12,30 +13,63 @@ def _wrap(func, reduces, y, dim, **kwargs):
     errors.raise_invalid_args(['x', 'dx', 'axis'], kwargs)
     errors.raise_not_sorted(y[dim])
 
+    # In case of dim is a non-dimensional coordinate.
+    x = y[dim]
+    dim = x.dims[0]
     output_core_dim = [] if reduces else [dim]
 
-    if isinstance(y, xr.DataArray):
+    kwargs['x'] = x
+    kwargs['axis'] = -1
+
+    def apply_func(v):
+        # v: xr.Varaible
         result = xr.apply_ufunc(
-            func, y, input_core_dims=[[dim]],
-            output_core_dims=[output_core_dim],
-            kwargs={'x': y[dim], 'axis': -1})
+            func, v, input_core_dims=[[dim]],
+            output_core_dims=[output_core_dim], kwargs=kwargs)
         if not reduces:
             return result.transpose(*y.dims)
         else:
             return result
 
-    elif isinstance(y, xr.Dataset):
-        y = y.copy()
-        for key in y.data_vars.keys():
-            if dim in y[key].dims:
-                y[key] = _wrap(func, reduces, y[key], dim, **kwargs)
-        return y
+    return utils.wrap_dataset(apply_func, y, dim)
 
-    else:
-        raise TypeError('Invalid data type {} is given.'.format(type(y)))
+
+DOCS = """
+
+    Integrate an xarray object along the given dimension using {0:s}.
+
+    Parameters
+    ----------
+    y: xr.DataArray or xr.Dataset
+        Input object to intergrate
+    dim: string
+        Name of dimension or coordinate of the object.
+    {1:s}
+
+    See also
+    --------
+    scipy.integrate.{2:s}
+"""
 
 
 trapz = partial(_wrap, integrate.trapz, True)
-sims = partial(_wrap, integrate.simps, True)
+trapz.__doc__ = """
+    trapz(y, dim):
+""" + DOCS.format('the composite trapezoidal rule', '', 'trapz')
+
+simps = partial(_wrap, integrate.simps, True)
+simps.__doc__ = """
+    simps(y, dim, even='avg'):
+""" + DOCS.format(
+    'the composite trapezoidal rule',
+    'even: str{`avg`, `first`, `last`}, optional', 'simps')
+
 romb = partial(_wrap, integrate.romb, True)
-cumtrapz = partial(_wrap, integrate.cumtrapz, False)
+romb.__doc__ = """
+    robs(y, dim, show=False):
+""" + DOCS.format('Roberg integration', 'show: bool, optional', 'romb')
+
+cumtrapz = partial(_wrap, integrate.cumtrapz, False, initial=0)
+cumtrapz.__doc__ = """
+    cumtrapz(y, dim):
+"""

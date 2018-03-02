@@ -5,7 +5,7 @@ import scipy as sp
 import pytest
 import xarray as xr
 
-from xrscipy import integrate
+from xrscipy import interpolate
 
 
 def get_da(ndim, ascend=False):
@@ -23,18 +23,17 @@ def get_da(ndim, ascend=False):
 
 
 @pytest.mark.parametrize('ndim', [1, 3])
-@pytest.mark.parametrize('func', ['trapz', 'cumtrapz'])
-@pytest.mark.parametrize('dim', ['x', 'time'])
-def test_integrate(ndim, func, dim):
+@pytest.mark.parametrize('func', ['interp1d', 'PchipInterpolator',
+                                  'Akima1DInterpolator', 'CubicSpline'])
+@pytest.mark.parametrize('dim', ['x'])
+def test_interpolate1d(ndim, func, dim):
     da = get_da(ndim)
+    new_x = np.linspace(1, 8, 13)
 
     axis = da.get_axis_num(da[dim].dims[0])
-    actual = getattr(integrate, func)(da, dim)
-    kwargs = {}
-    if func == 'cumtrapz':
-        kwargs['initial'] = 0
-    expected = getattr(sp.integrate, func)(da.values, x=da[dim].values,
-                                           axis=axis, **kwargs)
+    actual = getattr(interpolate, func)(da, dim)(new_x)
+    expected = getattr(sp.interpolate, func)(x=da[dim].values, y=da.values,
+                                             axis=axis)(new_x)
     assert (actual.values == expected).all()
 
     # make sure the original data does not change
@@ -44,24 +43,3 @@ def test_integrate(ndim, func, dim):
     for key, v in da.coords.items():
         if 'x' not in v.dims:
             assert da[key].identical(actual[key])
-
-
-def test_integrate_dataset():
-    ds = xr.Dataset({})
-    ds['a'] = get_da(1)
-    ds['b'] = get_da(3)
-
-    actual = integrate.trapz(ds, dim='z')
-    assert actual['a'].identical(ds['a'])
-    assert actual['b'].identical(integrate.trapz(ds['b'], dim='z'))
-
-
-def test_integrate_error():
-    # not sorted
-    da = xr.DataArray([0, 1, 2], dims=['x'], coords={'x': [2, 3, 0]})
-    with pytest.raises(ValueError):
-        integrate.trapz(da, 'x')
-
-    # wrong argument
-    with pytest.raises(TypeError):
-        integrate.trapz(da, axis='x')

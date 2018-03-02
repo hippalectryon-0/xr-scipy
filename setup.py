@@ -34,7 +34,7 @@ CLASSIFIERS = [
     'Topic :: Scientific/Engineering',
 ]
 
-INSTALL_REQUIRES = ['xarray >= 0.10', 'scipy >= 0.1']
+INSTALL_REQUIRES = ['xarray >= 0.10', 'scipy >= 1.0']
 TESTS_REQUIRE = ['pytest >= 2.7.1']
 if sys.version_info[0] < 3:
     TESTS_REQUIRE.append('mock')

@@ -4,7 +4,6 @@ from . import errors
 
 
 def gradient(f, dim, edge_order=1):
-    errors.raise_invalid_args(['axis'])
     errors.raise_not_sorted(f[dim])
 
     output_core_dim = [dim]
