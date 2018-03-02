@@ -30,7 +30,7 @@ class _Interp1d(object):
         for k, v in self._obj.variables.items():
             if dim in v.dims:
                 self._interp_objs[k] = self._interp_cls(
-                    x, v, axis=v.get_axis_num(dim), **kwargs)
+                    x, v.data, axis=v.get_axis_num(dim), **kwargs)
 
     def __call__(self, new_x):
         # TODO consider the dimension of new_x

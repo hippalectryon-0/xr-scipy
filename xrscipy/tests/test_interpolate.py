@@ -8,7 +8,7 @@ import xarray as xr
 from xrscipy import interpolate
 
 
-def get_da(ndim, ascend=False):
+def get_da(ndim):
     shapes = [10, 11, 12]
     dims = ['x', 'y', 'z']
     coords = {}

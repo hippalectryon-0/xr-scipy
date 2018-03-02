@@ -6,14 +6,14 @@ from . import errors
 def gradient(f, dim, edge_order=1):
     errors.raise_not_sorted(f[dim])
 
+    x = f[dim]
+    dim = x.dims[0]
     output_core_dim = [dim]
 
     if isinstance(f, xr.DataArray):
-        result = xr.apply_ufunc(
-                    np.gradient, f, input_core_dims=[[dim]],
-                    output_core_dims=[output_core_dim],
-                    kwargs={'edge_order': edge_order, 'axis': -1})
-        return result.transpose(*f.dims)
-
+        # TODO use apply_ufunc
+        result = np.gradient(f.values, x.values, axis=f.get_axis_num(dim),
+                             edge_order=edge_order)
+        return xr.DataArray(result, dims=f.dims, coords=f.coords)
     else:
         raise TypeError('Invalid data type {} is given.'.format(type(f)))
