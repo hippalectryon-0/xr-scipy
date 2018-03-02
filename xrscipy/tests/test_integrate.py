@@ -1,32 +1,18 @@
 from __future__ import absolute_import, division, print_function
 
-import numpy as np
 import scipy as sp
 import pytest
 import xarray as xr
 
 from xrscipy import integrate
+from .testings import get_obj
 
 
-def get_da(ndim, ascend=False):
-    shapes = [10, 11, 12]
-    dims = ['x', 'y', 'z']
-    coords = {}
-    coords['x'] = np.arange(shapes[0]) * 0.2
-    if ndim >= 2:
-        coords['z'] = np.linspace(0, 1, shapes[2])
-    coords['time'] = ('x', ), np.linspace(0, 1, shapes[0])
-    da = xr.DataArray(np.random.randn(*shapes[:ndim]), dims=dims[:ndim],
-                      coords=coords)
-    da.attrs['comment'] = 'dummy comment.'
-    return da
-
-
-@pytest.mark.parametrize('ndim', [1, 3])
+@pytest.mark.parametrize('mode', [1, 1])
 @pytest.mark.parametrize('func', ['trapz', 'cumtrapz'])
 @pytest.mark.parametrize('dim', ['x', 'time'])
-def test_integrate(ndim, func, dim):
-    da = get_da(ndim)
+def test_integrate(mode, func, dim):
+    da = get_obj(mode)
 
     axis = da.get_axis_num(da[dim].dims[0])
     actual = getattr(integrate, func)(da, dim)
@@ -38,7 +24,7 @@ def test_integrate(ndim, func, dim):
     assert (actual.values == expected).all()
 
     # make sure the original data does not change
-    da.values.ndim == ndim
+    da.values.ndim == get_obj(mode).ndim
 
     # make sure the coordinate is propagated
     for key, v in da.coords.items():
@@ -47,9 +33,7 @@ def test_integrate(ndim, func, dim):
 
 
 def test_integrate_dataset():
-    ds = xr.Dataset({})
-    ds['a'] = get_da(1)
-    ds['b'] = get_da(3)
+    ds = get_obj(mode=3)
 
     actual = integrate.trapz(ds, dim='z')
     assert actual['a'].identical(ds['a'])

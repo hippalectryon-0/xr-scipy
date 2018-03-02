@@ -2,30 +2,16 @@ from __future__ import absolute_import, division, print_function
 
 import numpy as np
 import pytest
-import xarray as xr
 
 from xrscipy import gradient
+from .testings import get_obj
 
 
-def get_da(ndim, ascend=False):
-    shapes = [10, 11, 12]
-    dims = ['x', 'y', 'z']
-    coords = {}
-    coords['x'] = np.arange(shapes[0]) * 0.2
-    if ndim >= 2:
-        coords['z'] = np.linspace(0, 1, shapes[2])
-    coords['time'] = ('x', ), np.linspace(0, 1, shapes[0])
-    da = xr.DataArray(np.random.randn(*shapes[:ndim]), dims=dims[:ndim],
-                      coords=coords)
-    da.attrs['comment'] = 'dummy comment.'
-    return da
-
-
-@pytest.mark.parametrize('ndim', [1, 3])
+@pytest.mark.parametrize('mode', [0, 1])
 @pytest.mark.parametrize('edge_order', [1, 2])
 @pytest.mark.parametrize('dim', ['x', 'time'])
-def test_gradient(ndim, edge_order, dim):
-    da = get_da(ndim)
+def test_gradient(mode, edge_order, dim):
+    da = get_obj(mode)
 
     axis = da.get_axis_num(da[dim].dims[0])
     actual = gradient(da, dim, edge_order=edge_order)
@@ -35,7 +21,7 @@ def test_gradient(ndim, edge_order, dim):
     assert (actual.values == expected).all()
 
     # make sure the original data does not change
-    da.values.ndim == ndim
+    da.values.ndim == get_obj(mode).ndim
 
     # make sure the coordinate is propagated
     for key, v in da.coords.items():

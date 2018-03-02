@@ -3,32 +3,18 @@ from __future__ import absolute_import, division, print_function
 import numpy as np
 import scipy as sp
 import pytest
-import xarray as xr
 
 from xrscipy import interpolate
+from .testings import get_obj
 
 
-def get_da(ndim):
-    shapes = [10, 11, 12]
-    dims = ['x', 'y', 'z']
-    coords = {}
-    coords['x'] = np.arange(shapes[0])
-    if ndim >= 2:
-        coords['z'] = np.linspace(0, 1, shapes[2])
-    coords['time'] = ('x', ), np.linspace(0, 1, shapes[0])
-    da = xr.DataArray(np.random.randn(*shapes[:ndim]), dims=dims[:ndim],
-                      coords=coords)
-    da.attrs['comment'] = 'dummy comment.'
-    return da
-
-
-@pytest.mark.parametrize('ndim', [1, 3])
+@pytest.mark.parametrize('mode', [0, 1])
 @pytest.mark.parametrize('func', ['interp1d', 'PchipInterpolator',
                                   'Akima1DInterpolator', 'CubicSpline'])
-@pytest.mark.parametrize('dim', ['x'])
-def test_interpolate1d(ndim, func, dim):
-    da = get_da(ndim)
-    new_x = np.linspace(1, 8, 13)
+@pytest.mark.parametrize('dim', ['x', 'time'])
+def test_interpolate1d(mode, func, dim):
+    da = get_obj(mode)
+    new_x = np.linspace(1, 8, 13) * 0.1
 
     axis = da.get_axis_num(da[dim].dims[0])
     actual = getattr(interpolate, func)(da, dim)(new_x)
@@ -37,7 +23,7 @@ def test_interpolate1d(ndim, func, dim):
     assert (actual.values == expected).all()
 
     # make sure the original data does not change
-    da.values.ndim == ndim
+    da.values.ndim == get_obj(mode).ndim
 
     # make sure the coordinate is propagated
     for key, v in da.coords.items():
