@@ -5,55 +5,164 @@ from scipy import interpolate
 import numpy as np
 import xarray as xr
 from . import errors
-from . import utils
 
 
-class _Interp1d(object):
-    _interp_cls = None
+_THIS_ARRAY = xr.core.utils.ReprObject('<this-array>')
 
-    def __init__(self, obj, dim, **kwargs):
-        # TODO consider dask array
-        errors.raise_invalid_args(['x', 'axis'], kwargs)
-        errors.raise_not_1d(obj[dim])
 
-        x = obj[dim]
-        dim = x.dims[0]
+def _get_safename(base):
+    pass
 
-        if isinstance(obj, xr.DataArray):
-            self._dataarray_name = obj.name
-            self._obj = obj._to_temp_dataset()
-        elif isinstance(obj, xr.Dataset):
-            self._obj = obj
+
+class _VaribaleInterp(object):
+    """ Base class for _Variable1dInterp and VariableNdInterp """
+
+
+class _VariableIdentity(_VaribaleInterp):
+    def __init__(self, dims):
+        self.dims = dims
+
+    def __call__(self, xi):
+        return xr.Variable(self.dims, xi)
+
+
+class _Variable1dInterp(_VaribaleInterp):
+    def __init__(self, interp_cls, variable, dim, x, **kwargs):
+        """ Interp object for xr.Variable
+
+        Parameters
+        ----------
+        interp_cls: scipy's interpolate class
+        variable: xr.Variable
+            Variable to be interpolated
+        dim: dimension to which interpolate variable along
+        x: coordinate of dim
+        kwargs:
+            kwargs for interp_cls
+        """
+        self.interp_obj = interp_cls(
+            x, variable.data, axis=variable.get_axis_num(dim), **kwargs)
+        self.dims = variable.dims
+        self.interp_dim = dim
+
+    def __call__(self, x):
+        value = self.interp_obj(x)
+        return xr.Variable(self.dims, value)
+
+
+class DataArrayInterp(object):
+    def __init__(self, variable, coords, name=None):
+        self.variable = variable
+        self._coords = coords
+        self.name = name
+
+    @property
+    def dims(self):
+        return self.variable.dims
+
+    def __getitem__(self, key):
+        variable = self._coords[key]
+        if variable.dims == self.dims:
+            coords = self._coords
         else:
-            raise TypeError('Invalid object {} is passed.'.format(type(obj)))
+            allowed_dims = set(variable.dims)
+            coords = OrderedDict((k, v) for k, v in self._coords.items()
+                                 if set(v.dims) <= allowed_dims)
 
-        self._interp_objs = OrderedDict()
-        for k, v in self._obj.variables.items():
-            if dim in v.dims:
-                self._interp_objs[k] = self._interp_cls(
-                    x, v.data, axis=v.get_axis_num(dim), **kwargs)
+        return type(self)(variable, coords, name=self.name)
 
-    def __call__(self, new_x):
+    def _to_temp_dataset(self):
+        variables = OrderedDict()
+        variables[_THIS_ARRAY] = self.variable
+        variables.update(self._coords)
+        return DatasetInterp(variables, list(self._coords.keys()))
+
+    def __call__(self, xi):
+        dataset = self._to_temp_dataset()(xi)
+        variable = dataset._variables.pop(_THIS_ARRAY)
+        coords = dataset._variables
+        return xr.DataArray(variable, dims=variable.dims, coords=coords,
+                            name=self.name)
+
+
+class DatasetInterp(object):
+    def __init__(self, variables, coords):
+        """
+        variables: mapping from names to _VaribaleInterp
+        coordnames: names of coordinates
+        """
+        self._variables = variables
+        self._coords = coords
+
+    @property
+    def coords(self):
+        coords = OrderedDict()
+        for k in self._coords:
+            coords[k] = self[k]
+        # TODO maybe we need DatasetCoordinate class?
+        return coords
+
+    def __getitem__(self, key):
+        variable = self._variables[key]
+        coords = OrderedDict()
+        needed_dims = set(variable.dims)
+        for k in self._coords:
+            if set(self._variables[k].dims) <= needed_dims:
+                coords[k] = self._variables[k]
+
+        return DataArrayInterp(variable, coords, name=key)
+
+    def __call__(self, xi):
+        """ Get interpolated xarray object at new coordinate xi """
         # TODO consider the dimension of new_x
-        ds = xr.Dataset({})
-        for k, v in self._obj.variables.items():
-            if k in self._interp_objs:
-                new_v = self._interp_objs[k](new_x)
-                ds[k] = xr.Variable(v.dims, new_v)
+        variables = OrderedDict()
+        coords = OrderedDict()
+        for k, v in self._variables.items():
+            v = v(xi) if isinstance(v, _VaribaleInterp) else v.copy()
+            if k in self._coords:
+                coords[k] = v
             else:
-                ds[k] = v
-        ds = ds.set_coords(self._obj.coords)
-
-        if hasattr(self, '_dataarray_name'):
-            da = ds[list(ds.data_vars.keys())[0]]
-            da.name = self._dataarray_name
-            return da
-        return ds
+                variables[k] = v
+        return xr.Dataset(variables, coords=coords)
 
 
-class interp1d(_Interp1d):
-    """
-    interp1d(y, dim, kind='linear', bounds_error=None, fill_value=nan,
+def _wrap_interp1d(interp_cls, obj, coord, **kwargs):
+    # TODO consider dask array
+    errors.raise_invalid_args(['x', 'axis'], kwargs)
+    errors.raise_not_1d(obj[coord])
+
+    x = obj[coord]
+    dim = x.dims[0]
+
+    if isinstance(obj, xr.DataArray):
+        variable = _Variable1dInterp(interp_cls, obj.variable, dim, x,
+                                     **kwargs)
+        coords = OrderedDict()
+        for k, v in obj.coords.items():
+            if dim in v.dims and k != coord:
+                coords[k] = _Variable1dInterp(interp_cls, v, dim, x, **kwargs)
+            elif k == coord:
+                coords[k] = _VariableIdentity([dim])
+            else:
+                coords[k] = v
+        return DataArrayInterp(variable, coords, obj.name)
+
+    if isinstance(obj, xr.Dataset):
+        variables = OrderedDict()
+        for k, v in obj.variables.items():
+            if dim in v.dims and k != coord:
+                variables[k] = _Variable1dInterp(interp_cls, v, dim, x,
+                                                 **kwargs)
+            elif k == coord:
+                variables[k] = _VariableIdentity([dim])
+            else:
+                variables[k] = v
+        return DatasetInterp(variables, obj.coords)
+
+
+interp1d = partial(_wrap_interp1d, interpolate.interp1d)
+interp1d.__doc__ = """
+    interp1d(y, coord, kind='linear', bounds_error=None, fill_value=nan,
              assume_sorted=False):
 
     Interpolate a 1-D function.
@@ -64,34 +173,29 @@ class interp1d(_Interp1d):
     Note that calling interp1d with NaNs present in input values results in
     undefined behaviour.
     """
-    _interp_cls = interpolate.interp1d
 
-
-class PchipInterpolator(_Interp1d):
-    """
-    PchipInterpolator(y, dim, extrapolate):
+PchipInterpolator = partial(_wrap_interp1d, interpolate.PchipInterpolator)
+PchipInterpolator.__doc__ = """
+    PchipInterpolator(y, coord, extrapolate):
 
     PCHIP 1-d monotonic cubic interpolation.
     """
-    _interp_cls = interpolate.PchipInterpolator
 
 
-class Akima1DInterpolator(_Interp1d):
-    """
-    Akima1DInterpolator(y, dim):
+Akima1DInterpolator = partial(_wrap_interp1d, interpolate.Akima1DInterpolator)
+Akima1DInterpolator.__doc__ = """
+    Akima1DInterpolator(y, coord):
 
     Akima interpolator.
     """
-    _interp_cls = interpolate.Akima1DInterpolator
 
 
-class CubicSpline(_Interp1d):
-    """
-    CubicSpline(y, dim, bc_type='not-a-knot', extrapolate=None):
+CubicSpline = partial(_wrap_interp1d, interpolate.CubicSpline)
+CubicSpline.__doc__ = """
+    CubicSpline(y, coord, bc_type='not-a-knot', extrapolate=None):
 
     Cubic spline data interpolator
     """
-    _interp_cls = interpolate.CubicSpline
 
 
 def _wrap_griddata(func, obj, coords, new_coords, **kwargs):

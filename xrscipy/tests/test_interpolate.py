@@ -13,14 +13,14 @@ from .testings import get_obj
 @pytest.mark.parametrize('mode', [0, 1])
 @pytest.mark.parametrize('func', ['interp1d', 'PchipInterpolator',
                                   'Akima1DInterpolator', 'CubicSpline'])
-@pytest.mark.parametrize('dim', ['x', 'time'])
-def test_interpolate1d(mode, func, dim):
+@pytest.mark.parametrize('coord', ['x', 'time'])
+def test_interpolate1d(mode, func, coord):
     da = get_obj(mode)
     new_x = np.linspace(1, 8, 13) * 0.1
 
-    axis = da.get_axis_num(da[dim].dims[0])
-    actual = getattr(interpolate, func)(da, dim)(new_x)
-    expected = getattr(sp.interpolate, func)(x=da[dim].values, y=da.values,
+    axis = da.get_axis_num(da[coord].dims[0])
+    actual = getattr(interpolate, func)(da, coord)(new_x)
+    expected = getattr(sp.interpolate, func)(x=da[coord].values, y=da.values,
                                              axis=axis)(new_x)
     assert (actual.values == expected).all()
 
@@ -29,8 +29,33 @@ def test_interpolate1d(mode, func, dim):
 
     # make sure the coordinate is propagated
     for key, v in da.coords.items():
+        assert key in actual.coords
         if 'x' not in v.dims:
             assert da[key].identical(actual[key])
+
+
+@pytest.mark.parametrize('coord', ['x', 'time'])
+def test_interpolate1d_dataset(coord):
+    ds = get_obj(mode=3)
+    new_x = np.linspace(1, 8, 13) * 0.1
+
+    actual = interpolate.interp1d(ds, coord=coord)
+    expected = interpolate.interp1d(ds['a'], coord=coord)
+    assert (actual['a'](new_x).identical(expected(new_x)))
+    assert (actual(new_x)['a'].identical(expected(new_x)))
+
+    # make sure the coordinate is propagated
+    for key, v in ds.coords.items():
+        assert key in actual.coords
+        if 'x' not in v.dims:
+            assert ds[key].identical(actual(new_x)[key])
+
+    # make sure the coordinate is propagated
+    interped = actual(new_x)
+    for key, v in ds.coords.items():
+        assert key in interped.coords
+        if 'x' not in v.dims:
+            assert ds[key].identical(interped[key])
 
 
 def get_obj_for_interp(mode):
@@ -38,6 +63,7 @@ def get_obj_for_interp(mode):
     # https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.griddata.html  # noqa
 
     pi4 = 4 * np.pi
+
     def func1(x, y):
         return x * (1 - x)*np.cos(pi4 * x) * np.sin(pi4 * y**2)**2
 
