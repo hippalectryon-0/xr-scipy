@@ -73,25 +73,29 @@ def get_obj_for_interp(mode):
     x = np.random.rand(100)
     y = np.random.rand(100)
 
-    if mode in [0, 1]:
+    if mode in [0, 1, 5]:
         da = xr.DataArray(func1(x, y), dims=['a'],
                           coords={'x': ('a', x), 'y': ('a', y)})
         if mode == 0:
             grid_x, grid_y = np.mgrid[0:1:100j, 0:1:200j]
             grid_x_da = xr.DataArray(grid_x, dims=['b', 'c'], name='xx')
             grid_y_da = xr.DataArray(grid_y, dims=['b', 'c'])
-        else:  # mode 1
+        elif mode == 1:
             grid = np.linspace(0, 1, 200)
             grid_x_da = xr.DataArray(grid, dims=['b'], name='xx')
             grid_y_da = xr.DataArray(grid, dims=['c'])
+        elif mode == 5:  # target destination is 1 dimensional
+            grid = np.linspace(0, 1, 200)
+            grid_x_da = xr.DataArray(grid, dims=['b'], name='xx')
+            grid_y_da = xr.DataArray(grid, dims=['b'])
         return da, (grid_x_da, grid_y_da)
 
-    elif mode == 2:
+    elif mode == 2:  # should work with 1 dimensional case
         da = xr.DataArray(func1(x, 0.2), dims=['a'], coords={'x': ('a', x)})
         grid_x_da = xr.DataArray(np.linspace(0, 1, 200), dims=['b'], name='xx')
         return da, (grid_x_da, )
 
-    elif mode == 3:
+    elif mode == 3:  # should work with multivariate values
         values = np.stack([func1(x, y), func2(x, y)], axis=0)
         da = xr.DataArray(values, dims=['e', 'a'],
                           coords={'x': ('a', x), 'y': ('a', y)})
@@ -100,26 +104,85 @@ def get_obj_for_interp(mode):
         grid_y_da = xr.DataArray(grid, dims=['c'])
         return da, (grid_x_da, grid_y_da)
 
+    elif mode == 4:  # interpolate grid data
+        x = np.random.rand(10)
+        y = np.random.rand(10)
+        da = xr.DataArray(func1(x.reshape(10, 1), y.reshape(1, 10)),
+                          dims=['x', 'y'],
+                          coords={'x': ('x', x), 'y': ('y', y)})
+        grid_x, grid_y = np.mgrid[0:1:100j, 0:1:200j]
+        grid_x_da = xr.DataArray(grid_x, dims=['b', 'c'], name='xx')
+        grid_y_da = xr.DataArray(grid_y, dims=['b', 'c'])
+        return da, (grid_x_da, grid_y_da)
 
-@pytest.mark.parametrize('mode', [0, 1, 2, 3])
+
+@pytest.mark.parametrize('mode', [0, 1, 3, 4, 5])
+@pytest.mark.parametrize(
+    'func', ['LinearNDInterpolator', 'NearestNDInterpolator'])
+@pytest.mark.parametrize('coord', ['x'])
+def test_interpolate_nd(mode, func, coord):
+    obj, grid_das = get_obj_for_interp(mode)
+    obj_values = obj.values
+
+    if mode in [0, 1, 3, 5]:
+        actual = getattr(interpolate, func)(obj, 'x', 'y')(grid_das[0],
+                                                           grid_das[1])
+        points = np.stack([obj['x'], obj['y']], axis=-1)
+    elif mode == 4:
+        actual = getattr(interpolate, func)(obj, 'x', 'y')(grid_das[0],
+                                                           grid_das[1])
+        points = np.stack(xr.broadcast(obj['x'], obj['y']), axis=-1)
+        points = np.array(points).reshape(-1, 2)
+        obj_values = np.array(obj_values).reshape(-1)
+
+    # points
+    xi = np.stack(xr.broadcast(*grid_das), axis=-1)
+
+    if mode == 3:
+        expected = np.stack(
+            [getattr(sp.interpolate, func)(points, v)(xi)
+             for v in obj_values], axis=0)
+    else:
+        expected = getattr(sp.interpolate, func)(points, obj_values)
+        expected = expected(xi)
+
+    if len(grid_das) == 1:
+        expected = np.squeeze(expected, axis=-1)
+    assert np.allclose(actual.values, expected, equal_nan=True)
+
+    if mode == 1:
+        assert actual['x'].ndim == 1
+        assert actual['y'].ndim == 1
+
+    for d in ['__sample_dim__', '__dimension_dim__', 'a', 'b', 'c']:
+        assert d not in list(actual.coords)
+
+
+@pytest.mark.parametrize('mode', [0, 1, 2, 3, 4, 5])
 def test_griddata(mode):
     obj, grid_das = get_obj_for_interp(mode)
+    obj_values = obj.values
 
-    if len(grid_das) == 2:
+    if mode in [0, 1, 3, 5]:
         actual = interpolate.griddata(obj, ('x', 'y'), grid_das)
         points = np.stack([obj['x'], obj['y']], axis=-1)
-    elif len(grid_das) == 1:
+    elif mode in [2]:
         actual = interpolate.griddata(obj, ('x', ), grid_das)
         points = np.stack([obj['x'], ], axis=-1)
+    elif mode == 4:
+        actual = interpolate.griddata(obj, ('x', 'y'), grid_das)
+        points = np.stack(xr.broadcast(obj['x'], obj['y']), axis=-1)
+        points = np.array(points).reshape(-1, 2)
+        obj_values = np.array(obj_values).reshape(-1)
 
     # points
     xi = np.stack(xr.broadcast(*grid_das), axis=-1)
 
     if mode == 3:
         expected = np.stack([sp.interpolate.griddata(points, v, xi)
-                             for v in obj.values], axis=0)
+                             for v in obj_values], axis=0)
     else:
-        expected = sp.interpolate.griddata(points, obj.values, xi)
+        expected = sp.interpolate.griddata(points, obj_values, xi)
 
     if len(grid_das) == 1:
         expected = np.squeeze(expected, axis=-1)

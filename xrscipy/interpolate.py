@@ -8,6 +8,8 @@ from . import errors
 
 
 _THIS_ARRAY = xr.core.utils.ReprObject('<this-array>')
+_SAMPLE_DIM = "__sample_dim__"
+_DIMENSION_DIM = "__dimension_dim__"
 
 
 def _get_safename(base):
@@ -19,11 +21,15 @@ class _VaribaleInterp(object):
 
 
 class _VariableIdentity(_VaribaleInterp):
-    def __init__(self, dims):
+    def __init__(self, dims, coord_num=0):
         self.dims = dims
+        self.coord_num = coord_num
 
-    def __call__(self, xi):
-        return xr.Variable(self.dims, xi)
+    def __call__(self, *xi):
+        v = xi[self.coord_num]
+        if hasattr(v, 'dims'):
+            return getattr(v, 'variable', v)
+        return xr.Variable(self.dims, v)
 
 
 class _Variable1dInterp(_VaribaleInterp):
@@ -45,9 +51,84 @@ class _Variable1dInterp(_VaribaleInterp):
         self.dims = variable.dims
         self.interp_dim = dim
 
-    def __call__(self, x):
-        value = self.interp_obj(x)
-        return xr.Variable(self.dims, value)
+    def __call__(self, *x):
+        if len(x) != 1:
+            raise ValueError('Only one coordinate should be given. '
+                             'Given {}.'.format(len(x)))
+        value = self.interp_obj(x[0])
+        # consider x's dimension
+        if hasattr(x[0], 'dims'):
+            new_dim = x[0].dims[0]
+            dims = list(self.dims)
+            dims[self.dims.index(self.interp_dim)] = new_dim
+        else:
+            dims = self.dims
+        return xr.Variable(dims, value)
+
+
+def _concat_and_stack(*variables):
+    """ Concatenate multiple variables, stack other dimensions and returns
+    a 2D variable sized [_SAMPLE_DIM, _DIMENSION_DIM]
+    """
+    variables = [getattr(v, 'variable', v) for v in variables]
+    broadcasted = xr.core.variable.broadcast_variables(*variables)
+    x = xr.Variable.concat(broadcasted, dim=_DIMENSION_DIM)
+    x = x.stack(**{_SAMPLE_DIM: broadcasted[0].dims}).transpose(
+        _SAMPLE_DIM, _DIMENSION_DIM)
+    return x, broadcasted[0].shape, broadcasted[0].dims
+
+
+class _VariableNdInterp(_VaribaleInterp):
+    def __init__(self, interp_cls, variable, dim, x, **kwargs):
+        """ Interp object for xr.Variable
+
+        Parameters
+        ----------
+        interp_cls: scipy's interpolate class
+        variable: xr.Variable
+            Variable to be interpolated
+        dim: dimension to which interpolate variable along
+        x: coordinate of dim
+        kwargs:
+            kwargs for interp_cls
+        """
+        self.dims = variable.dims
+        self._shapes = {d: s for d, s in zip(variable.dims, variable.shape)}
+        if isinstance(variable, xr.DataArray):
+            variable = variable.variable
+
+        # choose dim and x based on self.dims
+        dim = [d for d in dim if d in self.dims]
+        x = [x1 for x1 in x if len(set(x1.dims) & set(dim)) >= 1]
+        # stack all the dims other than dim
+        self._non_stack_dims = [d for d in self.dims if d not in dim]
+        stacked = variable.stack(**{_SAMPLE_DIM: dim}).set_dims(
+            [_SAMPLE_DIM] + self._non_stack_dims)
+        x, _, _ = _concat_and_stack(*x)
+        self.interp_obj = interp_cls(x, stacked.data, **kwargs)
+        self.interp_dim = dim
+
+    def __call__(self, *x):
+        # TODO consider non-xarray object
+        if isinstance(x[0], xr.DataArray):
+            assert all(isinstance(xi, xr.DataArray) for xi in x)
+            stacked_x, coord_shape, coord_dims = _concat_and_stack(*x)
+            assert stacked_x.ndim == 2
+            keep_dimorder = False if self.interp_dim != coord_dims else True
+        else:
+            raise TypeError('Invalid coordinate passed.')
+
+        value = self.interp_obj(stacked_x)  # [_SAMPLE_DIM, _DIMENSION_DIM]
+        variable = xr.Variable([_SAMPLE_DIM] + self._non_stack_dims, value)
+        # unstack variable
+        unstack_dims = OrderedDict()
+        for d, s in zip(coord_dims, coord_shape):
+            unstack_dims[d] = s
+
+        result = variable.unstack(**{_SAMPLE_DIM: unstack_dims})
+        if keep_dimorder:
+            result = result.set_dims(self.dims)
+        return result
 
 
 class DataArrayInterp(object):
@@ -77,8 +158,8 @@ class DataArrayInterp(object):
         variables.update(self._coords)
         return DatasetInterp(variables, list(self._coords.keys()))
 
-    def __call__(self, xi):
-        dataset = self._to_temp_dataset()(xi)
+    def __call__(self, *xi):
+        dataset = self._to_temp_dataset()(*xi)
         variable = dataset._variables.pop(_THIS_ARRAY)
         coords = dataset._variables
         return xr.DataArray(variable, dims=variable.dims, coords=coords,
@@ -112,13 +193,13 @@ class DatasetInterp(object):
 
         return DataArrayInterp(variable, coords, name=key)
 
-    def __call__(self, xi):
+    def __call__(self, *xi):
         """ Get interpolated xarray object at new coordinate xi """
         # TODO consider the dimension of new_x
         variables = OrderedDict()
         coords = OrderedDict()
         for k, v in self._variables.items():
-            v = v(xi) if isinstance(v, _VaribaleInterp) else v.copy()
+            v = v(*xi) if isinstance(v, _VaribaleInterp) else v.copy()
             if k in self._coords:
                 coords[k] = v
             else:
@@ -195,6 +276,63 @@ CubicSpline.__doc__ = """
     CubicSpline(y, coord, bc_type='not-a-knot', extrapolate=None):
 
     Cubic spline data interpolator
+    """
+
+
+def _wrap_interp_nd(interp_cls, obj, *coords, **kwargs):
+    # TODO consider dask array
+    errors.raise_invalid_args(['x', 'axis'], kwargs)
+
+    x = [obj[c] for c in coords]
+    dim = xr.broadcast(*x)[0].dims
+
+    if isinstance(obj, xr.DataArray):
+        variable = _VariableNdInterp(interp_cls, obj.variable, dim, x,
+                                     **kwargs)
+        new_coords = OrderedDict()
+        for k, v in obj.coords.items():
+            if set(dim) <= set(v.dims) and k not in coords:
+                new_coords[k] = _VariableNdInterp(interp_cls, v, dim, x,
+                                                  **kwargs)
+            elif k in coords:
+                new_coords[k] = _VariableIdentity([dim])
+            else:
+                new_coords[k] = v
+        return DataArrayInterp(variable, new_coords, obj.name)
+
+    if isinstance(obj, xr.Dataset):
+        variables = OrderedDict()
+        for k, v in obj.variables.items():
+            if dim in v.dims and k not in coords:
+                variables[k] = _VariableNdInterp(interp_cls, v, dim, x,
+                                                 **kwargs)
+            elif k in coords:
+                variables[k] = _VariableIdentity([dim])
+            else:
+                variables[k] = v
+        return DatasetInterp(variables, obj.coords)
+
+
+LinearNDInterpolator = partial(_wrap_interp_nd,
+                               interpolate.LinearNDInterpolator)
+LinearNDInterpolator.__doc__ = """
+    LinearNDInterpolator(da, *coordinates, fill_value=np.nan, rescale=False)
+
+    Piecewise linear interpolant in N dimensions.
+    """
+
+NearestNDInterpolator = partial(_wrap_interp_nd,
+                                interpolate.NearestNDInterpolator)
+NearestNDInterpolator.__doc__ = """
+"""
+
+CloughTocher2DInterpolator = partial(_wrap_interp_nd,
+                                     interpolate.CloughTocher2DInterpolator)
+CloughTocher2DInterpolator.__doc__ = """
+    CloughTocher2DInterpolator(obj, *coordinates, fill_value=np.nan, tol=False,
+                               maxiter, rescale)
+
+    Piecewise cubic, C1 smooth, curvature-minimizing interpolant in 2D.
     """
 
 
