@@ -70,9 +70,7 @@ def test_doc():
 
     actual = dedent(integrate.trapz.__doc__)
 
-    expected = '''trapz(obj, coord):
-
-Integrate along the given coordinate using the composite trapezoidal rule.
+    expected = '''trapz(obj, coord)
 
 Integrate `y` (`x`) along given coordinate.
 
@@ -88,7 +86,6 @@ Returns
 trapz : float
     Definite integral as approximated by trapezoidal rule.
 
-
 See Also
 --------
 scipy.integrate.trapz : Original scipy implementation
@@ -100,4 +97,5 @@ References
 .. [2] Illustration image:
        http://en.wikipedia.org/wiki/File:Composite_trapezoidal_rule_illustration.png
 '''
+    print(actual)
     assert actual == expected

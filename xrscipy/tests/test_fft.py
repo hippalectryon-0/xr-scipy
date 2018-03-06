@@ -39,9 +39,7 @@ def test_doc():
         assert k not in parser.parameters.keys()
 
     actual = dedent(fftpack.fft.__doc__)
-    expected = '''fft(obj, coord, n=None, outdim=None):
-
-Return discrete Fourier transform of real or complex sequence.
+    expected = '''fft(obj, coord, n=None, outdim=None)
 
 The returned complex array contains ``y(0), y(1),..., y(n-1)`` where
 
@@ -62,7 +60,7 @@ outdim : string, optional
     Name of the output dimension; the default is obj[coord].dims[0].
 
 Returns
---------
+-------
 z : complex xarray object
     with the elements::
 
@@ -73,11 +71,11 @@ z : complex xarray object
 
         y(j) = sum[k=0..n-1] x[k] * exp(-sqrt(-1)*j*k* 2*pi/n), j = 0..n-1
 
-
 See Also
 --------
 scipy.fftpack.fft : Original scipy implementation
 ifft : Inverse FFT
 rfft : FFT of a real sequence
 '''
+    print(actual)
     assert actual == expected

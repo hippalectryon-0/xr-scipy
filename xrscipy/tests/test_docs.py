@@ -18,19 +18,20 @@ def example_func(a, b):
     b : float
         Another example argument
 
+    See Also
+    --------
+    xrscipy.docs: original scipy implementation
+
     Note
     ----
     This is a note
-
-    See Also
-    --------
-    see xrscipy.docs
     """
     pass
 
 
 def test_doc_parser():
     parser = docs.DocParser(example_func.__doc__)
+    print(parser)
     assert repr(parser) == dedent(example_func.__doc__)
 
     parser.replace_params(a='c : int\n    Replaced parameter.\n')

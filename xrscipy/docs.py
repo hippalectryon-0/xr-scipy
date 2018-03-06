@@ -1,13 +1,23 @@
 from __future__ import absolute_import, division, print_function
 from collections import OrderedDict
-from textwrap import dedent
+from textwrap import dedent as dedent_
 
 
 SECTIONS = ['Args', 'Arguments', 'Attributes', 'Example', 'Examples',
-            'Keyword Args', 'Keyword Arguments', 'Note', 'Notes',
+            'Keyword Args', 'Keyword Arguments', 'Note', 'Notes', 'Methods',
             'Other Parameters', 'Parameters', 'Return', 'Returns', 'Raises',
-            'References', 'See Also', 'Warning', 'Warnings', 'Warns',
-            'Yield', 'Yields']
+            'References', 'See Also', 'See also', 'Warning', 'Warnings',
+            'Warns', 'Yield', 'Yields']
+
+ALIASES = {'Return': 'Returns', 'See also': 'See Also'}
+
+
+def dedent(string):
+    """ Similar to textwrap.dedent but neglect the indent of the first
+    line. """
+    first_line = string.split('\n')[0]
+    from_second = dedent_(string[len(first_line)+1:])
+    return dedent_(first_line) + '\n' + from_second
 
 
 class DocParser(object):
@@ -22,8 +32,11 @@ class DocParser(object):
         docstring = docstring.split('\n')
         for doc in docstring:
             if doc.strip() in SECTIONS:
-                key = doc
-                self.sections[key] = []
+                key = doc.strip()
+                if key in ALIASES:
+                    key = ALIASES[key]
+                if key not in self.sections:
+                    self.sections[key] = []
             else:
                 if key is None:
                     self.description.append(doc + '\n')
@@ -52,6 +65,15 @@ class DocParser(object):
         return subsections
 
     def insert_description(self, string):
+        if self.description[0] != '\n':
+            string = string + '\n'
+
+        funcname = string.strip('(')[0]
+        # if original doc already has a description, remove this.
+        for i in range(min(2, len(self.description))):
+            if funcname + '(' in self.description[i]:
+                self.description.pop(i)
+                break
         self.description.insert(0, string + '\n')
 
     def replace_params(self, **kwargs):
@@ -104,14 +126,25 @@ class DocParser(object):
         docs += ''.join(['Parameters\n', '----------\n'])
         for key, item in self.parameters.items():
             docs += ''.join(item)
-        docs += '\n' + ''.join(['Returns\n', '-------\n'])
-        for key, item in self.returns.items():
-            docs += ''.join(item)
-        docs += '\n' + ''.join(['See Also\n', '--------\n'])
-        for key, item in self.see_also.items():
-            docs += ''.join(item)
+        if docs[-2] != '\n':
+            docs += '\n'
+
+        if len(self.returns) > 0:
+            docs += ''.join(['Returns\n', '-------\n'])
+            for key, item in self.returns.items():
+                docs += ''.join(item)
+            if docs[-2] != '\n':
+                docs += '\n'
+
+        if len(self.see_also) > 0:
+            docs += ''.join(['See Also\n', '--------\n'])
+            for key, item in self.see_also.items():
+                docs += ''.join(item)
+            if docs[-2] != '\n':
+                docs += '\n'
+
         for key, item in self.sections.items():
-            docs += '\n' + key + '\n'
+            docs += key + '\n'
             docs += ''.join(item)
 
         return docs[:-1]  # remove the last \n

@@ -5,6 +5,7 @@ from scipy import interpolate
 import numpy as np
 import xarray as xr
 from . import errors
+from .docs import DocParser
 
 
 _THIS_ARRAY = xr.core.utils.ReprObject('<this-array>')
@@ -241,42 +242,46 @@ def _wrap_interp1d(interp_cls, obj, coord, **kwargs):
         return DatasetInterp(variables, obj.coords)
 
 
+def _inject_doc_1d(func, func_name, description=None):
+    doc = DocParser(getattr(interpolate, func_name).__doc__)
+    doc.replace_params(y='obj : xarray object\n')
+    doc.add_params(
+        coord='coord : string\n    Coordinate along which to interpolate.\n')
+    doc.remove_params('x', 'axis')
+    doc.reorder_params('obj', 'coord')
+
+    doc.remove_sections('Notes', 'Examples')
+
+    if description is not None:
+        doc.insert_description(description)
+
+    doc.insert_see_also(**{
+        'scipy.interpolate.' + func_name:
+        'scipy.interpolate.' + func_name +
+        ' : Original scipy implementation\n'})
+
+    # inject
+    func.__doc__ = str(doc)
+    func.__name__ = func_name
+
+
 interp1d = partial(_wrap_interp1d, interpolate.interp1d)
-interp1d.__doc__ = """
-    interp1d(y, coord, kind='linear', bounds_error=None, fill_value=nan,
-             assume_sorted=False):
-
-    Interpolate a 1-D function.
-
-    This class returns a function whose call method uses interpolation to
-    find the value of new points.
-
-    Note that calling interp1d with NaNs present in input values results in
-    undefined behaviour.
-    """
+_inject_doc_1d(interp1d, 'interp1d',
+               description='interp1d(obj, coord, kind=\'linear\', copy=True, '
+               'bounds_error=None, fill_value=nan, assume_sorted=False)')
 
 PchipInterpolator = partial(_wrap_interp1d, interpolate.PchipInterpolator)
-PchipInterpolator.__doc__ = """
-    PchipInterpolator(y, coord, extrapolate):
-
-    PCHIP 1-d monotonic cubic interpolation.
-    """
-
+_inject_doc_1d(PchipInterpolator, 'PchipInterpolator',
+               description='PchipInterpolator(obj, coord, extrapolate=None)')
 
 Akima1DInterpolator = partial(_wrap_interp1d, interpolate.Akima1DInterpolator)
-Akima1DInterpolator.__doc__ = """
-    Akima1DInterpolator(y, coord):
-
-    Akima interpolator.
-    """
-
+_inject_doc_1d(Akima1DInterpolator, 'Akima1DInterpolator',
+               description='Akima1DInterpolator(obj, coord)')
 
 CubicSpline = partial(_wrap_interp1d, interpolate.CubicSpline)
-CubicSpline.__doc__ = """
-    CubicSpline(y, coord, bc_type='not-a-knot', extrapolate=None):
-
-    Cubic spline data interpolator
-    """
+_inject_doc_1d(CubicSpline, 'CubicSpline',
+               description='CubicSpline(obj, coord, bc_type=\'not-a-knot\', '
+               'extrapolate=None)')
 
 
 def _wrap_interp_nd(interp_cls, obj, *coords, **kwargs):
@@ -313,27 +318,46 @@ def _wrap_interp_nd(interp_cls, obj, *coords, **kwargs):
         return DatasetInterp(variables, obj.coords)
 
 
+def _inject_doc_nd(func, func_name, description=None):
+    doc = DocParser(getattr(interpolate, func_name).__doc__)
+    doc.add_params(
+        obj='obj : xarray object\n',
+        coord='*coord : strings\n    '
+        'Coordinates along which to interpolate.\n')
+    doc.reorder_params('obj', 'coord')
+    doc.remove_params('points', 'values', 'x', 'y')
+
+    doc.remove_sections('Examples')
+
+    if description is not None:
+        doc.insert_description(description)
+
+    doc.insert_see_also(**{
+        'scipy.interpolate.' + func_name:
+        'scipy.interpolate.' + func_name +
+        ' : Original scipy implementation\n'})
+
+    # inject
+    func.__doc__ = str(doc)
+    func.__name__ = func_name
+
+
 LinearNDInterpolator = partial(_wrap_interp_nd,
                                interpolate.LinearNDInterpolator)
-LinearNDInterpolator.__doc__ = """
-    LinearNDInterpolator(da, *coordinates, fill_value=np.nan, rescale=False)
-
-    Piecewise linear interpolant in N dimensions.
-    """
+_inject_doc_nd(LinearNDInterpolator, 'LinearNDInterpolator',
+               description='LinearNDInterpolator(obj, *coords, '
+               'fill_value=np.nan, rescale=False)')
 
 NearestNDInterpolator = partial(_wrap_interp_nd,
                                 interpolate.NearestNDInterpolator)
-NearestNDInterpolator.__doc__ = """
-"""
+_inject_doc_nd(NearestNDInterpolator, 'NearestNDInterpolator',
+               description='NearestNDInterpolator(obj, *coords)')
 
 CloughTocher2DInterpolator = partial(_wrap_interp_nd,
                                      interpolate.CloughTocher2DInterpolator)
-CloughTocher2DInterpolator.__doc__ = """
-    CloughTocher2DInterpolator(obj, *coordinates, fill_value=np.nan, tol=False,
-                               maxiter, rescale)
-
-    Piecewise cubic, C1 smooth, curvature-minimizing interpolant in 2D.
-    """
+_inject_doc_nd(CloughTocher2DInterpolator, 'CloughTocher2DInterpolator',
+               description='CloughTocher2DInterpolator(obj, *coords, '
+               'fill_value=np.nan, tol=False, maxiter, rescale)')
 
 
 def _wrap_griddata(func, obj, coords, new_coords, **kwargs):

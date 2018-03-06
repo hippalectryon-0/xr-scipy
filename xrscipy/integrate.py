@@ -72,13 +72,13 @@ def inject_docs(func, func_name, description=None):
 
 
 trapz = partial(_wrap, integrate.trapz, True)
-inject_docs(trapz, 'trapz', description='trapz(obj, coord):')
+inject_docs(trapz, 'trapz', description='trapz(obj, coord)')
 
 simps = partial(_wrap, integrate.simps, True)
-inject_docs(simps, 'simps', description='simps(obj, coord, even=\'avg\'):')
+inject_docs(simps, 'simps', description='simps(obj, coord, even=\'avg\')')
 
 romb = partial(_wrap, integrate.romb, True)
-inject_docs(romb, 'romb', description='romb(obj, coord, show=False):')
+inject_docs(romb, 'romb', description='romb(obj, coord, show=False)')
 
 cumtrapz = partial(_wrap, integrate.cumtrapz, False, initial=0)
-inject_docs(cumtrapz, 'cumtrapz', description='cumtrapz(obj, coord):')
+inject_docs(cumtrapz, 'cumtrapz', description='cumtrapz(obj, coord)')

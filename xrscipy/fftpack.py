@@ -55,7 +55,7 @@ def _wrap1d(func, freq_func, y, coord, outdim=None, **kwargs):
     return ds
 
 
-def inject_docs(func, func_name, description=None):
+def _inject_docs(func, func_name, description=None):
     doc = DocParser(getattr(fftpack, func_name).__doc__)
     doc.replace_params(
         x='obj : xarray object\n' + doc.parameters['x'][1],
@@ -89,37 +89,37 @@ def inject_docs(func, func_name, description=None):
 
 
 fft = partial(_wrap1d, fftpack.fft, fftpack.fftfreq)
-inject_docs(fft, 'fft',
-            description='fft(obj, coord, n=None, outdim=None):')
+_inject_docs(fft, 'fft',
+            description='fft(obj, coord, n=None, outdim=None)')
 
 ifft = partial(_wrap1d, fftpack.ifft, fftpack.fftfreq)
-inject_docs(ifft, 'ifft',
-            description='ifft(obj, coord, n=None, outdim=None):')
+_inject_docs(ifft, 'ifft',
+            description='ifft(obj, coord, n=None, outdim=None)')
 
 rfft = partial(_wrap1d, fftpack.rfft, fftpack.rfftfreq)
-inject_docs(rfft, 'rfft',
-            description='rfft(obj, coord, n=None, outdim=None):')
+_inject_docs(rfft, 'rfft',
+            description='rfft(obj, coord, n=None, outdim=None)')
 
 irfft = partial(_wrap1d, fftpack.irfft, fftpack.rfftfreq)
-inject_docs(irfft, 'irfft',
-            description='irfft(obj, coord, n=None, outdim=None):')
+_inject_docs(irfft, 'irfft',
+            description='irfft(obj, coord, n=None, outdim=None)')
 
 dct = partial(_wrap1d, fftpack.dct, fftpack.rfftfreq)
-inject_docs(dct, 'dct',
+_inject_docs(dct, 'dct',
             description='dct(obj, coord, type=2, n=None, norm=None, '
-                        'outdim=None):')
+                        'outdim=None)')
 
 dst = partial(_wrap1d, fftpack.dst, fftpack.rfftfreq)
-inject_docs(dst, 'dst',
+_inject_docs(dst, 'dst',
             description='dst(obj, coord, type=2, n=None, norm=None, '
-                        'outdim=None):')
+                        'outdim=None)')
 
 idct = partial(_wrap1d, fftpack.idct, fftpack.rfftfreq)
-inject_docs(idct, 'idct',
+_inject_docs(idct, 'idct',
             description='idct(obj, coord, type=2, n=None, norm=None, '
-                        'outdim=None):')
+                        'outdim=None)')
 
 idst = partial(_wrap1d, fftpack.idst, fftpack.rfftfreq)
-inject_docs(idst, 'idst',
+_inject_docs(idst, 'idst',
             description='idst(obj, coord, type=2, n=None, norm=None, '
-                        'outdim=None):')
+                        'outdim=None)')

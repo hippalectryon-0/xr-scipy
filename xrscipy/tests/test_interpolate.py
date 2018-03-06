@@ -62,6 +62,7 @@ def get_obj_for_interp(mode):
     # These examples are taken from
     # https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.griddata.html  # noqa
 
+    rng = np.random.RandomState(0)
     pi4 = 4 * np.pi
 
     def func1(x, y):
@@ -70,8 +71,8 @@ def get_obj_for_interp(mode):
     def func2(x, y):
         return x * (1 - x)*np.cos(pi4 * x**2) * np.sin(pi4 * y)**2
 
-    x = np.random.rand(100)
-    y = np.random.rand(100)
+    x = rng.rand(100)
+    y = rng.rand(100)
 
     if mode in [0, 1, 5]:
         da = xr.DataArray(func1(x, y), dims=['a'],
@@ -105,8 +106,8 @@ def get_obj_for_interp(mode):
         return da, (grid_x_da, grid_y_da)
 
     elif mode == 4:  # interpolate grid data
-        x = np.random.rand(10)
-        y = np.random.rand(10)
+        x = rng.rand(10)
+        y = rng.rand(10)
         da = xr.DataArray(func1(x.reshape(10, 1), y.reshape(1, 10)),
                           dims=['x', 'y'],
                           coords={'x': ('x', x), 'y': ('y', y)})

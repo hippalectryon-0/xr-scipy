@@ -6,3 +6,5 @@ from __future__ import print_function
 from . import docs
 from . import integrate, interpolate, fftpack
 from .numpy_ import gradient
+
+from .version import version as __version__

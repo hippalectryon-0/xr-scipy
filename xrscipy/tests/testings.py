@@ -4,7 +4,10 @@ import numpy as np
 import xarray as xr
 
 
+
 def get_obj(mode):
+    rng = np.random.RandomState(0)
+
     shapes = [10, 12, 15]
     if mode in [0, 1]:
         ndim = 1 if mode == 0 else 3
@@ -14,7 +17,7 @@ def get_obj(mode):
         if ndim >= 2:
             coords['z'] = np.linspace(0, 1, shapes[2])
         coords['time'] = ('x', ), np.linspace(0, 1, shapes[0])
-        da = xr.DataArray(np.random.randn(*shapes[:ndim]), dims=dims[:ndim],
+        da = xr.DataArray(rng.randn(*shapes[:ndim]), dims=dims[:ndim],
                           coords=coords)
         da.attrs['comment'] = 'dummy comment.'
         # scalar coordinate
