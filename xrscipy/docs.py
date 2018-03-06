@@ -29,33 +29,74 @@ class DocParser(object):
                     self.description.append(doc + '\n')
                 else:
                     self.sections[key].append(doc + '\n')
-        self._parse_parameters()
+        self.parameters = self._parser_subsection('Parameters')
+        self.returns = self._parser_subsection('Returns')
+        self.see_also = self._parser_subsection('See Also')
 
-    def _parse_parameters(self):
-        """ parse self.sections['Parameters'] """
-        self.parameters = OrderedDict()
-        if 'Parameters' not in self.sections:
-            return
+    def _parser_subsection(self, section):
+        subsections = OrderedDict()
+        if section not in self.sections:
+            return subsections
 
         key = None
-        for line in self.sections['Parameters']:
+        for line in self.sections[section]:
             if len(line) > 0 and line[0] != ' ' and ':' in line:  # title
                 key = line.split(':')[0].strip()
-                self.parameters[key] = []
-                self.parameters[key].append(line)
+                subsections[key] = []
+                subsections[key].append(line)
             elif key is not None:
-                self.parameters[key].append(line)
+                subsections[key].append(line)
 
-        del self.sections['Parameters']
+        del self.sections[section]
 
-    def replace_param(self, new_key, new_doc):
-        parameters = OrderedDict()
-        for key, item in self.parameters.items():
-            if key == new_key:
-                parameters[key] = new_doc
+        return subsections
+
+    def insert_description(self, string):
+        self.description.insert(0, string + '\n')
+
+    def replace_params(self, **kwargs):
+        self.parameters = self._replace_subsections(self.parameters, **kwargs)
+
+    def replace_returns(self, **kwargs):
+        self.returns = self._replace_subsections(self.returns, **kwargs)
+
+    def _replace_subsections(self, subsection, **kwargs):
+        new_subsec = OrderedDict()
+        for key, item in subsection.items():
+            if key in kwargs.keys():
+                new_key = kwargs[key].split(':')[0].strip()
+                new_subsec[new_key] = kwargs[key]
             else:
-                parameters[key] = item
-        self.parameters = parameters
+                new_subsec[key] = item
+        return new_subsec
+
+    def remove_params(self, *keys):
+        for k in keys:
+            if k in self.parameters:
+                del self.parameters[k]
+
+    def remove_sections(self, *keys):
+        for k in keys:
+            if k in self.sections:
+                del self.sections[k]
+
+    def add_params(self, **kwargs):
+        self.parameters.update(kwargs)
+
+    def reorder_params(self, *args):
+        params = OrderedDict()
+        for k in args:
+            if k in self.parameters:
+                params[k] = self.parameters.pop(k)
+        params.update(self.parameters)
+        self.parameters = params
+
+    def insert_see_also(self, **kwargs):
+        new_see_also = OrderedDict()
+        for k, item in kwargs.items():
+            new_see_also[k] = item
+        new_see_also.update(self.see_also)
+        self.see_also = new_see_also
 
     def __repr__(self):
         """ print this docstrings """
@@ -63,8 +104,14 @@ class DocParser(object):
         docs += ''.join(['Parameters\n', '----------\n'])
         for key, item in self.parameters.items():
             docs += ''.join(item)
+        docs += '\n' + ''.join(['Returns\n', '-------\n'])
+        for key, item in self.returns.items():
+            docs += ''.join(item)
+        docs += '\n' + ''.join(['See Also\n', '--------\n'])
+        for key, item in self.see_also.items():
+            docs += ''.join(item)
         for key, item in self.sections.items():
-            docs += key + '\n'
+            docs += '\n' + key + '\n'
             docs += ''.join(item)
 
         return docs[:-1]  # remove the last \n

@@ -1,7 +1,6 @@
 from __future__ import absolute_import, division, print_function
 
 from textwrap import dedent
-import pytest
 
 from xrscipy import docs
 
@@ -34,6 +33,4 @@ def test_doc_parser():
     parser = docs.DocParser(example_func.__doc__)
     assert repr(parser) == dedent(example_func.__doc__)
 
-    parser.replace_param('a', 'c : int\n    Replaced parameter.\n')
-    print(parser)
-    raise ValueError
+    parser.replace_params(a='c : int\n    Replaced parameter.\n')

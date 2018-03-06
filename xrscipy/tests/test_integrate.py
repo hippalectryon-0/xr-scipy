@@ -1,10 +1,12 @@
 from __future__ import absolute_import, division, print_function
 
+from textwrap import dedent
 import scipy as sp
 import pytest
 import xarray as xr
 
 from xrscipy import integrate
+from xrscipy.docs import DocParser
 from .testings import get_obj
 
 
@@ -35,9 +37,9 @@ def test_integrate(mode, func, dim):
 def test_integrate_dataset():
     ds = get_obj(mode=3)
 
-    actual = integrate.trapz(ds, dim='z')
+    actual = integrate.trapz(ds, coord='z')
     assert actual['a'].identical(ds['a'])
-    assert actual['b'].identical(integrate.trapz(ds['b'], dim='z'))
+    assert actual['b'].identical(integrate.trapz(ds['b'], coord='z'))
 
 
 def test_integrate_error():
@@ -49,3 +51,53 @@ def test_integrate_error():
     # wrong argument
     with pytest.raises(TypeError):
         integrate.trapz(da, axis='x')
+
+
+@pytest.mark.parametrize('func', ['trapz', 'cumtrapz', 'simps', 'romb'])
+def test_doc_all(func):
+    parser = DocParser(integrate.trapz.__doc__)
+
+    not_included_keys = ['x', 'axis', 'dx']
+    for k in not_included_keys:
+        assert k not in parser.parameters.keys()
+
+def test_doc():
+    parser = DocParser(integrate.trapz.__doc__)
+
+    not_included_keys = ['x', 'axis', 'dx']
+    for k in not_included_keys:
+        assert k not in parser.parameters.keys()
+
+    actual = dedent(integrate.trapz.__doc__)
+
+    expected = '''trapz(obj, coord):
+
+Integrate along the given coordinate using the composite trapezoidal rule.
+
+Integrate `y` (`x`) along given coordinate.
+
+Parameters
+----------
+obj : xarray object
+    Input array to integrate.
+coord : string
+    The coordinate along which to integrate.
+
+Returns
+-------
+trapz : float
+    Definite integral as approximated by trapezoidal rule.
+
+
+See Also
+--------
+scipy.integrate.trapz : Original scipy implementation
+
+References
+----------
+.. [1] Wikipedia page: http://en.wikipedia.org/wiki/Trapezoidal_rule
+
+.. [2] Illustration image:
+       http://en.wikipedia.org/wiki/File:Composite_trapezoidal_rule_illustration.png
+'''
+    assert actual == expected
