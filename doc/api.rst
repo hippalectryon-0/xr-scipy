@@ -40,6 +40,7 @@ interpolate
    interpolate.LinearNDInterpolator
    interpolate.NearestNDInterpolator
    interpolate.CloughTocher2DInterpolator
+   interpolate.RegularGridInterpolator
    interpolate.griddata
 
 fftpack

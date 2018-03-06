@@ -1,8 +1,3 @@
-.. image:: _static/dataset-diagram-logo.png
-   :width: 300 px
-   :align: center
-
-|
 
 Scipy for Xarray
 ================

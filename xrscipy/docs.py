@@ -74,12 +74,13 @@ class DocParser(object):
         if self.description[0] != '\n':
             string = string + '\n'
 
-        funcname = string.strip('(')[0]
+        funcname = string.split('(')[0]
         # if original doc already has a description, remove this.
-        for i in range(min(2, len(self.description))):
+        for i in range(min(4, len(self.description))):
             if funcname + '(' in self.description[i]:
                 self.description.pop(i)
-                break
+                self.description.pop(i)
+
         self.description.insert(0, string + '\n')
 
     def replace_params(self, **kwargs):
