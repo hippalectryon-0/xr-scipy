@@ -1,3 +1,7 @@
+[![Build Status](https://travis-ci.org/fujiisoup/xr-scipy.svg?branch=master)](https://travis-ci.org/fujiisoup/xr-scipy)
+[![Documentation Status](https://readthedocs.org/projects/xr-scipy/badge/?version=latest)](http://xr-scipy.readthedocs.io/en/latest/?badge=latest)
+
+
 # scipy for xarray
 xr-scipy is a thin wrapper of scipy for the
 [xarray](xarray.pydata.org) eco-system.
@@ -6,9 +10,9 @@ Many scipy functions, such as `scipy.integrate.trapz` requires coordinate
 array as an argument.
 xr-scipy wraps these functions to use native coordinate objects of xarray
 and returns an xarray object with the computed data.
-We keep other usage/options to almost the same to the original function.
-
 This enables more xarray-oriented data analysis with scipy.
+
+Other usage/options are kept almost the same to the original scipy function.
 
 # Example
 

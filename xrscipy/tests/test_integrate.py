@@ -68,35 +68,3 @@ def test_doc():
     not_included_keys = ['x', 'axis', 'dx']
     for k in not_included_keys:
         assert k not in parser.parameters.keys()
-
-    actual = dedent(integrate.trapz.__doc__)
-
-    expected = '''trapz(obj, coord)
-
-Integrate `y` (`x`) along given coordinate.
-
-Parameters
-----------
-obj : xarray object
-    Input array to integrate.
-coord : string
-    The coordinate along which to integrate.
-
-Returns
--------
-trapz : float
-    Definite integral as approximated by trapezoidal rule.
-
-See Also
---------
-scipy.integrate.trapz : Original scipy implementation
-
-References
-----------
-.. [1] Wikipedia page: http://en.wikipedia.org/wiki/Trapezoidal_rule
-
-.. [2] Illustration image:
-       http://en.wikipedia.org/wiki/File:Composite_trapezoidal_rule_illustration.png
-'''
-    print(actual)
-    assert actual == expected
