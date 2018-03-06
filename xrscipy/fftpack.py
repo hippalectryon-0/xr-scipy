@@ -59,9 +59,10 @@ def _inject_docs(func, func_name, description=None):
     doc = DocParser(getattr(fftpack, func_name).__doc__)
     doc.replace_params(
         x='obj : xarray object\n' + doc.parameters['x'][1],
-        axis='coord : string\n'
-        + doc.parameters['axis'][1].split(';')[0].replace('Axis', 'Coordinate')
-        + '.\n    The coordinate must be evenly spaced.\n')
+        axis='coord : string\n' +
+        doc.parameters['axis'][1].split(';')[0].replace('Axis',
+                                                        'Coordinate') +
+        '.\n    The coordinate must be evenly spaced.\n')
     doc.remove_params('overwrite_x')
     doc.add_params(
         outdim='''outdim : string, optional\n    Name of the output '''

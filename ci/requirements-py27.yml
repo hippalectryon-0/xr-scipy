@@ -5,7 +5,7 @@ dependencies:
   - flake8
   - numpy==1.11
   - pandas==0.18.0
-  - scipy=1.0
+  - scipy
   - xarray=0.10
   - pip:
     - coveralls
