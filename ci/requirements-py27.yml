@@ -3,9 +3,10 @@ dependencies:
   - python=2.7
   - pytest
   - flake8
-  - mock
   - numpy==1.11
   - pandas==0.18.0
+  - scipy=1.0
+  - xarray=0.10
   - pip:
     - coveralls
     - pytest-cov

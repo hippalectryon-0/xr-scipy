@@ -3,24 +3,12 @@ channels:
   - conda-forge
 dependencies:
   - python=3.6
-  - dask
-  - distributed
-  - h5py
-  - h5netcdf
-  - matplotlib
-  - netcdf4
   - pytest
   - flake8
   - numpy
   - pandas
   - scipy
-  - seaborn
-  - toolz
-  - rasterio
-  - bottleneck
-  - zarr
+  - xarray
   - pip:
     - coveralls
     - pytest-cov
-    - pydap
-    - lxml
