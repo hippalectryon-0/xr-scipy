@@ -1,6 +1,5 @@
 from __future__ import absolute_import, division, print_function
 
-from textwrap import dedent
 import scipy as sp
 import pytest
 import xarray as xr

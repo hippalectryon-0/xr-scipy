@@ -243,7 +243,11 @@ def _wrap_interp1d(interp_cls, obj, coord, **kwargs):
 
 
 def _inject_doc_1d(func, func_name, description=None):
-    doc = DocParser(getattr(interpolate, func_name).__doc__)
+    try:
+        doc = DocParser(getattr(interpolate, func_name).__doc__)
+    except errors.NoDocstringError:
+        return
+
     doc.replace_params(y='obj : xarray object\n')
     doc.add_params(
         coord='coord : string\n    Coordinate along which to interpolate.\n')
@@ -319,7 +323,11 @@ def _wrap_interp_nd(interp_cls, obj, *coords, **kwargs):
 
 
 def _inject_doc_nd(func, func_name, description=None):
-    doc = DocParser(getattr(interpolate, func_name).__doc__)
+    try:
+        doc = DocParser(getattr(interpolate, func_name).__doc__)
+    except errors.NoDocstringError:
+        return
+
     doc.add_params(
         obj='obj : xarray object\n',
         coord='*coord : strings\n    '

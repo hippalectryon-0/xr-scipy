@@ -56,7 +56,11 @@ def _wrap1d(func, freq_func, y, coord, outdim=None, **kwargs):
 
 
 def _inject_docs(func, func_name, description=None):
-    doc = DocParser(getattr(fftpack, func_name).__doc__)
+    try:
+        doc = DocParser(getattr(fftpack, func_name).__doc__)
+    except errors.NoDocstringError:
+        return
+
     doc.replace_params(
         x='obj : xarray object\n' + doc.parameters['x'][1],
         axis='coord : string\n' +

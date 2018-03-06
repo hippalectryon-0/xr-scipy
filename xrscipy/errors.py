@@ -19,3 +19,7 @@ def raise_not_1d(coord):
     if coord.ndim != 1:
         raise ValueError('Coordinate should be 1-dimensional. {}-d array is '
                          'given.'.format(coord.ndim))
+
+
+class NoDocstringError(Exception):
+    pass

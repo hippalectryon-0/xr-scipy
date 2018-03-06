@@ -38,7 +38,10 @@ def _wrap(func, reduces, y, coord, **kwargs):
 
 
 def inject_docs(func, func_name, description=None):
-    doc = DocParser(getattr(integrate, func_name).__doc__)
+    try:
+        doc = DocParser(getattr(integrate, func_name).__doc__)
+    except errors.NoDocstringError:
+        return
 
     doc.replace_params(
         y='obj : xarray object\n' + doc.parameters['y'][1],

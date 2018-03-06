@@ -3,7 +3,7 @@ dependencies:
   - python=2.7
   - pytest
   - flake8
-  - numpy==1.11
+  - numpy==1.13
   - pandas==0.18.0
   - scipy
   - xarray=0.10

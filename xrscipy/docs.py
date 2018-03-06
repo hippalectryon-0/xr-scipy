@@ -2,6 +2,8 @@ from __future__ import absolute_import, division, print_function
 from collections import OrderedDict
 from textwrap import dedent as dedent_
 
+from . import errors
+
 
 SECTIONS = ['Args', 'Arguments', 'Attributes', 'Example', 'Examples',
             'Keyword Args', 'Keyword Arguments', 'Note', 'Notes', 'Methods',
@@ -15,6 +17,8 @@ ALIASES = {'Return': 'Returns', 'See also': 'See Also'}
 def dedent(string):
     """ Similar to textwrap.dedent but neglect the indent of the first
     line. """
+    if string is None:
+        return string
     first_line = string.split('\n')[0]
     from_second = dedent_(string[len(first_line)+1:])
     return dedent_(first_line) + '\n' + from_second
@@ -23,6 +27,8 @@ def dedent(string):
 class DocParser(object):
     def __init__(self, docstring):
         """ A simple parser for sectioning docstrings. """
+        if docstring is None:
+            raise errors.NoDocstringError
         docstring = dedent(docstring)
         self.description = []
         key = None
