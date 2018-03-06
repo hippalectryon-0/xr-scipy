@@ -116,27 +116,31 @@ def get_obj_for_interp(mode):
         grid_y_da = xr.DataArray(grid_y, dims=['b', 'c'])
         return da, (grid_x_da, grid_y_da)
 
+    elif mode == 6:  # np.ndarray destination
+        da, grid_da = get_obj_for_interp(1)
+        return da, (grid_da[0].values, grid_da[1].values)
 
-@pytest.mark.parametrize('mode', [0, 1, 3, 4, 5])
+
+@pytest.mark.parametrize('mode', [0, 1, 3, 4, 5, 6])
 @pytest.mark.parametrize(
     'func', ['LinearNDInterpolator', 'NearestNDInterpolator'])
-@pytest.mark.parametrize('coord', ['x'])
-def test_interpolate_nd(mode, func, coord):
+def test_interpolate_nd(mode, func):
     obj, grid_das = get_obj_for_interp(mode)
     obj_values = obj.values
 
-    if mode in [0, 1, 3, 5]:
-        actual = getattr(interpolate, func)(obj, 'x', 'y')(grid_das[0],
-                                                           grid_das[1])
+    if mode in [0, 1, 3, 5, 6]:
+        actual = getattr(interpolate, func)(obj, 'x', 'y')(*grid_das)
         points = np.stack([obj['x'], obj['y']], axis=-1)
     elif mode == 4:
-        actual = getattr(interpolate, func)(obj, 'x', 'y')(grid_das[0],
-                                                           grid_das[1])
+        actual = getattr(interpolate, func)(obj, 'x', 'y')(*grid_das)
         points = np.stack(xr.broadcast(obj['x'], obj['y']), axis=-1)
         points = np.array(points).reshape(-1, 2)
         obj_values = np.array(obj_values).reshape(-1)
 
     # points
+    if mode == 6:
+        grid_das = (xr.DataArray(grid_das[0], dims='a'),
+                    xr.DataArray(grid_das[1], dims='a'))
     xi = np.stack(xr.broadcast(*grid_das), axis=-1)
 
     if mode == 3:
@@ -154,6 +158,48 @@ def test_interpolate_nd(mode, func, coord):
     if mode == 1:
         assert actual['x'].ndim == 1
         assert actual['y'].ndim == 1
+
+    for d in ['__sample_dim__', '__dimension_dim__', 'a', 'b', 'c']:
+        assert d not in list(actual.coords)
+
+
+def get_obj_grid(mode):
+    rng = np.random.RandomState(0)
+    pi4 = 4 * np.pi
+
+    def func1(x, y):
+        return x * (1 - x)*np.cos(pi4 * x) * np.sin(pi4 * y**2)**2
+
+    def func2(x, y):
+        return x * (1 - x)*np.cos(pi4 * x**2) * np.sin(pi4 * y)**2
+
+    if mode == 0:
+        x = np.linspace(0, 1, 10)
+        y = np.linspace(0, 1, 10)
+        da = xr.DataArray(func1(x.reshape(10, 1), y.reshape(1, 10)),
+                          dims=['x', 'y'],
+                          coords={'x': ('x', x), 'y': ('y', y)})
+        da_x = xr.DataArray(rng.uniform(0, 1, 11), dims='x')
+        da_y = xr.DataArray(rng.uniform(0, 1, 11), dims='x')
+        return da, (da_x, da_y)
+
+
+@pytest.mark.parametrize('mode', [0, ])
+@pytest.mark.parametrize('func', ['RegularGridInterpolator'])
+def test_interpolate_grid(mode, func):
+    obj, grid_das = get_obj_grid(mode)
+    obj_values = obj.values
+
+    actual = getattr(interpolate, func)(obj, 'x', 'y')(*grid_das)
+    points = (obj['x'], obj['y'])
+
+    # points
+    xi = np.stack(xr.broadcast(*grid_das), axis=-1)
+
+    expected = getattr(sp.interpolate, func)(points, obj_values)
+    expected = expected(xi)
+
+    assert np.allclose(actual.values, expected, equal_nan=True)
 
     for d in ['__sample_dim__', '__dimension_dim__', 'a', 'b', 'c']:
         assert d not in list(actual.coords)
