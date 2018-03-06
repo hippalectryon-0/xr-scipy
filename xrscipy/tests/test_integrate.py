@@ -61,6 +61,7 @@ def test_doc_all(func):
     for k in not_included_keys:
         assert k not in parser.parameters.keys()
 
+
 def test_doc():
     parser = DocParser(integrate.trapz.__doc__)
 

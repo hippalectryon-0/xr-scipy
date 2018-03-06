@@ -1,7 +1,6 @@
 from __future__ import absolute_import, division, print_function
 
 from functools import partial
-from textwrap import dedent
 from scipy import integrate
 
 import xarray as xr

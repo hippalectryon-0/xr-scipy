@@ -13,7 +13,7 @@ def raise_not_sorted(coord):
     raise_not_1d(coord)
     if not (np.diff(coord) > 0).all() and not (np.diff(coord) < 0).all():
         raise ValueError('Coordinate should be sorted first. See xr.sortby.')
-    
+
 
 def raise_not_1d(coord):
     if coord.ndim != 1:

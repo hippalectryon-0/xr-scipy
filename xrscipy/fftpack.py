@@ -90,36 +90,36 @@ def _inject_docs(func, func_name, description=None):
 
 fft = partial(_wrap1d, fftpack.fft, fftpack.fftfreq)
 _inject_docs(fft, 'fft',
-            description='fft(obj, coord, n=None, outdim=None)')
+             description='fft(obj, coord, n=None, outdim=None)')
 
 ifft = partial(_wrap1d, fftpack.ifft, fftpack.fftfreq)
 _inject_docs(ifft, 'ifft',
-            description='ifft(obj, coord, n=None, outdim=None)')
+             description='ifft(obj, coord, n=None, outdim=None)')
 
 rfft = partial(_wrap1d, fftpack.rfft, fftpack.rfftfreq)
 _inject_docs(rfft, 'rfft',
-            description='rfft(obj, coord, n=None, outdim=None)')
+             description='rfft(obj, coord, n=None, outdim=None)')
 
 irfft = partial(_wrap1d, fftpack.irfft, fftpack.rfftfreq)
 _inject_docs(irfft, 'irfft',
-            description='irfft(obj, coord, n=None, outdim=None)')
+             description='irfft(obj, coord, n=None, outdim=None)')
 
 dct = partial(_wrap1d, fftpack.dct, fftpack.rfftfreq)
 _inject_docs(dct, 'dct',
-            description='dct(obj, coord, type=2, n=None, norm=None, '
-                        'outdim=None)')
+             description='dct(obj, coord, type=2, n=None, norm=None, '
+             'outdim=None)')
 
 dst = partial(_wrap1d, fftpack.dst, fftpack.rfftfreq)
 _inject_docs(dst, 'dst',
-            description='dst(obj, coord, type=2, n=None, norm=None, '
-                        'outdim=None)')
+             description='dst(obj, coord, type=2, n=None, norm=None, '
+             'outdim=None)')
 
 idct = partial(_wrap1d, fftpack.idct, fftpack.rfftfreq)
 _inject_docs(idct, 'idct',
-            description='idct(obj, coord, type=2, n=None, norm=None, '
-                        'outdim=None)')
+             description='idct(obj, coord, type=2, n=None, norm=None, '
+             'outdim=None)')
 
 idst = partial(_wrap1d, fftpack.idst, fftpack.rfftfreq)
 _inject_docs(idst, 'idst',
-            description='idst(obj, coord, type=2, n=None, norm=None, '
-                        'outdim=None)')
+             description='idst(obj, coord, type=2, n=None, norm=None, '
+             'outdim=None)')

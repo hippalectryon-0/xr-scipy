@@ -30,7 +30,6 @@ def gradient(f, coord, edge_order=1):
 
     x = f[coord]
     dim = x.dims[0]
-    output_core_dim = [dim]
 
     if isinstance(f, xr.DataArray):
         # TODO use apply_ufunc

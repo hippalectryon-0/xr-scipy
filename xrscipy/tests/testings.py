@@ -4,7 +4,6 @@ import numpy as np
 import xarray as xr
 
 
-
 def get_obj(mode):
     rng = np.random.RandomState(0)
 
