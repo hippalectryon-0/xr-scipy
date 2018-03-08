@@ -460,10 +460,11 @@ def _wrap_griddata(func, obj, coords, new_coords, **kwargs):
                             output_core_dims=[['_points2']])
     # append new coordinates
     result.coords.update(dest.coords)
-    if len(coords) > 1:
-        result = result.set_index('_points2').unstack('_points2')
+    result = result.set_index('_points2')
+    try:
+        result = result.unstack('_points2')
         result.coords.update(dest_ds.coords)
-    else:
+    except ValueError:
         del result['_points2']
         result = result.rename({'_points2': new_coords[0].dims[0]})
 

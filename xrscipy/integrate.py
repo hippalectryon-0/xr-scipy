@@ -34,7 +34,7 @@ def _wrap(func, reduces, y, coord, **kwargs):
         else:
             return result
 
-    return utils.wrap_dataset(apply_func, y, dim)
+    return utils.wrap_dataset(apply_func, y, dim, keep_coords='keep')
 
 
 def inject_docs(func, func_name, description=None):

@@ -2,10 +2,35 @@
 Scipy for Xarray
 ================
 
-This is a thin wrapper of scipy for xarray
+xr-scipy is a thin wrapper of scipy for `xarray <http://xarray.pydata.org>`_ eco-system.
+
+Many scipy functions, such as `scipy.integrate.trapz`, requires coordinate
+array as an argument.
+Since xarray objects possess their coordinate values in it,
+there must be simpler api for such functions.
+
+xr-scipy wraps them to use the native coordinate objects of xarray
+and returns an xarray object with the computed data.
+This enables more xarray-oriented data analysis.
+
 
 Documentation
 -------------
+
+* :doc:`grad_integ`
+* :doc:`fft`
+* :doc:`interpolate`
+
+**Examples**
+
+.. toctree::
+   :maxdepth: 1
+   :hidden:
+   :caption: Examples
+
+   grad_integ
+   fft
+   interpolate
 
 **Help & reference**
 

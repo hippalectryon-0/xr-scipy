@@ -16,7 +16,7 @@ def test_interpolate1d(mode, func, dim, n):
     da = get_obj(mode)
 
     axis = da.get_axis_num(da[dim].dims[0])
-    actual = getattr(fftpack, func)(da, dim, 'freq', n=n)
+    actual = getattr(fftpack, func)(da, dim, n=n)
     expected = getattr(sp.fftpack, func)(da, n, axis=axis)
 
     assert (actual.values == expected).all()

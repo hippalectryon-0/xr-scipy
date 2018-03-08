@@ -1,6 +1,8 @@
+from functools import partial
+
 import numpy as np
 import xarray as xr
-from . import errors
+from . import errors, utils
 
 
 def gradient(f, coord, edge_order=1):
@@ -31,10 +33,12 @@ def gradient(f, coord, edge_order=1):
     x = f[coord]
     dim = x.dims[0]
 
-    if isinstance(f, xr.DataArray):
-        # TODO use apply_ufunc
-        result = np.gradient(f.values, x.values, axis=f.get_axis_num(dim),
-                             edge_order=edge_order)
-        return xr.DataArray(result, dims=f.dims, coords=f.coords)
-    else:
-        raise TypeError('Invalid data type {} is given.'.format(type(f)))
+    def gradient(f):
+        return np.gradient(f, x.values, axis=-1, edge_order=edge_order)
+
+    def func(v):
+        result = xr.apply_ufunc(gradient, v, input_core_dims=[[dim]],
+                                output_core_dims=[[dim]])
+        return result.transpose(*v.dims)
+
+    return utils.wrap_dataset(func, f, dim, keep_coords='keep')

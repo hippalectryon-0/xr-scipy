@@ -23,17 +23,15 @@ def _get_spacing(x):
     return mean
 
 
-def _wrap1d(func, freq_func, y, coord, outdim=None, **kwargs):
+def _wrap1d(func, freq_func, y, coord, **kwargs):
     """ Wrap function for fft1d """
     errors.raise_invalid_args(['axis', 'overwrite_x'], kwargs)
     errors.raise_not_sorted(y[coord])
 
-    outdim = outdim if outdim is not None else coord
-
     # In case of dim is a non-dimensional coordinate.
     x = y[coord]
     dim = x.dims[0]
-    output_core_dim = [outdim]
+    output_core_dim = [dim]
     dx = _get_spacing(x)
 
     kwargs['axis'] = -1
@@ -44,14 +42,53 @@ def _wrap1d(func, freq_func, y, coord, outdim=None, **kwargs):
         result = xr.apply_ufunc(
             func, v, input_core_dims=[[dim]],
             output_core_dims=[output_core_dim], kwargs=kwargs)
-        new_dims = [d if d != dim else outdim for d in v.dims]
-        return result.set_dims(new_dims)
+        return result.set_dims(v.dims)
 
-    ds = utils.wrap_dataset(apply_func, y, dim)
+    ds = utils.wrap_dataset(apply_func, y, dim, keep_coords='drop')
 
     # attach frequency coordinate
-    freq = freq_func(len(ds[outdim]), dx)
-    ds[outdim] = (outdim, ), freq
+    freq = freq_func(len(y[coord]), dx)
+    ds[coord] = (dim, ), freq
+    return ds
+
+
+def _wrapnd(func, freq_func, y, *coords, **kwargs):
+    """ Wrap function for fftnd """
+    errors.raise_invalid_args(['axes', 'overwrite_x'], kwargs)
+    shape = kwargs.pop('shape', None)
+    if not isinstance(shape, dict):
+        raise TypeError('shape should be a dict mapping from coord name to '
+                        'size. Given {}.'.format(shape))
+
+    for c in coords:
+        errors.raise_not_sorted(y[c])
+
+    # In case of dim is a non-dimensional coordinate.
+    xs = [y[c] for c in coords]
+    dims = [x.dims[0] for x in xs]
+    dxs = [(x) for x in xs]
+
+    kwargs['axes'] = len(coords)
+    kwargs['overwrite_x'] = False
+
+    def apply_func(v):
+        # v: xr.Varaible
+        kwargs_tmp = kwargs.copy()
+        if shape is not None:
+            kwargs_tmp['shape'] = [shape[d] if d in shape else v.shape[d]
+                                   for d in v.dims]
+        input_core_dims = [d for d in dims if d in v.dims]
+        result = xr.apply_ufunc(
+            func, v, input_core_dims=[input_core_dims],
+            output_core_dims=[input_core_dims], kwargs=kwargs_tmp)
+        return result.set_dims(v.dims)
+
+    ds = utils.wrap_dataset(apply_func, y, dims, keep_coords='drop')
+
+    # attach frequency coordinate
+    for c, dx in zip(coords, dxs):
+        freq = freq_func(len(ds[c]), dx)
+        ds[c] = (coords.dims[0], ), freq
     return ds
 
 
