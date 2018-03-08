@@ -11,9 +11,10 @@ def wrap_dataset(func, y, *dims, keep_coords='apply'):
     if not isinstance(y, (xr.DataArray, xr.Dataset)):
         raise TypeError('Invalid data type {} is given.'.format(type(y)))
 
-    if any(d not in y.dims for d in dims):
-        raise ValueError('{} is not a valid dimension for the object. The '
-                         'valid dimension is {}.'.format(d, y.dims))
+    for d in dims:
+        if d not in y.dims:
+            raise ValueError('{} is not a valid dimension for the object. '
+                             'The valid dimension is {}.'.format(d, y.dims))
 
     if isinstance(y, xr.DataArray):
         result = wrap_dataset(func, y._to_temp_dataset(), *dims,
