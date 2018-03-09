@@ -43,6 +43,23 @@ interpolate
    interpolate.RegularGridInterpolator
    interpolate.griddata
 
+fft
+===
+
+.. autosummary::
+   :toctree: generated/
+
+   fft.fft
+   fft.ifft
+   fft.rfft
+   fft.irfft
+   fft.fftn
+   fft.ifftn
+   fft.rfftn
+   fft.irfftn
+   fft.hfft
+   fft.ihfft
+
 fftpack
 =======
 

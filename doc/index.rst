@@ -17,11 +17,11 @@ This enables more xarray-oriented data analysis.
 Documentation
 -------------
 
+**Examples**
+
 * :doc:`grad_integ`
 * :doc:`fft`
 * :doc:`interpolate`
-
-**Examples**
 
 .. toctree::
    :maxdepth: 1

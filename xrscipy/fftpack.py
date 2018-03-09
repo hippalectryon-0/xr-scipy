@@ -3,9 +3,8 @@ from functools import partial
 
 import numpy as np
 from scipy import fftpack
-import xarray as xr
 from . import errors
-from . import utils
+from .fft import _wrap1d, _wrapnd
 from .docs import DocParser
 
 
@@ -23,91 +22,40 @@ def _get_spacing(x):
     return mean
 
 
-def _wrap1d(func, freq_func, y, coord, **kwargs):
-    """ Wrap function for fft1d """
-    errors.raise_invalid_args(['axis', 'overwrite_x'], kwargs)
-    errors.raise_not_sorted(y[coord])
+def _wrapfftpack(func, freq_func, y, *coords, **kwargs):
+    kwargs['s'] = kwargs.pop('shape', None)
 
-    # In case of dim is a non-dimensional coordinate.
-    x = y[coord]
-    dim = x.dims[0]
-    output_core_dim = [dim]
-    dx = _get_spacing(x)
+    def new_func(y, **kwargs):
+        kwargs['shape'] = kwargs.pop('s', None)
+        return func(y, **kwargs)
 
-    kwargs['axis'] = -1
-    kwargs['overwrite_x'] = False
-
-    def apply_func(v):
-        # v: xr.Varaible
-        result = xr.apply_ufunc(
-            func, v, input_core_dims=[[dim]],
-            output_core_dims=[output_core_dim], kwargs=kwargs)
-        return result.set_dims(v.dims)
-
-    ds = utils.wrap_dataset(apply_func, y, dim, keep_coords='drop')
-
-    # attach frequency coordinate
-    freq = freq_func(len(y[coord]), dx)
-    ds[coord] = (dim, ), freq
-    return ds
+    return _wrapnd(new_func, freq_func, y, *coords, **kwargs)
 
 
-def _wrapnd(func, freq_func, y, *coords, **kwargs):
-    """ Wrap function for fftnd """
-    errors.raise_invalid_args(['axes', 'overwrite_x'], kwargs)
-    shape = kwargs.pop('shape', None)
-    if not isinstance(shape, dict):
-        raise TypeError('shape should be a dict mapping from coord name to '
-                        'size. Given {}.'.format(shape))
-
-    for c in coords:
-        errors.raise_not_sorted(y[c])
-
-    # In case of dim is a non-dimensional coordinate.
-    xs = [y[c] for c in coords]
-    dims = [x.dims[0] for x in xs]
-    dxs = [(x) for x in xs]
-
-    kwargs['axes'] = len(coords)
-    kwargs['overwrite_x'] = False
-
-    def apply_func(v):
-        # v: xr.Varaible
-        kwargs_tmp = kwargs.copy()
-        if shape is not None:
-            kwargs_tmp['shape'] = [shape[d] if d in shape else v.shape[d]
-                                   for d in v.dims]
-        input_core_dims = [d for d in dims if d in v.dims]
-        result = xr.apply_ufunc(
-            func, v, input_core_dims=[input_core_dims],
-            output_core_dims=[input_core_dims], kwargs=kwargs_tmp)
-        return result.set_dims(v.dims)
-
-    ds = utils.wrap_dataset(apply_func, y, dims, keep_coords='drop')
-
-    # attach frequency coordinate
-    for c, dx in zip(coords, dxs):
-        freq = freq_func(len(ds[c]), dx)
-        ds[c] = (coords.dims[0], ), freq
-    return ds
-
-
-def _inject_docs(func, func_name, description=None):
+def _inject_docs(func, func_name, description=None, nd=False):
     try:
         doc = DocParser(getattr(fftpack, func_name).__doc__)
     except errors.NoDocstringError:
         return
 
-    doc.replace_params(
-        x='obj : xarray object\n' + doc.parameters['x'][1],
-        axis='coord : string\n' +
-        doc.parameters['axis'][1].split(';')[0].replace('Axis',
-                                                        'Coordinate') +
-        '.\n    The coordinate must be evenly spaced.\n')
+    if not nd:
+        doc.replace_params(
+            x='obj : xarray object\n' + doc.parameters['x'][1],
+            axis='coord : string\n' +
+            doc.parameters['axis'][1].split(';')[0].replace('Axis',
+                                                            'Coordinate') +
+            '.\n    The coordinate must be evenly spaced.\n')
+    else:
+        doc.replace_params(
+            x='obj : xarray object\n' +
+            '    Object which the transform is applied.\n',
+            axes='coords : string\n' +
+            '    Coordinates along which the transform is applied.\n'
+            '    The coordinate must be evenly spaced.\n',
+            shape='shape : mapping from coords to size, optional\n'
+            '    The shape of the result.')
+
     doc.remove_params('overwrite_x')
-    doc.add_params(
-        outdim='''outdim : string, optional\n    Name of the output '''
-               '''dimension; the default is obj[coord].dims[0].\n''')
     doc.reorder_params('obj', 'coord')
 
     doc.remove_sections('Notes', 'Examples')
@@ -132,36 +80,40 @@ def _inject_docs(func, func_name, description=None):
 
 fft = partial(_wrap1d, fftpack.fft, fftpack.fftfreq)
 _inject_docs(fft, 'fft',
-             description='fft(obj, coord, n=None, outdim=None)')
+             description='fft(obj, coord, n=None)')
 
 ifft = partial(_wrap1d, fftpack.ifft, fftpack.fftfreq)
 _inject_docs(ifft, 'ifft',
-             description='ifft(obj, coord, n=None, outdim=None)')
+             description='ifft(obj, coord, n=None)')
 
 rfft = partial(_wrap1d, fftpack.rfft, fftpack.rfftfreq)
 _inject_docs(rfft, 'rfft',
-             description='rfft(obj, coord, n=None, outdim=None)')
+             description='rfft(obj, coord, n=None)')
 
 irfft = partial(_wrap1d, fftpack.irfft, fftpack.rfftfreq)
 _inject_docs(irfft, 'irfft',
-             description='irfft(obj, coord, n=None, outdim=None)')
+             description='irfft(obj, coord, n=None)')
 
 dct = partial(_wrap1d, fftpack.dct, fftpack.rfftfreq)
 _inject_docs(dct, 'dct',
-             description='dct(obj, coord, type=2, n=None, norm=None, '
-             'outdim=None)')
+             description='dct(obj, coord, type=2, n=None, norm=None)')
 
 dst = partial(_wrap1d, fftpack.dst, fftpack.rfftfreq)
 _inject_docs(dst, 'dst',
-             description='dst(obj, coord, type=2, n=None, norm=None, '
-             'outdim=None)')
+             description='dst(obj, coord, type=2, n=None, norm=None)')
 
 idct = partial(_wrap1d, fftpack.idct, fftpack.rfftfreq)
 _inject_docs(idct, 'idct',
-             description='idct(obj, coord, type=2, n=None, norm=None, '
-             'outdim=None)')
+             description='idct(obj, coord, type=2, n=None, norm=None)')
 
 idst = partial(_wrap1d, fftpack.idst, fftpack.rfftfreq)
 _inject_docs(idst, 'idst',
-             description='idst(obj, coord, type=2, n=None, norm=None, '
-             'outdim=None)')
+             description='idst(obj, coord, type=2, n=None, norm=None)')
+
+fftn = partial(_wrapfftpack, fftpack.fftn, fftpack.fftfreq)
+_inject_docs(fftn, 'fftn', nd=True,
+             description='fftn(obj, *coords, shape=None)')
+
+ifftn = partial(_wrapfftpack, fftpack.ifftn, fftpack.fftfreq)
+_inject_docs(ifftn, 'ifftn', nd=True,
+             description='ifftn(obj, *coords, shape=None)')

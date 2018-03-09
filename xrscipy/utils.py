@@ -1,13 +1,15 @@
 import xarray as xr
 
 
-def wrap_dataset(func, y, *dims, keep_coords='apply'):
+def wrap_dataset(func, y, *dims, **kwargs):
     """
     Wrap Dataset for Array func. If y is Dataset, the func is applied for all
     the data vars if it has dim in its dimension.
 
     keep_coords: 'apply' | 'keep' | 'drop'
     """
+    keep_coords = kwargs.pop('keep_coords', 'apply')
+
     if not isinstance(y, (xr.DataArray, xr.Dataset)):
         raise TypeError('Invalid data type {} is given.'.format(type(y)))
 
