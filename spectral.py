@@ -30,8 +30,13 @@ def crossspectrogram(darray, other_darray, fs=None, seglen=None,
     # outer join align to ensure proper sampling
     darray, other_darray = xarray.align(darray, other_darray, join='outer',
                                         copy=False)
-    f, t, Pxy = scipy.signal.spectral._spectral_helper(np.asarray(darray),
-                                                       np.asarray(other_darray),
+    together = (darray, other_darray)
+    if set(darray.dims) != set(other_darray.dims):
+        together = xarray.broadcast(*together)
+    d_val, od_val = (d.values for d in together)
+
+    f, t, Pxy = scipy.signal.spectral._spectral_helper(d_val,
+                                                       od_val,
                                                        fs, window, nperseg,
                                                        noverlap, nfft, detrend,
                                                        return_onesided,
@@ -39,12 +44,13 @@ def crossspectrogram(darray, other_darray, fs=None, seglen=None,
     t_0 = float(darray.coords[dim][0])
     t_axis = t + t_0
     # new dimensions and coordinates construction
-    new_dims = list(darray.dims)
-    new_dims.insert(0, _FREQUENCY_DIM)  # frequency is first dimension
-    new_dims.remove(dim)                # remove dim, will be last
-    new_dims.append(dim)                # make it last
+    coord_darr = darray if darray.ndim >= other_darray.ndim else other_darray
+    new_dims = list(coord_darr.dims)
+    # frequency replaces data dim
+    new_dims[new_dims.index(dim)] = _FREQUENCY_DIM
+    new_dims.append(dim)   # make data dim last
     # select nearest times on other possible coordinates
-    coords_ds = darray.coords.to_dataset()
+    coords_ds = coord_darr.coords.to_dataset()
     coords_ds = coords_ds.sel(**{dim:t_axis, 'method':'nearest'})
     coords_ds[dim] = t_axis
     coords_ds[_FREQUENCY_DIM] = f
