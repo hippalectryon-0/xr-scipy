@@ -40,16 +40,15 @@ def frequency_filter(darray, f_crit, order=None, irtype='iir', filtfilt=True,
     f_crit_norm = np.asarray(f_crit, dtype=np.float)
     if not in_nyq:              # normalize by Nyquist frequency
         f_crit_norm *= 2 * get_sampling_step(darray, dim)
-    order_corr = order // (2 if filtfilt else 1) # filtfilt -> double order
     data = np.asarray(darray)
     if sosfiltfilt and irtype == 'iir': # TODO merge with other if branch
-        sos = scipy.signal.iirfilter(order_corr, f_crit_norm, output='sos', **kwargs)
+        sos = scipy.signal.iirfilter(order, f_crit_norm, output='sos', **kwargs)
         if filtfilt:
             data = sosfiltfilt(sos, data, axis, **apply_kwargs)
         else:
             data = scipy.signal.sosfilt(sos, data, axis, **apply_kwargs)
     else:
-        b, a = _BA_FUNCS[irtype](order_corr, f_crit_norm, **kwargs)
+        b, a = _BA_FUNCS[irtype](order, f_crit_norm, **kwargs)
         if filtfilt:
             data = scipy.signal.filtfilt(b, a, data, axis, **apply_kwargs)
         else:
