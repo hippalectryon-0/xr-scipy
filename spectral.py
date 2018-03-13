@@ -109,15 +109,13 @@ def coherogram(darray, other_darray, fs=None, seglen=None, overlap_ratio=2,
 def coherence(darray, other_darray, fs=None, seglen=None, overlap_ratio=2,
               window='hann', nperseg=256, noverlap=None, nfft=None,
               detrend='constant', dim=None):
-    Pxx = spectrogram(darray, fs, seglen, overlap_ratio, window, nperseg,
-                      noverlap, nfft)
-    Pyy = spectrogram(other_darray, fs, seglen, overlap_ratio, window, nperseg,
-                      noverlap, nfft)
-    Pxy = crossspectrogram(darray, other_darray, fs, seglen, overlap_ratio,
-                           window, nperseg, noverlap, nfft)
-    dim, axis = get_maybe_last_dim_axis(darray, dim)
-    coh = np.abs(Pxy)**2 / (Pxx * Pyy)  # magnitude squared coherence
-    coh = coh.mean(dim=dim)
+    Pxx = psd(darray, fs, seglen, overlap_ratio, window, nperseg,
+                      noverlap, nfft, detrend, dim=dim)
+    Pyy = psd(other_darray, fs, seglen, overlap_ratio, window, nperseg,
+                      noverlap, nfft, detrend, dim=dim)
+    Pxy = csd(darray, other_darray, fs, seglen, overlap_ratio,
+                           window, nperseg, noverlap, nfft, detrend, dim=dim)
+    coh = Pxy / np.sqrt(Pxx * Pyy)  # magnitude squared coherence
     coh.name = 'coherence_{}_{}'.format(darray.name, other_darray.name)
     return coh
 
