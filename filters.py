@@ -80,6 +80,11 @@ def bandpass(darray, f_low, f_high, *args, **kwargs):
     return frequency_filter(darray, [f_low, f_high], *args, **kwargs)
 
 
+def bandstop(darray, f_low, f_high, *args, **kwargs):
+    kwargs = _update_ftype_kwargs(kwargs, 'bandstop', True)
+    return frequency_filter(darray, [f_low, f_high], *args, **kwargs)
+
+
 class DecimationWarning(Warning):
     pass
 # always (not just once) show decimation warnings to see the responsible signal
@@ -142,3 +147,4 @@ def savgol_filter(darray, window_length, polyorder, deriv=0, delta=None,
     ret = scipy.signal.savgol_filter(np.asarray(darray), window_length,
                                      polyorder, deriv, delta, axis, mode, cval)
     return darray.__array_wrap__(ret)
+
