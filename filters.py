@@ -122,6 +122,15 @@ def medfilt(darray, kernel_size=None):
     return darray.__array_wrap__(ret)
 
 
+def wiener(darray, window_length, noise_variance=None, in_points=False, dim=None):
+    if not in_points:
+        delta = get_sampling_step(darray, dim)
+        window_length = int(np.rint(window_length / delta))
+    ret = scipy.signal.wiener(darray.values, window_length, noise_variance)
+    return darray.__array_wrap__(ret)
+
+
+
 def savgol_filter(darray, window_length, polyorder, deriv=0, delta=None,
                   dim=None, mode='interp', cval=0.0):
     dim, axis = get_maybe_last_dim_axis(darray, dim)
