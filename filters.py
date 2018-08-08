@@ -155,3 +155,65 @@ def savgol_filter(darray, window_length, polyorder, deriv=0, delta=None,
                                      polyorder, deriv, delta, axis, mode, cval)
     return darray.__array_wrap__(ret)
 
+
+@xarray.register_dataarray_accessor('filt')
+class FilterAccessor(object):
+    '''Accessor exposing common frequency and other filtering methods'''
+
+    def __init__(self, darray):
+        self.darray = darray
+
+    @property
+    def dt(self):
+        '''Sampling step of last axis'''
+        return get_sampling_step(self.darray)
+
+    @property
+    def fs(self):
+        """Sampling frequency in inverse units of self.dt"""
+        return 1.0 / self.dt
+
+    @property
+    def dx(self):
+        '''Sampling steps for all axes as array'''
+        return np.array([get_sampling_step(self.darray, dim) for dim in self.darray.dims])
+
+    # NOTE: the arguments are coded explicitly for tab-completion to work,
+    # using a decorator wrapper with *args would not expose them
+    def low(self, f_cutoff, *args, **kwargs):
+        """Lowpass filter, wraps lowpass"""
+        return lowpass(self.darray, f_cutoff, *args, **kwargs)
+
+    def high(self, f_cutoff, *args, **kwargs):
+        """Highpass filter, wraps highpass"""
+        return highpass(self.darray, f_cutoff, *args, **kwargs)
+
+    def bandpass(self, f_low, f_high, *args, **kwargs):
+        """Bandpass filter, wraps bandpass"""
+        return bandpass(self.darray, f_low, f_high, *args, **kwargs)
+
+    def bandstop(self, f_low, f_high, *args, **kwargs):
+        """Bandstop filter, wraps bandstop"""
+        return bandstop(self.darray, f_low, f_high, *args, **kwargs)
+
+    def freq(self, f_crit, order=None, irtype='iir', filtfilt=True,
+             apply_kwargs=None, in_nyq=False, dim=None, **kwargs):
+        """General frequency filter, wraps frequency_filter"""
+        return frequency_filter(self.darray, f_crit, order, irtype, filtfilt,
+                                apply_kwargs, in_nyq, dim, **kwargs)
+
+    __call__ = freq
+
+    def savgol(self, window_length, polyorder, deriv=0, delta=None,
+                      dim=None, mode='interp', cval=0.0):
+        """Savitzky-Golay filter, wraps savgol_filter"""
+        return savgol_filter(self.darray, window_length, polyorder, deriv, delta,
+                             dim, mode, cval)
+
+    def median(self, kernel_size=None):
+        """Median filter, wraps medfilt"""
+        return medfilt(self.darray, kernel_size)
+
+    def decimate(self, q=None, target_fs=None, dim=None, **lowpass_kwargs):
+        """Decimate signal, wraps decimate"""
+        return decimate(self.darray, q, target_fs, dim, **lowpass_kwargs)
