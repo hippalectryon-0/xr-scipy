@@ -33,5 +33,5 @@ def interp1d(darray, other_darray=None, fill_value=np.nan, mask_null=True,
             ret_data[right] = fill_value[1]
         else:
             ret_data[outside] = fill_value
-    return xarray.DataArray(ret_data, {dim: other_darray.coords[dim]},
+    return xarray.DataArray(ret_data, coords=[(dim, other_darray.coords[dim])],
                             attrs=darray.attrs, name=darray.name)
