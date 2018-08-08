@@ -71,6 +71,22 @@ def csd(darray, other_darray, fs=None, seglen=None, overlap_ratio=2,
     return Pxy
 
 
+def freq2lag(darray, is_onesided=False, f_dim=_FREQUENCY_DIM):
+    axis = darray.get_axis_num(f_dim)
+    if is_onesided:
+        ret = np.fft.irfft(darray, axis=axis).real
+    else:
+        ret = np.fft.ifft(darray, axis=axis).real
+    ret = darray.__array_wrap__(ret)
+    ret.name = 'ifft_' + darray.name
+    f = ret.coords[f_dim]
+    df = f[1] - f[0]
+    dt = 1.0 / (df * darray.shape[axis])
+    lag =  f /df * dt
+    ret.coords['lag'] = lag
+    return ret.swap_dims({f_dim: 'lag'}).isel(lag=lag.argsort().values)
+
+
 def xcorrelation(darray, other_darray, fs=None, seglen=None, overlap_ratio=2,
         window='hann', nperseg=256, noverlap=None, nfft=None,
         detrend='constant', dim=None):
@@ -83,16 +99,8 @@ def xcorrelation(darray, other_darray, fs=None, seglen=None, overlap_ratio=2,
     y_std = psd(other_darray, fs, seglen, overlap_ratio, window,
                 nperseg, noverlap, nfft, detrend, return_onesided=False,
                 scaling='spectrum', dim=dim, mode='psd').mean(dim=_FREQUENCY_DIM)**0.5
-    xcorr = scipy.fftpack.ifft(csd_d, axis=csd_d.get_axis_num(_FREQUENCY_DIM)).real
-    xcorr = csd_d.__array_wrap__(xcorr)
-    xcorr /= x_std * y_std
-    xcorr.name = 'xcorr_' + csd_d.name
-    f = xcorr.coords[_FREQUENCY_DIM]
-    factor = f[2] / f[1]
-    dt = get_sampling_step(darray, dim=dim)
-    lag =  f * f.shape[0] * dt**2
-    xcorr.coords['lag'] = lag
-    return xcorr.swap_dims({_FREQUENCY_DIM: 'lag'}).isel(lag=lag.argsort())
+    xcorr = freq2lag(csd_d) / (x_std * y_std)
+    return xcorr
 
 
 def spectrogram(darray, fs=None, seglen=None, overlap_ratio=2, window='hann',
