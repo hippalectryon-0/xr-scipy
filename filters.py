@@ -26,6 +26,11 @@ _ORDER_DEFAULTS = {
     'fir': 29,
     }
 
+class FilteringNaNWarning(Warning):
+    pass
+# always (not just once) show filtering NaN warnings to see the responsible signal
+warnings.filterwarnings('always', category=FilteringNaNWarning)
+
 
 def frequency_filter(darray, f_crit, order=None, irtype='iir', filtfilt=True,
                      apply_kwargs=None, in_nyq=False, dim=None, **kwargs):
@@ -41,6 +46,9 @@ def frequency_filter(darray, f_crit, order=None, irtype='iir', filtfilt=True,
     if not in_nyq:              # normalize by Nyquist frequency
         f_crit_norm *= 2 * get_sampling_step(darray, dim)
     data = np.asarray(darray)
+    if np.any(np.isnan(data)): # only warn since simple forward-filter or FIR is valid
+        warnings.warn('data contains NaNs, filter will propagate them',
+                      FilteringNaNWarning, stacklevel=2)
     if sosfiltfilt and irtype == 'iir': # TODO merge with other if branch
         sos = scipy.signal.iirfilter(order, f_crit_norm, output='sos', **kwargs)
         if filtfilt:
