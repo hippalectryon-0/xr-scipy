@@ -56,7 +56,7 @@ def crossspectrogram(darray, other_darray, fs=None, seglen=None,
     coords_ds[_FREQUENCY_DIM] = f
     new_name = 'crossspectrogram_{}_{}'.format(darray.name, other_darray.name)
     return xarray.DataArray(Pxy, name=new_name,
-                            dims=new_dims, coords=coords_ds)
+                            dims=new_dims, coords=coords_ds.coords)
 
 def csd(darray, other_darray, fs=None, seglen=None, overlap_ratio=2,
         window='hann', nperseg=256, noverlap=None, nfft=None,
