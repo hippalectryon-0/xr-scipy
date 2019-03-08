@@ -87,19 +87,21 @@ def freq2lag(darray, is_onesided=False, f_dim=_FREQUENCY_DIM):
     return ret.swap_dims({f_dim: 'lag'}).isel(lag=lag.argsort().values)
 
 
-def xcorrelation(darray, other_darray, fs=None, seglen=None, overlap_ratio=2,
-        window='hann', nperseg=256, noverlap=None, nfft=None,
-        detrend='constant', dim=None):
+def xcorrelation(darray, other_darray, normalize=True, fs=None, seglen=None,
+                 overlap_ratio=2, window='hann', nperseg=256, noverlap=None,
+                 nfft=None, detrend='constant', dim=None):
     csd_d = csd(darray, other_darray, fs, seglen, overlap_ratio, window,
                 nperseg, noverlap, nfft, detrend, return_onesided=False,
                 scaling='spectrum', dim=dim, mode='psd')
-    x_std = psd(darray, fs, seglen, overlap_ratio, window,
-                nperseg, noverlap, nfft, detrend, return_onesided=False,
-                scaling='spectrum', dim=dim, mode='psd').mean(dim=_FREQUENCY_DIM)**0.5
-    y_std = psd(other_darray, fs, seglen, overlap_ratio, window,
-                nperseg, noverlap, nfft, detrend, return_onesided=False,
-                scaling='spectrum', dim=dim, mode='psd').mean(dim=_FREQUENCY_DIM)**0.5
-    xcorr = freq2lag(csd_d) / (x_std * y_std)
+    xcorr = freq2lag(csd_d)
+    if normalize:
+        norm = 1
+        for sig in (darray, other_darray):
+            sig_std = psd(sig, fs, seglen, overlap_ratio, window, nperseg,
+                          noverlap, nfft, detrend, return_onesided=False,
+                          scaling='spectrum', dim=dim, mode='psd').mean(dim=_FREQUENCY_DIM)**0.5
+            norm = norm * sig_std
+        xcorr /= norm
     return xcorr
 
 
