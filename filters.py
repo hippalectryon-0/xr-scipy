@@ -52,16 +52,20 @@ def frequency_filter(darray, f_crit, order=None, irtype='iir', filtfilt=True,
     if sosfiltfilt and irtype == 'iir': # TODO merge with other if branch
         sos = scipy.signal.iirfilter(order, f_crit_norm, output='sos', **kwargs)
         if filtfilt:
-            data = sosfiltfilt(sos, data, axis, **apply_kwargs)
+            ret = xarray.apply_ufunc(sosfiltfilt, sos, darray,
+                                      kwargs = apply_kwargs)
         else:
-            data = scipy.signal.sosfilt(sos, data, axis, **apply_kwargs)
+            ret = xarray.apply_ufunc(scipy.signal.sosfilt, sos, darray,
+                                     kwargs = apply_kwargs)
     else:
         b, a = _BA_FUNCS[irtype](order, f_crit_norm, **kwargs)
         if filtfilt:
-            data = scipy.signal.filtfilt(b, a, data, axis, **apply_kwargs)
+            ret = xarray.apply_ufunc(scipy.signal.filtfilt, b, a, darray,
+                                     kwargs = apply_kwargs)            
         else:
-            data = scipy.signal.lfilter(b, a, data, axis, **apply_kwargs)
-    return darray.__array_wrap__(data)
+            ret = xarray.apply_ufunc(scipy.signal.lfilter, b, a, darray,
+                                     kwargs = apply_kwargs)
+    return ret
 
 
 def _update_ftype_kwargs(kwargs, iirvalue, firvalue):
@@ -134,12 +138,15 @@ def medfilt(darray, kernel_size=None):
                              kwargs = dict(kernel_size = kernel_size))
 
 def wiener(darray, window_length, noise_variance=None, in_points=False, dim=None):
+    dim = get_maybe_only_dim(darray, dim)
     if not in_points:
         delta = get_sampling_step(darray, dim)
         window_length = int(np.rint(window_length / delta))    
     return xarray.apply_ufunc(scipy.signal.wiener, darray,
-                             kwargs = dict(my_size = window_length,
-                                           noise = noise_variance))
+                              input_core_dims = [[dim]],
+                              output_core_dims = [[dim]],
+                              kwargs = dict(my_size = window_length,
+                                            noise = noise_variance))
 
 def savgol_filter(darray, window_length, polyorder, deriv=0, delta=None,
                   dim=None, mode='interp', cval=0.0):
@@ -156,8 +163,6 @@ def savgol_filter(darray, window_length, polyorder, deriv=0, delta=None,
                                           polyorder = polyorder,
                                           deriv = deriv, delta = delta,
                                           mode = mode, cval = cval))
-
-
 
 @xarray.register_dataarray_accessor('filt')
 class FilterAccessor(object):
