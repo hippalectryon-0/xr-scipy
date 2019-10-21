@@ -150,12 +150,12 @@ def savgol_filter(darray, window_length, polyorder, deriv=0, delta=None,
         if window_length % 2 == 0:  # must be odd
             window_length += 1
     return xarray.apply_ufunc(scipy.signal.savgol_filter, darray,
-                              input_core_dims=[[dim]],
-                              output_core_dims=[[dim]],
-                              kwargs=dict(window_length=window_length,
-                                          polyorder=polyorder,
-                                          deriv=deriv, delta=delta,
-                                          mode=mode, cval=cval))
+                              input_core_dims = [[dim]],
+                              output_core_dims = [[dim]],
+                              kwargs=dict(window_length = window_length,
+                                          polyorder = polyorder,
+                                          deriv = deriv, delta = delta,
+                                          mode = mode, cval = cval))
 
 
 
