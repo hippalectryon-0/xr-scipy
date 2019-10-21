@@ -41,29 +41,36 @@ def frequency_filter(darray, f_crit, order=None, irtype='iir', filtfilt=True,
         order = _ORDER_DEFAULTS[irtype]
     if apply_kwargs is None:
         apply_kwargs = {}
-    dim, axis = get_maybe_last_dim_axis(darray, dim)
+    dim = get_maybe_only_dim(darray, dim )
     f_crit_norm = np.asarray(f_crit, dtype=np.float)
     if not in_nyq:              # normalize by Nyquist frequency
         f_crit_norm *= 2 * get_sampling_step(darray, dim)
-    data = np.asarray(darray)
-    if np.any(np.isnan(data)): # only warn since simple forward-filter or FIR is valid
+    if np.any(np.isnan(np.asarray(darray))): # only warn since simple forward-filter or FIR is valid
         warnings.warn('data contains NaNs, filter will propagate them',
                       FilteringNaNWarning, stacklevel=2)
     if sosfiltfilt and irtype == 'iir': # TODO merge with other if branch
         sos = scipy.signal.iirfilter(order, f_crit_norm, output='sos', **kwargs)
         if filtfilt:
             ret = xarray.apply_ufunc(sosfiltfilt, sos, darray,
-                                      kwargs = apply_kwargs)
+                                     input_core_dims = [[dim]],
+                                     output_core_dims = [[dim]],
+                                     kwargs = apply_kwargs)
         else:
             ret = xarray.apply_ufunc(scipy.signal.sosfilt, sos, darray,
+                                     input_core_dims = [[dim]],
+                                     output_core_dims = [[dim]],
                                      kwargs = apply_kwargs)
     else:
         b, a = _BA_FUNCS[irtype](order, f_crit_norm, **kwargs)
         if filtfilt:
             ret = xarray.apply_ufunc(scipy.signal.filtfilt, b, a, darray,
+                                     input_core_dims = [[dim]],
+                                     output_core_dims = [[dim]],
                                      kwargs = apply_kwargs)            
         else:
             ret = xarray.apply_ufunc(scipy.signal.lfilter, b, a, darray,
+                                     input_core_dims = [[dim]],
+                                     output_core_dims = [[dim]],
                                      kwargs = apply_kwargs)
     return ret
 
