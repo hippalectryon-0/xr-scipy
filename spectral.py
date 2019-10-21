@@ -238,6 +238,23 @@ def csd(darray, other_darray, fs=None, seglen=None, overlap_ratio=2,
 
 
 def freq2lag(darray, is_onesided=False, f_dim=_FREQUENCY_DIM):
+    """
+    Calculate the lag corresponding to .
+    Parameters
+    ----------
+    darray : xarray.DataArray
+        The result of crossspectral density serves as an input.
+    is_onesided : boolean
+        Indicated whether frequency dimmension is one sided or full. Defaults to 'False'.
+    f_dim : string
+        Defaults to 'frequency'.
+
+    Returns
+    -------
+    ret : xarray
+        Array of 'ret' returned with the main dimmension switched to the lag.
+    """    
+    
     axis = darray.get_axis_num(f_dim)
     if is_onesided:
         ret = np.fft.irfft(darray, axis=axis).real
@@ -256,6 +273,51 @@ def freq2lag(darray, is_onesided=False, f_dim=_FREQUENCY_DIM):
 def xcorrelation(darray, other_darray, normalize=True, fs=None, seglen=None,
                  overlap_ratio=2, window='hann', nperseg=256, noverlap=None,
                  nfft=None, detrend='constant', dim=None):
+    """
+    Calculate the crosscorrelation.
+    Parameters
+    ----------
+    darray : xarray
+        Series of measurement values
+    other_darray : xarray
+        Series of measurement values
+    window : str or tuple or array_like, optional
+        Desired window to use. If `window` is a string or tuple, it is
+        passed to `get_window` to generate the window values, which are
+        DFT-even by default. See `get_window` for a list of windows and
+        required parameters. If `window` is array_like it will be used
+        directly as the window and its length must be nperseg. Defaults
+        to a Hann window.
+    seglen : float, optional
+        Segment length in units of the used (e.g. time) dimmension. 
+    nperseg : int, optional
+        Length of each segment. Defaults to None, but if window is str or
+        tuple, is set to 256, and if window is array_like, is set to the
+        length of the window.
+    noverlap: int, optional
+        Number of points to overlap between segments. If `None`,
+        ``noverlap = nperseg // overlap_ratio``. Defaults to `None`.
+    overlap_ratio : int, optional
+        Used to calculate noverlap, if this is not specified (see above). Defaults to 2.
+    nfft : int, optional
+        Length of the FFT used, if a zero padded FFT is desired. If
+        `None`, the FFT length is `nperseg`. Defaults to `None`.
+    detrend : str or function or `False`, optional
+        Specifies how to detrend each segment. If `detrend` is a
+        string, it is passed as the `type` argument to the `detrend`
+        function. If it is a function, it takes a segment and returns a
+        detrended segment. If `detrend` is `False`, no detrending is
+        done. Defaults to 'constant'.
+    dim : str, optional, if 1D data provided, otherwise must be specified
+        Axis along which the CSD is computed for both inputs; the
+        default is over the last axis.  
+
+    Returns
+    -------
+    xcorr : xarray
+        Crosscorrelation of 'darray' and 'other_darray' returned with the main dimmension switched to the lag.
+    """
+    
     csd_d = csd(darray, other_darray, fs, seglen, overlap_ratio, window,
                 nperseg, noverlap, nfft, detrend, return_onesided=False,
                 scaling='spectrum', dim=dim, mode='psd')
