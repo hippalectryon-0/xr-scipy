@@ -7,7 +7,7 @@ except ImportError:
     def next_fast_len(size):
         return 2**int(np.ceil(np.log2(size)))
 
-from .utils import get_maybe_last_dim_axis, get_sampling_step
+from .utils import get_maybe_last_dim_axis, get_sampling_step, get_maybe_only_dim
 
 _FREQUENCY_DIM = 'frequency'
 
@@ -65,7 +65,7 @@ def csd(darray, other_darray, fs=None, seglen=None, overlap_ratio=2,
     Pxy = crossspectrogram(darray, other_darray, fs, seglen,
                            overlap_ratio, window, nperseg, noverlap, nfft, detrend,
                            return_onesided, scaling, dim, mode)
-    dim, axis = get_maybe_last_dim_axis(darray, dim)
+    dim = get_maybe_only_dim(darray, dim)
     Pxy = Pxy.mean(dim=dim)
     Pxy.name = 'csd_{}_{}'.format(darray.name, other_darray.name)
     return Pxy
@@ -121,7 +121,7 @@ def psd(darray, fs=None, seglen=None, overlap_ratio=2, window='hann',
     Pxx = spectrogram(darray, fs, seglen, overlap_ratio, window, nperseg,
                       noverlap, nfft, detrend, return_onesided, scaling, dim,
                       mode)
-    dim, axis = get_maybe_last_dim_axis(darray, dim)
+    dim = get_maybe_only_dim(darray, dim)
     Pxx = Pxx.mean(dim=dim)
     Pxx.name = 'psd_{}'.format(darray.name)
     return Pxx
@@ -137,7 +137,7 @@ def coherogram(darray, other_darray, fs=None, seglen=None, overlap_ratio=2,
     Pxy = crossspectrogram(darray, other_darray, fs, seglen, overlap_ratio,
                            window, nperseg, noverlap, nfft, detrend,
                            return_onesided, dim=dim)
-    dim, axis = get_maybe_last_dim_axis(darray, dim)
+    dim = get_maybe_only_dim(darray, dim)
     rol_kw = {dim: nrolling, 'center': True}
     coh = (Pxy.rolling(**rol_kw).mean() /
            (Pxx.rolling(**rol_kw).mean() * Pyy.rolling(**rol_kw).mean())**0.5)
