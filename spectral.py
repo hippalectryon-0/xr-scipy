@@ -11,6 +11,53 @@ from .utils import get_maybe_last_dim_axis, get_sampling_step
 
 _FREQUENCY_DIM = 'frequency'
 
+_DOCSTRING_COMMON = """              
+    Parameters
+    ----------
+    darray : xarray
+        Series of measurement values
+    other_darray : xarray
+        Series of measurement values
+    fs : float, optional
+        Sampling frequency of the `darray` and `other_darray` time series. If not specified,
+        crossspectrogram will calculate it from the sampling step.
+    window : str or tuple or array_like, optional
+        Desired window to use. If `window` is a string or tuple, it is
+        passed to `get_window` to generate the window values, which are
+        DFT-even by default. See `get_window` for a list of windows and
+        required parameters. If `window` is array_like it will be used
+        directly as the window and its length must be nperseg. Defaults
+        to a Hann window.
+    seglen : float, optional
+        Segment length in units of the used (e.g. time) dimmension. 
+    nperseg : int, optional
+        Length of each segment. Defaults to None, but if window is str or
+        tuple, is set to 256, and if window is array_like, is set to the
+        length of the window.
+    noverlap: int, optional
+        Number of points to overlap between segments. If `None`,
+        ``noverlap = nperseg // overlap_ratio``. Defaults to `None`.
+    overlap_ratio : int, optional
+        Used to calculate noverlap, if this is not specified (see above). Defaults to 2.
+    nfft : int, optional
+        Length of the FFT used, if a zero padded FFT is desired. If
+        `None`, the FFT length is `nperseg`. Defaults to `None`.
+    detrend : str or function or `False`, optional
+        Specifies how to detrend each segment. If `detrend` is a
+        string, it is passed as the `type` argument to the `detrend`
+        function. If it is a function, it takes a segment and returns a
+        detrended segment. If `detrend` is `False`, no detrending is
+        done. Defaults to 'constant'.
+    return_onesided : bool, optional
+        If `True`, return a one-sided spectrum for real data. If
+        `False` return a two-sided spectrum. Defaults to `True`, but for 
+        complex data, a two-sided spectrum is always returned.
+    dim : str, optional, if 1D data provided, otherwise must be specified
+        Axis along which the CSD is computed for both inputs; the
+        default is over the last axis.
+"""
+
+
 def crossspectrogram(darray, other_darray, fs=None, seglen=None,
                      overlap_ratio=2, window='hann', nperseg=256,
                      noverlap=None, nfft=None, detrend='constant',
@@ -336,6 +383,22 @@ def xcorrelation(darray, other_darray, normalize=True, fs=None, seglen=None,
 def spectrogram(darray, fs=None, seglen=None, overlap_ratio=2, window='hann',
                 nperseg=256, noverlap=None, nfft=None, detrend='constant',
                 return_onesided=True, scaling='density', dim=None, mode='psd'):
+    """
+    Calculate the spectrogram using crossspectrogram applied to the same xarray (darray = other_darray).
+    {common}
+    mode : str
+        Defines what kind of return values are expected. Options are
+        ['psd', 'complex', 'magnitude', 'angle', 'phase']. 'complex' is
+        equivalent to the output of `stft` with no padding or boundary
+        extension. 'magnitude' returns the absolute magnitude of the
+        STFT. 'angle' and 'phase' return the complex angle of the STFT,
+        with and without unwrapping, respectively.  
+    
+    Returns
+    -------
+    Pxx : xarray.DataArray
+        Spectrogram of 'darray'.
+    """.format(common=_DOCSTRING_COMMON)    
     Pxx = crossspectrogram(darray, darray, fs, seglen, overlap_ratio, window,
                            nperseg, noverlap, nfft, detrend, return_onesided,
                            scaling, dim, mode)
@@ -346,6 +409,28 @@ def spectrogram(darray, fs=None, seglen=None, overlap_ratio=2, window='hann',
 def psd(darray, fs=None, seglen=None, overlap_ratio=2, window='hann',
         nperseg=256, noverlap=None, nfft=None, detrend='constant',
         return_onesided=True, scaling='density', dim=None, mode='psd'):
+    """
+    Calculate the power spectral density.
+    {common}
+    mode : str
+        Defines what kind of return values are expected. Options are
+        ['psd', 'complex', 'magnitude', 'angle', 'phase']. 'complex' is
+        equivalent to the output of `stft` with no padding or boundary
+        extension. 'magnitude' returns the absolute magnitude of the
+        STFT. 'angle' and 'phase' return the complex angle of the STFT,
+        with and without unwrapping, respectively.
+    scaling : { 'density', 'spectrum' }, optional
+        Selects between computing the cross spectral density ('density')
+        where `Pxy` has units of V**2/Hz and computing the cross spectrum
+        ('spectrum') where `Pxy` has units of V**2, if `darray` and `other_darray` are
+        measured in V and `fs` is measured in Hz. Defaults to 'density'
+    
+    Returns
+    -------
+    Pxx : xarray.DataArray
+        Power spectrum density of 'darray'.
+    """.format(common=_DOCSTRING_COMMON)     
+    
     Pxx = spectrogram(darray, fs, seglen, overlap_ratio, window, nperseg,
                       noverlap, nfft, detrend, return_onesided, scaling, dim,
                       mode)
@@ -358,6 +443,18 @@ def psd(darray, fs=None, seglen=None, overlap_ratio=2, window='hann',
 def coherogram(darray, other_darray, fs=None, seglen=None, overlap_ratio=2,
                nrolling=8, window='hann', nperseg=256, noverlap=None,
                nfft=None, detrend='constant', return_onesided=True, dim=None):
+    """
+    Calculate the coherogram.
+    {common}
+    nrolling : int, optional
+            Number of running windows to provide the mean of coherence.
+    
+    Returns
+    -------
+    coh : xarray.DataArray
+        Coherogram of 'darray' and 'other_darray'.
+    """.format(common=_DOCSTRING_COMMON)
+    
     Pxx = spectrogram(darray, fs, seglen, overlap_ratio, window, nperseg,
                       noverlap, nfft, detrend, return_onesided, dim=dim)
     Pyy = spectrogram(other_darray, fs, seglen, overlap_ratio, window, nperseg,
@@ -377,6 +474,16 @@ def coherogram(darray, other_darray, fs=None, seglen=None, overlap_ratio=2,
 def coherence(darray, other_darray, fs=None, seglen=None, overlap_ratio=2,
               window='hann', nperseg=256, noverlap=None, nfft=None,
               detrend='constant', dim=None):
+    """
+    Calculate the coherence.
+    {common}
+    
+    Returns
+    -------
+    coh : xarray.DataArray
+        Coherence of 'darray' and 'other_darray'.
+    """.format(common=_DOCSTRING_COMMON)
+    
     Pxx = psd(darray, fs, seglen, overlap_ratio, window, nperseg,
                       noverlap, nfft, detrend, dim=dim)
     Pyy = psd(other_darray, fs, seglen, overlap_ratio, window, nperseg,
@@ -389,6 +496,25 @@ def coherence(darray, other_darray, fs=None, seglen=None, overlap_ratio=2,
 
 
 def hilbert(darray, N=None, dim=None):
+    """
+    Compute the analytic signal, using the Hilbert transform.
+    The transformation is done along the selected axis.
+
+    Parameters
+    darray : xarray
+    Signal data. Must be real.
+
+    N : int, optional
+    Number of Fourier components. Default: x.shape[axis]
+
+    dim : string, optional
+    Axis along which to do the transformation.
+
+    Returns
+    darray : xarray
+    Analytic signal of the Hilbert transform of 'darray' along selected axis.
+    """
+    
     dim, axis = get_maybe_last_dim_axis(darray, dim)
     n_orig = darray.shape[axis]
     N_unspecified = N is None
