@@ -130,20 +130,16 @@ def decimate(darray, q=None, target_fs=None, dim=None, **lowpass_kwargs):
 
 
 def medfilt(darray, kernel_size=None):
-    ret = xarray.apply_ufunc(scipy.signal.medfilt, darray,
+    return xarray.apply_ufunc(scipy.signal.medfilt, darray,
                              kwargs = dict(kernel_size = kernel_size))
-    return ret
-
 
 def wiener(darray, window_length, noise_variance=None, in_points=False, dim=None):
     if not in_points:
         delta = get_sampling_step(darray, dim)
-        window_length = int(np.rint(window_length / delta))
-    
-    ret = xarray.apply_ufunc(scipy.signal.wiener, darray,
+        window_length = int(np.rint(window_length / delta))    
+    return xarray.apply_ufunc(scipy.signal.wiener, darray,
                              kwargs = dict(my_size = window_length,
                                            noise = noise_variance))
-    return ret
 
 def savgol_filter(darray, window_length, polyorder, deriv=0, delta=None,
                   dim=None, mode='interp', cval=0.0):
