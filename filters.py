@@ -130,17 +130,20 @@ def decimate(darray, q=None, target_fs=None, dim=None, **lowpass_kwargs):
 
 
 def medfilt(darray, kernel_size=None):
-    ret = scipy.signal.medfilt(np.asarray(darray), kernel_size)
-    return darray.__array_wrap__(ret)
+    ret = xarray.apply_ufunc(scipy.signal.medfilt, darray,
+                             kwargs = dict(kernel_size = kernel_size))
+    return ret
 
 
 def wiener(darray, window_length, noise_variance=None, in_points=False, dim=None):
     if not in_points:
         delta = get_sampling_step(darray, dim)
         window_length = int(np.rint(window_length / delta))
-    ret = scipy.signal.wiener(darray.values, window_length, noise_variance)
-    return darray.__array_wrap__(ret)
-
+    
+    ret = xarray.apply_ufunc(scipy.signal.wiener, darray,
+                             kwargs = dict(my_size = window_length,
+                                           noise = noise_variance))
+    return ret
 
 def savgol_filter(darray, window_length, polyorder, deriv=0, delta=None,
                   dim=None, mode='interp', cval=0.0):
@@ -150,7 +153,13 @@ def savgol_filter(darray, window_length, polyorder, deriv=0, delta=None,
         window_length = int(np.rint(window_length / delta))
         if window_length % 2 == 0:  # must be odd
             window_length += 1
-    return xarray.apply_ufunc(scipy.signal.savgol_filter,darray,input_core_dims=[[dim]], output_core_dims=[[dim]],kwargs=dict(window_length=window_length, polyorder=polyorder, deriv=deriv, delta=delta, mode=mode, cval=cval))
+    return xarray.apply_ufunc(scipy.signal.savgol_filter, darray,
+                              input_core_dims=[[dim]],
+                              output_core_dims=[[dim]],
+                              kwargs=dict(window_length=window_length,
+                                          polyorder=polyorder,
+                                          deriv=deriv, delta=delta,
+                                          mode=mode, cval=cval))
 
 
 
