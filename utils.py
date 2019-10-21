@@ -35,7 +35,8 @@ def get_maybe_last_dim_axis(darray, dim=None):
 
 
 def get_sampling_step(darray, dim=None, rtol=1e-3):
-    dim, axis = get_maybe_last_dim_axis(darray, dim)
+    dim = get_maybe_only_dim(darray, dim)
+    
     coord = darray.coords[dim]
     dt_avg = float(coord[-1] - coord[0]) / (len(coord) - 1)  # N-1 segments
     dt_first = float(coord[1] - coord[0])

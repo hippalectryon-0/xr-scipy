@@ -8,7 +8,7 @@ try:
 except ImportError:
     sosfiltfilt = None
 
-from .utils import get_maybe_last_dim_axis, get_sampling_step
+from .utils import get_maybe_last_dim_axis, get_sampling_step, get_maybe_only_dim
 
 def _firwin_ba(*args, **kwargs):
     if not kwargs.get('pass_zero'):
@@ -142,18 +142,16 @@ def wiener(darray, window_length, noise_variance=None, in_points=False, dim=None
     return darray.__array_wrap__(ret)
 
 
-
 def savgol_filter(darray, window_length, polyorder, deriv=0, delta=None,
                   dim=None, mode='interp', cval=0.0):
-    dim, axis = get_maybe_last_dim_axis(darray, dim)
+    dim = get_maybe_only_dim(darray, dim)
     if delta is None:
         delta = get_sampling_step(darray, dim)
         window_length = int(np.rint(window_length / delta))
         if window_length % 2 == 0:  # must be odd
             window_length += 1
-    ret = scipy.signal.savgol_filter(np.asarray(darray), window_length,
-                                     polyorder, deriv, delta, axis, mode, cval)
-    return darray.__array_wrap__(ret)
+    return xarray.apply_ufunc(scipy.signal.savgol_filter,darray,input_core_dims=[[dim]], output_core_dims=[[dim]],kwargs=dict(window_length=window_length, polyorder=polyorder, deriv=deriv, delta=delta, mode=mode, cval=cval))
+
 
 
 @xarray.register_dataarray_accessor('filt')
