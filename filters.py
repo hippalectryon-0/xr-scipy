@@ -110,7 +110,7 @@ def decimate(darray, q=None, target_fs=None, dim=None, **lowpass_kwargs):
 
     If q < 2, decimation is skipped and a DecimationWarning is emitted
     '''
-    dim, axis = get_maybe_last_dim_axis(darray, dim)
+    dim = get_maybe_only_dim(darray, dim)
     if q is None:
         if target_fs is None:
             raise ValueError('either q or target_fs must be given')
