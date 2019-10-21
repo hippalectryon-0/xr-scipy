@@ -6,14 +6,24 @@ class UnevenSamplingWarning(Warning):
 # always (not just once) show decimation warnings to see the responsible signal
 warnings.filterwarnings('always', category=UnevenSamplingWarning)
 
-def get_maybe_only_dim(signal, dim):
+def get_maybe_only_dim(darray, dim):
+    """
+    Check the dimension of the signal.
+    
+    Parameters
+    ----------
+    darray : DataArray
+        An xarray DataArray.
+    dim : string
+        Specifies the dimension.
+    """
     if dim is None:
-        if len(signal.dims) == 1:
-            return signal.dims
+        if len(darray.dims) == 1:
+            return darray.dims[0]
         else:
             raise ValueError("Specify the dimension")
     else:
-        return
+        return dim
 
 def get_maybe_last_dim_axis(darray, dim=None):
     if dim is None:
