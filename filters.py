@@ -145,7 +145,7 @@ def wiener(darray, window_length, noise_variance=None, in_points=False, dim=None
     return xarray.apply_ufunc(scipy.signal.wiener, darray,
                               input_core_dims = [[dim]],
                               output_core_dims = [[dim]],
-                              kwargs = dict(my_size = window_length,
+                              kwargs = dict(mysize = window_length,
                                             noise = noise_variance))
 
 def savgol_filter(darray, window_length, polyorder, deriv=0, delta=None,
