@@ -16,6 +16,89 @@ def crossspectrogram(darray, other_darray, fs=None, seglen=None,
                      noverlap=None, nfft=None, detrend='constant',
                      return_onesided=True, scaling='density', dim=None,
                      mode='psd'):
+        r"""
+    Calculate the cross spectrogram.
+    Parameters
+    ----------
+    darray : xarray
+        Series of measurement values
+    other_darray : xarray
+        Series of measurement values
+    fs : float, optional
+        Sampling frequency of the `darray` and `other_darray` time series. If not specified,
+        crossspectrogram will calculate it from the sampling step.
+    window : str or tuple or array_like, optional
+        Desired window to use. If `window` is a string or tuple, it is
+        passed to `get_window` to generate the window values, which are
+        DFT-even by default. See `get_window` for a list of windows and
+        required parameters. If `window` is array_like it will be used
+        directly as the window and its length must be nperseg. Defaults
+        to a Hann window.
+    seglen : float, optional
+        Segment length in units of the used (e.g. time) dimmension. 
+    nperseg : int, optional
+        Length of each segment. Defaults to None, but if window is str or
+        tuple, is set to 256, and if window is array_like, is set to the
+        length of the window.
+    noverlap: int, optional
+        Number of points to overlap between segments. If `None`,
+        ``noverlap = nperseg // overlap_ratio``. Defaults to `None`.
+    overlap_ratio : int, optional
+        Used to calculate noverlap, if this is not specified (see above). Defaults to 2.
+    nfft : int, optional
+        Length of the FFT used, if a zero padded FFT is desired. If
+        `None`, the FFT length is `nperseg`. Defaults to `None`.
+    detrend : str or function or `False`, optional
+        Specifies how to detrend each segment. If `detrend` is a
+        string, it is passed as the `type` argument to the `detrend`
+        function. If it is a function, it takes a segment and returns a
+        detrended segment. If `detrend` is `False`, no detrending is
+        done. Defaults to 'constant'.
+    return_onesided : bool, optional
+        If `True`, return a one-sided spectrum for real data. If
+        `False` return a two-sided spectrum. Defaults to `True`, but for 
+        complex data, a two-sided spectrum is always returned.
+    scaling : { 'density', 'spectrum' }, optional
+        Selects between computing the cross spectral density ('density')
+        where `Pxy` has units of V**2/Hz and computing the cross spectrum
+        ('spectrum') where `Pxy` has units of V**2, if `darray` and `other_darray` are
+        measured in V and `fs` is measured in Hz. Defaults to 'density'
+    dim : str, optional, if 1D data provided, otherwise must be specified
+        Axis along which the CSD is computed for both inputs; the
+        default is over the last axis.
+    mode : str
+        Defines what kind of return values are expected. Options are
+        ['psd', 'complex', 'magnitude', 'angle', 'phase']. 'complex' is
+        equivalent to the output of `stft` with no padding or boundary
+        extension. 'magnitude' returns the absolute magnitude of the
+        STFT. 'angle' and 'phase' return the complex angle of the STFT,
+        with and without unwrapping, respectively.   
+
+    Returns
+    -------
+    Pxy : xarray.DataArray
+        Cross spectrogram of 'darray' and 'other_darray' returned with two new dimmensions: frequency and "time".
+    --------
+    By convention, Pxy is computed with the conjugate FFT of `darray` 
+    multiplied by the FFT of `other_darray`.
+    If the input series differ in length, the shorter series will be
+    zero-padded to match.
+    An appropriate amount of overlap will depend on the choice of window
+    and on your requirements. For the default Hann window an overlap of
+    50% is a reasonable trade off between accurately estimating the
+    signal power, while not over counting any of the data. Narrower
+    windows may require a larger overlap.
+    
+    References
+    ----------
+    .. [1] P. Welch, "The use of the fast Fourier transform for the
+           estimation of power spectra: A method based on time averaging
+           over short, modified periodograms", IEEE Trans. Audio
+           Electroacoust. vol. 15, pp. 70-73, 1967.
+    .. [2] Rabiner, Lawrence R., and B. Gold. "Theory and Application of
+           Digital Signal Processing" Prentice-Hall, pp. 414-419, 1975
+    """
+    
     dim, axis = get_maybe_last_dim_axis(darray, dim)
     if fs is None:
         dt = get_sampling_step(darray, dim)
@@ -80,6 +163,8 @@ def csd(darray, other_darray, fs=None, seglen=None, overlap_ratio=2,
         required parameters. If `window` is array_like it will be used
         directly as the window and its length must be nperseg. Defaults
         to a Hann window.
+    seglen : float, optional
+        Segment length in units of the used (e.g. time) dimmension. 
     nperseg : int, optional
         Length of each segment. Defaults to None, but if window is str or
         tuple, is set to 256, and if window is array_like, is set to the
@@ -110,13 +195,18 @@ def csd(darray, other_darray, fs=None, seglen=None, overlap_ratio=2,
     dim : str, optional, if 1D data provided, otherwise must be specified
         Axis along which the CSD is computed for both inputs; the
         default is over the last axis.
+    mode : str
+        Defines what kind of return values are expected. Options are
+        ['psd', 'complex', 'magnitude', 'angle', 'phase']. 'complex' is
+        equivalent to the output of `stft` with no padding or boundary
+        extension. 'magnitude' returns the absolute magnitude of the
+        STFT. 'angle' and 'phase' return the complex angle of the STFT,
+        with and without unwrapping, respectively.    
 
     Returns
-    -------
-    f : ndarray
-        Array of sample frequencies.
-    Pxy : ndarray
-        Cross spectral density or cross power spectrum of darray, other_darray.
+    -------   
+    Pxy : xarray.DataArray
+        Cross spectral density or cross power spectrum with dimmension of an array of sample frequencies.
     --------
     By convention, Pxy is computed with the conjugate FFT of `darray` 
     multiplied by the FFT of `other_darray`.
