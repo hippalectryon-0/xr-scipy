@@ -52,25 +52,25 @@ def frequency_filter(darray, f_crit, order=None, irtype='iir', filtfilt=True,
         sos = scipy.signal.iirfilter(order, f_crit_norm, output='sos', **kwargs)
         if filtfilt:
             ret = xarray.apply_ufunc(sosfiltfilt, sos, darray,
-                                     input_core_dims = [[dim]],
-                                     output_core_dims = [[dim]],
+                                     input_core_dims = [[],[dim]],
+                                     output_core_dims = [[],[dim]],
                                      kwargs = apply_kwargs)
         else:
             ret = xarray.apply_ufunc(scipy.signal.sosfilt, sos, darray,
-                                     input_core_dims = [[dim]],
-                                     output_core_dims = [[dim]],
+                                     input_core_dims = [[],[dim]],
+                                     output_core_dims = [[],[dim]],
                                      kwargs = apply_kwargs)
     else:
         b, a = _BA_FUNCS[irtype](order, f_crit_norm, **kwargs)
         if filtfilt:
             ret = xarray.apply_ufunc(scipy.signal.filtfilt, b, a, darray,
-                                     input_core_dims = [[dim]],
-                                     output_core_dims = [[dim]],
+                                     input_core_dims = [[],[dim]],
+                                     output_core_dims = [[],[dim]],
                                      kwargs = apply_kwargs)            
         else:
             ret = xarray.apply_ufunc(scipy.signal.lfilter, b, a, darray,
-                                     input_core_dims = [[dim]],
-                                     output_core_dims = [[dim]],
+                                     input_core_dims = [[],[dim]],
+                                     output_core_dims = [[],[dim]],
                                      kwargs = apply_kwargs)
     return ret
 
