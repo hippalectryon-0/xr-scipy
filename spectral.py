@@ -74,10 +74,16 @@ def csd(darray, other_darray, fs=None, seglen=None, overlap_ratio=2,
 def freq2lag(darray, is_onesided=False, f_dim=_FREQUENCY_DIM):
     axis = darray.get_axis_num(f_dim)
     if is_onesided:
-        ret = np.fft.irfft(darray, axis=axis).real
+        ret = xarray.apply_ufunc(fft.irfft,darray,
+                              input_core_dims = [[f_dim]],
+                              output_core_dims = [[f_dim]])
+        ret = ret.real
     else:
-        ret = np.fft.ifft(darray, axis=axis).real
-    ret = darray.__array_wrap__(ret)
+        ret = xarray.apply_ufunc(fft.ifft,darray,
+                              input_core_dims = [[f_dim]],
+                              output_core_dims = [[f_dim]])
+        ret = ret.real    
+                
     ret.name = 'ifft_' + darray.name
     f = ret.coords[f_dim]
     df = f[1] - f[0]
@@ -161,17 +167,31 @@ def coherence(darray, other_darray, fs=None, seglen=None, overlap_ratio=2,
 
 
 def hilbert(darray, N=None, dim=None):
-    dim, axis = get_maybe_last_dim_axis(darray, dim)
+    dim = get_maybe_only_dim(darray, dim)
+  
+    axis = darray.get_axis_num(dim)
+        
     n_orig = darray.shape[axis]
     N_unspecified = N is None
     if N_unspecified:
         N = next_fast_len(n_orig)
-    out = scipy.signal.hilbert(np.asarray(darray), N, axis=axis)
+    out = xarray.apply_ufunc(_hilbert_wraper, darray,
+                              input_core_dims = [[dim]],
+                              output_core_dims = [[dim]],
+                              kwargs=dict(N = N, n_orig = n_orig, N_unspecified = N_unspecified))
+
+    return out
+    
+
+def _hilbert_wraper(darray, N, n_orig, N_unspecified, axis = -1):
+    """
+    Hilbert wraper used to keep the signal dimension length constant
+    """
+    out = scipy.signal.hilbert(np.asarray(darray), N, axis = axis)
+    
     if n_orig != N and N_unspecified:
         sl = [slice(None)] * out.ndim
         sl[axis] = slice(None, n_orig)
         out = out[sl]
-    if not N_unspecified and N != n_orig:
-        return out
-    else:
-        return darray.__array_wrap__(out)
+    return out
+
