@@ -35,27 +35,60 @@ warnings.filterwarnings('always', category=FilteringNaNWarning)
 def frequency_filter(darray, f_crit, order=None, irtype='iir', filtfilt=True,
                      apply_kwargs=None, in_nyq=False, dim=None, **kwargs):
     """ Applies given frequency filter to a darray.
-    The type of the filter is chosen by `irtype` and then `filtfilt` states is
-    the filter is applied both ways, forward and backward.
     
+    This is a 1-d filter. If the darray is one dimensional, then the dimension
+    along which the filter is applied is chosen automatically if not specified
+    by `dim`. If `darray` is multi dimensional then axis along which the filter
+    is applied has to be specified by `dim` string.
+    
+    The type of the filter is chosen by `irtype` and then `filtfilt` states is
+    the filter is applied both ways, forward and backward. Additional parameters
+    passed to filter function specified by `apply_kwargs`.
+    
+    If 'iir' is chosen as `irtype`, then if `filtfilt` is True then the filter
+    scipy.signal.filtfilt is used, if False scipy.signal.lfilter applies.
+    
+    If 'fir' is chosen as `irtype`, then if `filtfilt` is True then the filter
+    scipy.signal.sosfiltfilt is used, if False scipy.signal.sosfilt applies.
     
     Parameters
-        ----------
-        darray : DataArray
-            The data to be filtered.  If values in `darray` are not a single or
-            double precision floating point array, it will be converted to type
-            ``numpy.float64`` before filtering.
-        window_length : int
-            The length of the filter window (i.e. the number of coefficients).
-            `window_length` must be a positive odd integer. If `mode` is 'interp',
-            `window_length` must be less than or equal to the size of `darray`.
-        polyorder : int
-            The order of the polynomial used to fit the samples.
-            `polyorder` must be less than `window_length`.
-        deriv : int, optional
-            The order of the derivative to compute.  This must be a
-            nonnegative integer.  The default is 0, which means to filter
-            the data without differentiating.
+    ----------
+    darray : DataArray
+        The data to be filtered.
+    f_crit : array_like
+        A scalar or length-2 sequence giving the critical frequencies.
+    order : int, optional
+        The order of the filter. If Default then it takes order defaults
+        from `_ORDER_DEFAULTS`, which is `irtype` specific.
+        Default is None.
+    irtype : string, optional
+        A string specifying the impulse response of the filter, has to be 
+        either "fir" then finite impulse response (FIR) is used, or "iir"
+        then infinite impulse response (IIR) filter is applied. ValueError
+        is raised otherwise.
+        Default is "iir".
+    filtfilt: bool, optional
+        When True the filter is applied both forwards and backwards, otherwise
+        only one way, from left to right, is applied.
+        Default is True.
+    apply_kwargs : dict, optional
+        Specifies kwargs, which are passed to the filter function given by
+        `irtype` and `filtfilt`.
+        Default is None.
+    in_nyq : bool, optional
+        If True, then the critical frequencies given by `f_crit` are normalized
+        by Nyquist frequency.
+        Default is False.
+    dim : string, optional
+        A string specifing the dimension along which the filter is applied.
+        If `darray` is 1-d then the dimension is found if not specified by `dim`.
+        For multi dimensional `darray` has to be specified, otherwise ValueError
+        is raised.
+        Default is None.
+    kwargs :
+        Arbitrary keyword arguments passed when the filter is being designed,
+        either to scipy.signal.iirfilter if "iir" method for `irtype` is chosen,
+        or scipy.signal.firwin.            
     """
     if irtype not in _BA_FUNCS:
         raise ValueError('Wrong argument for irtype: {}, must be one of {}'.format(
