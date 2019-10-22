@@ -7,7 +7,7 @@ except ImportError:
     def next_fast_len(size):
         return 2**int(np.ceil(np.log2(size)))
 
-from .utils import get_maybe_last_dim_axis, get_sampling_step
+from .utils import get_maybe_last_dim_axis, get_sampling_step, get_maybe_only_dim
 
 _FREQUENCY_DIM = 'frequency'
 
@@ -214,7 +214,7 @@ def csd(darray, other_darray, fs=None, seglen=None, overlap_ratio=2,
     Pxy = crossspectrogram(darray, other_darray, fs, seglen,
                            overlap_ratio, window, nperseg, noverlap, nfft, detrend,
                            return_onesided, dim, scaling, mode)
-    dim, axis = get_maybe_last_dim_axis(darray, dim)
+    dim = get_maybe_only_dim(darray, dim)
     Pxy = Pxy.mean(dim=dim)
     Pxy.name = 'csd_{}_{}'.format(darray.name, other_darray.name)
     return Pxy
@@ -241,10 +241,15 @@ def freq2lag(darray, is_onesided=False, f_dim=_FREQUENCY_DIM):
     """
     axis = darray.get_axis_num(f_dim)
     if is_onesided:
-        ret = np.fft.irfft(darray, axis=axis).real
+        ret = xarray.apply_ufunc(fft.irfft,darray,
+                              input_core_dims = [[f_dim]],
+                              output_core_dims = [[f_dim]])
+        ret = ret.real
     else:
-        ret = np.fft.ifft(darray, axis=axis).real
-    ret = darray.__array_wrap__(ret)
+        ret = xarray.apply_ufunc(fft.ifft,darray,
+                              input_core_dims = [[f_dim]],
+                              output_core_dims = [[f_dim]])
+        ret = ret.real    
     ret.name = 'ifft_' + darray.name
     f = ret.coords[f_dim]
     df = f[1] - f[0]
@@ -340,7 +345,7 @@ def psd(darray, fs=None, seglen=None, overlap_ratio=2, window='hann',
     Pxx = spectrogram(darray, fs, seglen, overlap_ratio, window, nperseg,
                       noverlap, nfft, detrend, return_onesided, dim, scaling,
                       mode)
-    dim, axis = get_maybe_last_dim_axis(darray, dim)
+    dim = get_maybe_only_dim(darray, dim)
     Pxx = Pxx.mean(dim=dim)
     Pxx.name = 'psd_{}'.format(darray.name)
     return Pxx
@@ -380,7 +385,7 @@ def coherogram(darray, other_darray, fs=None, seglen=None, overlap_ratio=2,
     Pxy = crossspectrogram(darray, other_darray, fs, seglen, overlap_ratio,
                            window, nperseg, noverlap, nfft, detrend,
                            return_onesided, dim=dim)
-    dim, axis = get_maybe_last_dim_axis(darray, dim)
+    dim = get_maybe_only_dim(darray, dim)
     rol_kw = {dim: nrolling, 'center': True}
     coh = (Pxy.rolling(**rol_kw).mean() /
            (Pxx.rolling(**rol_kw).mean() * Pyy.rolling(**rol_kw).mean())**0.5)
@@ -441,17 +446,28 @@ def hilbert(darray, N=None, dim=None):
     darray : xarray
         Analytic signal of the Hilbert transform of 'darray' along selected axis.
     """
-    dim, axis = get_maybe_last_dim_axis(darray, dim)
+    dim = get_maybe_only_dim(darray, dim)
     n_orig = darray.shape[axis]
     N_unspecified = N is None
     if N_unspecified:
         N = next_fast_len(n_orig)
-    out = scipy.signal.hilbert(np.asarray(darray), N, axis=axis)
+    out = xarray.apply_ufunc(_hilbert_wraper, darray,
+                              input_core_dims = [[dim]],
+                              output_core_dims = [[dim]],
+                              kwargs=dict(N = N, n_orig = n_orig, N_unspecified = N_unspecified))
+
+    return out
+    
+
+def _hilbert_wraper(darray, N, n_orig, N_unspecified, axis = -1):
+    """
+    Hilbert wraper used to keep the signal dimension length constant
+    """
+    out = scipy.signal.hilbert(np.asarray(darray), N, axis = axis)
+    
     if n_orig != N and N_unspecified:
         sl = [slice(None)] * out.ndim
         sl[axis] = slice(None, n_orig)
         out = out[sl]
-    if not N_unspecified and N != n_orig:
-        return out
-    else:
-        return darray.__array_wrap__(out)
+    return out
+

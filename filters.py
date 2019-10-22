@@ -8,7 +8,7 @@ try:
 except ImportError:
     sosfiltfilt = None
 
-from .utils import get_maybe_last_dim_axis, get_sampling_step
+from .utils import get_sampling_step, get_maybe_only_dim
 
 def _firwin_ba(*args, **kwargs):
     if not kwargs.get('pass_zero'):
@@ -41,27 +41,38 @@ def frequency_filter(darray, f_crit, order=None, irtype='iir', filtfilt=True,
         order = _ORDER_DEFAULTS[irtype]
     if apply_kwargs is None:
         apply_kwargs = {}
-    dim, axis = get_maybe_last_dim_axis(darray, dim)
+    dim = get_maybe_only_dim(darray, dim)
     f_crit_norm = np.asarray(f_crit, dtype=np.float)
     if not in_nyq:              # normalize by Nyquist frequency
         f_crit_norm *= 2 * get_sampling_step(darray, dim)
-    data = np.asarray(darray)
-    if np.any(np.isnan(data)): # only warn since simple forward-filter or FIR is valid
+    if np.any(np.isnan(np.asarray(darray))): # only warn since simple forward-filter or FIR is valid
         warnings.warn('data contains NaNs, filter will propagate them',
                       FilteringNaNWarning, stacklevel=2)
     if sosfiltfilt and irtype == 'iir': # TODO merge with other if branch
         sos = scipy.signal.iirfilter(order, f_crit_norm, output='sos', **kwargs)
         if filtfilt:
-            data = sosfiltfilt(sos, data, axis, **apply_kwargs)
+            ret = xarray.apply_ufunc(sosfiltfilt, sos, darray,
+                                     input_core_dims = [[],[dim]],
+                                     output_core_dims = [[dim]],
+                                     kwargs = apply_kwargs)
         else:
-            data = scipy.signal.sosfilt(sos, data, axis, **apply_kwargs)
+            ret = xarray.apply_ufunc(scipy.signal.sosfilt, sos, darray,
+                                     input_core_dims = [[],[dim]],
+                                     output_core_dims = [[dim]],
+                                     kwargs = apply_kwargs)
     else:
         b, a = _BA_FUNCS[irtype](order, f_crit_norm, **kwargs)
         if filtfilt:
-            data = scipy.signal.filtfilt(b, a, data, axis, **apply_kwargs)
+            ret = xarray.apply_ufunc(scipy.signal.filtfilt, b, a, darray,
+                                     input_core_dims = [[],[],[dim]],
+                                     output_core_dims = [[dim]],
+                                     kwargs = apply_kwargs)            
         else:
-            data = scipy.signal.lfilter(b, a, data, axis, **apply_kwargs)
-    return darray.__array_wrap__(data)
+            ret = xarray.apply_ufunc(scipy.signal.lfilter, b, a, darray,
+                                     input_core_dims = [[],[],[dim]],
+                                     output_core_dims = [[dim]],
+                                     kwargs = apply_kwargs)
+    return ret
 
 
 def _update_ftype_kwargs(kwargs, iirvalue, firvalue):
@@ -110,7 +121,7 @@ def decimate(darray, q=None, target_fs=None, dim=None, **lowpass_kwargs):
 
     If q < 2, decimation is skipped and a DecimationWarning is emitted
     '''
-    dim, axis = get_maybe_last_dim_axis(darray, dim)
+    dim = get_maybe_only_dim(darray, dim)
     if q is None:
         if target_fs is None:
             raise ValueError('either q or target_fs must be given')
@@ -128,33 +139,21 @@ def decimate(darray, q=None, target_fs=None, dim=None, **lowpass_kwargs):
     ret = ret.isel(**{dim: slice(None, None, q)})
     return ret
 
-
-def medfilt(darray, kernel_size=None):
-    ret = scipy.signal.medfilt(np.asarray(darray), kernel_size)
-    return darray.__array_wrap__(ret)
-
-
-def wiener(darray, window_length, noise_variance=None, in_points=False, dim=None):
-    if not in_points:
-        delta = get_sampling_step(darray, dim)
-        window_length = int(np.rint(window_length / delta))
-    ret = scipy.signal.wiener(darray.values, window_length, noise_variance)
-    return darray.__array_wrap__(ret)
-
-
-
 def savgol_filter(darray, window_length, polyorder, deriv=0, delta=None,
                   dim=None, mode='interp', cval=0.0):
-    dim, axis = get_maybe_last_dim_axis(darray, dim)
+    dim = get_maybe_only_dim(darray, dim)
     if delta is None:
         delta = get_sampling_step(darray, dim)
         window_length = int(np.rint(window_length / delta))
         if window_length % 2 == 0:  # must be odd
             window_length += 1
-    ret = scipy.signal.savgol_filter(np.asarray(darray), window_length,
-                                     polyorder, deriv, delta, axis, mode, cval)
-    return darray.__array_wrap__(ret)
-
+    return xarray.apply_ufunc(scipy.signal.savgol_filter, darray,
+                              input_core_dims = [[dim]],
+                              output_core_dims = [[dim]],
+                              kwargs=dict(window_length = window_length,
+                                          polyorder = polyorder,
+                                          deriv = deriv, delta = delta,
+                                          mode = mode, cval = cval))
 
 @xarray.register_dataarray_accessor('filt')
 class FilterAccessor(object):
@@ -209,10 +208,6 @@ class FilterAccessor(object):
         """Savitzky-Golay filter, wraps savgol_filter"""
         return savgol_filter(self.darray, window_length, polyorder, deriv, delta,
                              dim, mode, cval)
-
-    def median(self, kernel_size=None):
-        """Median filter, wraps medfilt"""
-        return medfilt(self.darray, kernel_size)
 
     def decimate(self, q=None, target_fs=None, dim=None, **lowpass_kwargs):
         """Decimate signal, wraps decimate"""
