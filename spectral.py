@@ -16,6 +16,10 @@ def crossspectrogram(darray, other_darray, fs=None, seglen=None,
                      noverlap=None, nfft=None, detrend='constant',
                      return_onesided=True, scaling='density', dim=None,
                      mode='psd'):
+    """
+    Check the time acis of the two signals. Check if the signals have the same
+    axis.
+    """
     dim, axis = get_maybe_last_dim_axis(darray, dim)
     if fs is None:
         dt = get_sampling_step(darray, dim)

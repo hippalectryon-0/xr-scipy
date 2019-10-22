@@ -34,6 +34,29 @@ warnings.filterwarnings('always', category=FilteringNaNWarning)
 
 def frequency_filter(darray, f_crit, order=None, irtype='iir', filtfilt=True,
                      apply_kwargs=None, in_nyq=False, dim=None, **kwargs):
+    """ Applies given frequency filter to a darray.
+    The type of the filter is chosen by `irtype` and then `filtfilt` states is
+    the filter is applied both ways, forward and backward.
+    
+    
+    Parameters
+        ----------
+        darray : DataArray
+            The data to be filtered.  If values in `darray` are not a single or
+            double precision floating point array, it will be converted to type
+            ``numpy.float64`` before filtering.
+        window_length : int
+            The length of the filter window (i.e. the number of coefficients).
+            `window_length` must be a positive odd integer. If `mode` is 'interp',
+            `window_length` must be less than or equal to the size of `darray`.
+        polyorder : int
+            The order of the polynomial used to fit the samples.
+            `polyorder` must be less than `window_length`.
+        deriv : int, optional
+            The order of the derivative to compute.  This must be a
+            nonnegative integer.  The default is 0, which means to filter
+            the data without differentiating.
+    """
     if irtype not in _BA_FUNCS:
         raise ValueError('Wrong argument for irtype: {}, must be one of {}'.format(
             irtype, _BA_FUNCS.keys()))
