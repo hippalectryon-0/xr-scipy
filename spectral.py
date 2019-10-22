@@ -234,14 +234,14 @@ def freq2lag(darray, is_onesided=False, f_dim=_FREQUENCY_DIM):
     """
     axis = darray.get_axis_num(f_dim)
     if is_onesided:
-        ret = xarray.apply_ufunc(fft.irfft,darray,
-                              input_core_dims = [[f_dim]],
-                              output_core_dims = [[f_dim]])
+        ret = xarray.apply_ufunc(np.fft.irfft,darray,
+                                 input_core_dims = [[f_dim]],
+                                 output_core_dims = [[f_dim]])
         ret = ret.real
     else:
-        ret = xarray.apply_ufunc(fft.ifft,darray,
-                              input_core_dims = [[f_dim]],
-                              output_core_dims = [[f_dim]])
+        ret = xarray.apply_ufunc(np.fft.ifft,darray,
+                                 input_core_dims = [[f_dim]],
+                                 output_core_dims = [[f_dim]])
         ret = ret.real    
     ret.name = 'ifft_' + darray.name
     f = ret.coords[f_dim]
