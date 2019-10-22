@@ -34,6 +34,62 @@ warnings.filterwarnings('always', category=FilteringNaNWarning)
 
 def frequency_filter(darray, f_crit, order=None, irtype='iir', filtfilt=True,
                      apply_kwargs=None, in_nyq=False, dim=None, **kwargs):
+    """ Applies given frequency filter to a darray.
+    
+    This is a 1-d filter. If the darray is one dimensional, then the dimension
+    along which the filter is applied is chosen automatically if not specified
+    by `dim`. If `darray` is multi dimensional then axis along which the filter
+    is applied has to be specified by `dim` string.
+    
+    The type of the filter is chosen by `irtype` and then `filtfilt` states is
+    the filter is applied both ways, forward and backward. Additional parameters
+    passed to filter function specified by `apply_kwargs`.
+    
+    If 'iir' is chosen as `irtype`, then if `filtfilt` is True then the filter
+    scipy.signal.filtfilt is used, if False scipy.signal.lfilter applies.
+    
+    If 'fir' is chosen as `irtype`, then if `filtfilt` is True then the filter
+    scipy.signal.sosfiltfilt is used, if False scipy.signal.sosfilt applies.
+    
+    Parameters
+    ----------
+    darray : DataArray
+        An xarray type data to be filtered.
+    f_crit : array_like
+        A scalar or length-2 sequence giving the critical frequencies.
+    order : int, optional
+        The order of the filter. If Default then it takes order defaults
+        from `_ORDER_DEFAULTS`, which is `irtype` specific.
+        Default is None.
+    irtype : string, optional
+        A string specifying the impulse response of the filter, has to be 
+        either "fir" then finite impulse response (FIR) is used, or "iir"
+        then infinite impulse response (IIR) filter is applied. ValueError
+        is raised otherwise.
+        Default is "iir".
+    filtfilt: bool, optional
+        When True the filter is applied both forwards and backwards, otherwise
+        only one way, from left to right, is applied.
+        Default is True.
+    apply_kwargs : dict, optional
+        Specifies kwargs, which are passed to the filter function given by
+        `irtype` and `filtfilt`.
+        Default is None.
+    in_nyq : bool, optional
+        If True, then the critical frequencies given by `f_crit` are normalized
+        by Nyquist frequency.
+        Default is False.
+    dim : string, optional
+        A string specifing the dimension along which the filter is applied.
+        If `darray` is 1-d then the dimension is found if not specified by `dim`.
+        For multi dimensional `darray` has to be specified, otherwise ValueError
+        is raised.
+        Default is None.
+    kwargs :
+        Arbitrary keyword arguments passed when the filter is being designed,
+        either to scipy.signal.iirfilter if "iir" method for `irtype` is chosen,
+        or scipy.signal.firwin.            
+    """
     if irtype not in _BA_FUNCS:
         raise ValueError('Wrong argument for irtype: {}, must be one of {}'.format(
             irtype, _BA_FUNCS.keys()))
@@ -84,21 +140,113 @@ def _update_ftype_kwargs(kwargs, iirvalue, firvalue):
 
 
 def lowpass(darray, f_cutoff, *args, **kwargs):
+    """ Applies lowpass filter to a darray.
+    
+    This is a 1-d filter. If the darray is one dimensional, then the dimension
+    along which the filter is applied is chosen automatically if not specified
+    by an arg `dim`. If `darray` is multi dimensional then axis along which
+    the filter is applied has to be specified by an additional argument `dim`
+    string.
+    
+    Parameters
+    ----------
+    darray : DataArray
+        An xarray type data to be filtered.
+    f_cutoff : array_like
+        A scalar specifying the cut-off frequency for the lowpass filter.
+    args : 
+        Additional arguments passed to frequency_filter function to further
+        specify the filter. The following parameters can be passed:
+        (order, irtype, filtfilt, apply_kwargs, in_nyq, dim)
+    kwargs :
+        Arbitrary keyword arguments passed when the filter is being designed.
+        See frequency_filter documentation for furhter information.
+    """
     kwargs = _update_ftype_kwargs(kwargs, 'lowpass', True)
     return frequency_filter(darray, f_cutoff, *args, **kwargs)
 
 
 def highpass(darray, f_cutoff, *args, **kwargs):
+    """ Applies highpass filter to a darray.
+    
+    This is a 1-d filter. If the darray is one dimensional, then the dimension
+    along which the filter is applied is chosen automatically if not specified
+    by an arg `dim`. If `darray` is multi dimensional then axis along which
+    the filter is applied has to be specified by an additional argument `dim`
+    string.
+    
+    Parameters
+    ----------
+    darray : DataArray
+        An xarray type data to be filtered.
+    f_cutoff: array_like
+        A scalar specifying the cut-off frequency for the highpass filter.
+    args : 
+        Additional arguments passed to frequency_filter function to further
+        specify the filter. The following parameters can be passed:
+        (order, irtype, filtfilt, apply_kwargs, in_nyq, dim)
+    kwargs :
+        Arbitrary keyword arguments passed when the filter is being designed.
+        See frequency_filter documentation for furhter information.
+    """
     kwargs = _update_ftype_kwargs(kwargs, 'highpass', False)
     return frequency_filter(darray, f_cutoff, *args, **kwargs)
 
 
 def bandpass(darray, f_low, f_high, *args, **kwargs):
+    """ Applies bandpass filter to a darray.
+    
+    This is a 1-d filter. If the darray is one dimensional, then the dimension
+    along which the filter is applied is chosen automatically if not specified
+    by an arg `dim`. If `darray` is multi dimensional then axis along which
+    the filter is applied has to be specified by an additional argument `dim`
+    string.
+    
+    Parameters
+    ----------
+    darray : DataArray
+        An xarray type data to be filtered.
+    f_low : array_like
+        A scalar specifying the lower cut-off frequency for the bandpass filter.
+    f_high : array_like
+        A scalar specifying the higher cut-off frequency for the bandpass filter.
+    args : 
+        Additional arguments passed to frequency_filter function to further
+        specify the filter. The following parameters can be passed:
+        (order, irtype, filtfilt, apply_kwargs, in_nyq, dim)
+    kwargs :
+        Arbitrary keyword arguments passed when the filter is being designed.
+        See frequency_filter documentation for furhter information.
+    """
     kwargs = _update_ftype_kwargs(kwargs, 'bandpass', False)
     return frequency_filter(darray, [f_low, f_high], *args, **kwargs)
 
 
 def bandstop(darray, f_low, f_high, *args, **kwargs):
+    """ Applies bandstop filter to a darray.
+    
+    This is a 1-d filter. If the darray is one dimensional, then the dimension
+    along which the filter is applied is chosen automatically if not specified
+    by an arg `dim`. If `darray` is multi dimensional then axis along which
+    the filter is applied has to be specified by an additional argument `dim`
+    string.
+    
+    Parameters
+    ----------
+    darray : DataArray
+        An xarray type data to be filtered.
+    f_low : array_like
+        A scalar specifying the lower cut-off frequency for the bandstop filter.
+    f_high : array_like
+        A scalar specifying the higher cut-off frequency for the bandstop filter.
+    args : 
+        Additional arguments passed to frequency_filter function to further
+        specify the filter. The following parameters can be passed:
+        (order, irtype, filtfilt, apply_kwargs, in_nyq, dim)
+    kwargs :
+        Arbitrary keyword arguments passed when the filter is being designed.
+        See frequency_filter documentation for furhter information.
+    """
     kwargs = _update_ftype_kwargs(kwargs, 'bandstop', True)
     return frequency_filter(darray, [f_low, f_high], *args, **kwargs)
 
@@ -110,16 +258,40 @@ warnings.filterwarnings('always', category=DecimationWarning)
 
 def decimate(darray, q=None, target_fs=None, dim=None, **lowpass_kwargs):
     '''Decimate signal by given (int) factor or to closest possible target_fs
+    along the specified dimension.
 
-    along the specified dimension
+    Decimation: lowpass to new nyquist frequency and then downsample by factor `q`
+    `lowpass_kwargs` are given to the lowpass method.
 
-    Decimation: lowpass to new nyquist frequency and then downsample by factor q
-    lowpass_kwargs are given to the lowpass method
+    If `q` is not given, it is approximated as the closest integer ratio
+    of fs / `target_fs`, so `target_fs` must be smaller than current sampling
+    frequency fs.
 
-    If q is not given, it is approximated as the closest integer ratio
-    of fs / target_fs, so target_fs must be smaller than current sampling frequency fs
-
-    If q < 2, decimation is skipped and a DecimationWarning is emitted
+    If `q` < 2, decimation is skipped and a DecimationWarning is emitted
+    
+    Parameters
+    ----------
+    darray : DataArray
+        An xarray type data to be decimated.
+    q : array_like
+        A scalar specifying the factor by which the signal should be decimated.
+        If not given, it is approximated as the closest integer ratio of
+        fs / `target_fs`. If set lower than 2, decimation is skipped and
+        a DecimationWarning is emitted.
+        Default is None.
+    target_fs : array_like, optional
+        A scalar specifying target sampling frequency of returning data.
+        Must be smaller than current sampling frequency.
+        Default is None.
+    dim : string, optional
+        A string specifing the dimension along which the filter is applied.
+        If `darray` is 1-d then the dimension is found if not specified by `dim`.
+        For multi dimensional `darray` has to be specified, otherwise ValueError
+        is raised.
+        Default is None.
+    lowpass_kwargs :
+        Arbitrary keyword arguments passed to the lowpass method. See lowpass
+        method for further details.
     '''
     dim = get_maybe_only_dim(darray, dim)
     if q is None:
@@ -141,6 +313,54 @@ def decimate(darray, q=None, target_fs=None, dim=None, **lowpass_kwargs):
 
 def savgol_filter(darray, window_length, polyorder, deriv=0, delta=None,
                   dim=None, mode='interp', cval=0.0):
+    """ Apply a Savitzky-Golay filter to an array.
+
+    This is a 1-d filter.  If `darray` has dimension greater than 1, `dim`
+    determines the dimension along which the filter is applied.
+    Parameters
+    ----------
+    darray : DataArray
+        An xarray type data to be filtered.  If values of `darray` are not
+        a single or double precision floating point array, it will be converted
+        to type ``numpy.float64`` before filtering.
+    window_length : int
+        The length of the filter window (i.e. the number of coefficients).
+        `window_length` must be a positive odd integer. If `mode` is 'interp',
+        `window_length` must be less than or equal to the size of `darray`.
+    polyorder : int
+        The order of the polynomial used to fit the samples.
+        `polyorder` must be less than `window_length`.
+    deriv : int, optional
+        The order of the derivative to compute.  This must be a
+        nonnegative integer.  The default is 0, which means to filter
+        the data without differentiating.
+    delta : float, optional
+        The spacing of the samples to which the filter will be applied.
+        This is only used if deriv > 0.  Default is 1.0.
+    dim : string, optional
+        Specifies the dimension along which the filter is applied. For 1-d 
+        darray finds the only dimension, if not specified. For multi
+        dimensional darray, the dimension for the filtering has to be
+        specified, otherwise raises ValueError.
+        Default is None.
+    mode : str, optional
+        Must be 'mirror', 'constant', 'nearest', 'wrap' or 'interp'.  This
+        determines the type of extension to use for the padded signal to
+        which the filter is applied.  When `mode` is 'constant', the padding
+        value is given by `cval`.  See the Notes for more details on 'mirror',
+        'constant', 'wrap', and 'nearest'.
+        When the 'interp' mode is selected (the default), no extension
+        is used.  Instead, a degree `polyorder` polynomial is fit to the
+        last `window_length` values of the edges, and this polynomial is
+        used to evaluate the last `window_length // 2` output values.
+    cval : scalar, optional
+        Value to fill past the edges of the input if `mode` is 'constant'.
+        Default is 0.0.
+    Returns
+    -------
+    y : DataArray, same shape as `darray`
+        The filtered data.
+    """
     dim = get_maybe_only_dim(darray, dim)
     if delta is None:
         delta = get_sampling_step(darray, dim)
