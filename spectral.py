@@ -178,7 +178,8 @@ def hilbert(darray, N=None, dim=None):
     out = xarray.apply_ufunc(_hilbert_wraper, darray,
                               input_core_dims = [[dim]],
                               output_core_dims = [[dim]],
-                              kwargs=dict(N = N, n_orig = n_orig, N_unspecified = N_unspecified))
+                              kwargs=dict(N = N, n_orig = n_orig,
+                                          N_unspecified = N_unspecified))
 
     return out
     
