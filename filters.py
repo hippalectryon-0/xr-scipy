@@ -140,6 +140,28 @@ def _update_ftype_kwargs(kwargs, iirvalue, firvalue):
 
 
 def lowpass(darray, f_cutoff, *args, **kwargs):
+    """ Applies lowpass filter to a darray.
+    
+    This is a 1-d filter. If the darray is one dimensional, then the dimension
+    along which the filter is applied is chosen automatically if not specified
+    by an arg `dim`. If `darray` is multi dimensional then axis along which
+    the filter is applied has to be specified by an additional argument `dim`
+    string.
+    
+    Parameters
+    ----------
+    darray : DataArray
+        The data to be filtered.
+    f_cutoff: array_like
+        A scalar specifying the cut-off frequency for the lowpass filter.
+    arg: 
+        Additional arguments passed to frequency_filter function to further
+        specify the filter. The following parameters can be passed:
+        (order, irtype, filtfilt, apply_kwargs, in_nyq, dim)
+    kwargs:
+        Arbitrary keyword arguments passed when the filter is being designed.
+        See frequency_filter documentation for furhter information.
+    """
     kwargs = _update_ftype_kwargs(kwargs, 'lowpass', True)
     return frequency_filter(darray, f_cutoff, *args, **kwargs)
 
