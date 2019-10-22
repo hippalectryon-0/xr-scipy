@@ -7,7 +7,7 @@ except ImportError:
     def next_fast_len(size):
         return 2**int(np.ceil(np.log2(size)))
 
-from .utils import get_maybe_last_dim_axis, get_sampling_step, get_maybe_only_dim
+from .utils import get_sampling_step, get_maybe_only_dim
 
 _FREQUENCY_DIM = 'frequency'
 
@@ -32,7 +32,8 @@ _DOCSTRING_COMMON_PARAMS = """    fs : float, optional
         Number of points to overlap between segments. If `None`,
         ``noverlap = nperseg // overlap_ratio``. Defaults to `None`.
     overlap_ratio : int, optional
-        Used to calculate noverlap, if this is not specified (see above). Defaults to 2.
+        Used to calculate noverlap, if this is not specified (see above).
+        Defaults to 2.
     nfft : int, optional
         Length of the FFT used, if a zero padded FFT is desired. If
         `None`, the FFT length is `nperseg`. Defaults to `None`.
@@ -132,39 +133,31 @@ def crossspectrogram(darray, other_darray, fs=None, seglen=None,
         nfft = next_fast_len(nperseg)
     if noverlap is None:
         noverlap = nperseg // overlap_ratio
-    if darray is other_darray:
-        d_val = od_val = darray.values
-    else:
+    if darray is not other_darray:
         # outer join align to ensure proper sampling
         darray, other_darray = xarray.align(darray, other_darray, join='outer',
                                             copy=False)
-        together = (darray, other_darray)
-        if set(darray.dims) != set(other_darray.dims):
-            together = xarray.broadcast(*together)
-        d_val, od_val = (d.values for d in together)
-
-    f, t, Pxy = scipy.signal.spectral._spectral_helper(d_val,
-                                                       od_val,
-                                                       fs, window, nperseg,
-                                                       noverlap, nfft, detrend,
-                                                       return_onesided,
-                                                       scaling, axis, mode)
+    kwargs = dict(fs=fs, window=window, nperseg=nperseg, noverlap=noverlap,
+                  nfft=nfft, detrend=detrend, return_onesided=return_onesided,
+                  scaling=scaling, axis=-1, mode=mode
+    )
+    f, t, Pxy = xarray.apply_ufunc(scipy.signal.spectral._spectral_helper,
+                                  darray, other_darray,
+                                  input_core_dims=[[dim]]*2,
+                                  output_core_dims=[[_FREQUENCY_DIM], ['t'], [_FREQUENCY_DIM, 't']],
+                                  kwargs=kwargs)
     t_0 = float(darray.coords[dim][0])
-    t_axis = t + t_0
+    Pxy.coords['t'] = t + t_0
+    Pxy.coords[_FREQUENCY_DIM] = f
+    Pxy = Pxy.rename(t=dim)
     # new dimensions and coordinates construction
     coord_darr = darray if darray.ndim >= other_darray.ndim else other_darray
-    new_dims = list(coord_darr.dims)
-    # frequency replaces data dim
-    new_dims[new_dims.index(dim)] = _FREQUENCY_DIM
-    new_dims.append(dim)   # make data dim last
     # select nearest times on other possible coordinates
     coords_ds = coord_darr.coords.to_dataset()
-    coords_ds = coords_ds.sel(**{dim:t_axis, 'method':'nearest'})
-    coords_ds[dim] = t_axis
-    coords_ds[_FREQUENCY_DIM] = f
-    new_name = 'crossspectrogram_{}_{}'.format(darray.name, other_darray.name)
-    return xarray.DataArray(Pxy, name=new_name,
-                            dims=new_dims, coords=coords_ds.coords)
+    coords_ds = coords_ds.sel(**{dim: Pxy.time, 'method':'nearest'})
+    Pxy = Pxy.assign_coords(**coords_ds.coords)
+    Pxy.name = 'crossspectrogram_{}_{}'.format(darray.name, other_darray.name)
+    return Pxy
 
 
 @_add2docstring_common_params
