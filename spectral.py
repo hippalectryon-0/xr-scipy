@@ -27,13 +27,16 @@ def crossspectrogram(darray, other_darray, fs=None, seglen=None,
         nfft = next_fast_len(nperseg)
     if noverlap is None:
         noverlap = nperseg // overlap_ratio
-    # outer join align to ensure proper sampling
-    darray, other_darray = xarray.align(darray, other_darray, join='outer',
-                                        copy=False)
-    together = (darray, other_darray)
-    if set(darray.dims) != set(other_darray.dims):
-        together = xarray.broadcast(*together)
-    d_val, od_val = (d.values for d in together)
+    if darray is other_darray:
+        d_val = od_val = darray.values
+    else:
+        # outer join align to ensure proper sampling
+        darray, other_darray = xarray.align(darray, other_darray, join='outer',
+                                            copy=False)
+        together = (darray, other_darray)
+        if set(darray.dims) != set(other_darray.dims):
+            together = xarray.broadcast(*together)
+        d_val, od_val = (d.values for d in together)
 
     f, t, Pxy = scipy.signal.spectral._spectral_helper(d_val,
                                                        od_val,
