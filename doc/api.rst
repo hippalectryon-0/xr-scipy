@@ -74,3 +74,31 @@ fftpack
    fftpack.idct
    fftpack.dst
    fftpack.idst
+
+spectral
+========
+
+.. autosummary::
+   :toctree: generated/
+
+   signal.spectral.csd
+   signal.spectral.psd
+   signal.spectral.coherence
+   signal.spectral.xcorrelation
+   signal.spectral.crossspectrogram
+   signal.spectral.spectrogram
+   signal.spectral.coherogram
+   signal.spectral.hilbert
+
+filters
+=======
+
+.. autosummary::
+   :toctree: generated/
+
+   signal.filters.frequency_filter
+   signal.filters.lowpass
+   signal.filters.highpass
+   signal.filters.bandpass
+   signal.filters.bandstop
+   signal.filters.savgol_filter
