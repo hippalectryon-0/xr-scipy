@@ -34,6 +34,7 @@ which direction we compute the gradient of the array,
 The return type is also a DataArray with coordinates.
 
 .. ipython:: python
+    :okwarning:
 
     arr.plot(label='arr')
     grad.plot(label='gradient')
@@ -51,6 +52,7 @@ along which the array to be integrated.
 The return type is also a DataArray,
 
 .. ipython:: python
+    :okwarning:
 
     # trapz computes definite integration
     xrscipy.integrate.trapz(arr, coord='x')
@@ -65,9 +67,6 @@ The return type is also a DataArray,
     @savefig cumtrapz.png width=4in
     plt.show()
 
-
-
-.. ipython:: python
 
 
 See :py:func:`~xrscipy.integrate.trapz` for other options.
