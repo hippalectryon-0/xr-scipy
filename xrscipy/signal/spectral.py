@@ -122,7 +122,7 @@ def crossspectrogram(darray, other_darray, fs=None, seglen=None,
     .. [2] Rabiner, Lawrence R., and B. Gold. "Theory and Application of
            Digital Signal Processing" Prentice-Hall, pp. 414-419, 1975
     """
-    dim, axis = get_maybe_last_dim_axis(darray, dim)
+    dim = get_maybe_only_dim(darray, dim)
     if fs is None:
         dt = get_sampling_step(darray, dim)
         fs = 1.0 / dt
@@ -133,31 +133,41 @@ def crossspectrogram(darray, other_darray, fs=None, seglen=None,
         nfft = next_fast_len(nperseg)
     if noverlap is None:
         noverlap = nperseg // overlap_ratio
-    if darray is not other_darray:
+    if darray is other_darray:
+        d_val = od_val = darray.values
+    else:
         # outer join align to ensure proper sampling
         darray, other_darray = xarray.align(darray, other_darray, join='outer',
                                             copy=False)
-    kwargs = dict(fs=fs, window=window, nperseg=nperseg, noverlap=noverlap,
-                  nfft=nfft, detrend=detrend, return_onesided=return_onesided,
-                  scaling=scaling, axis=-1, mode=mode
-    )
-    f, t, Pxy = xarray.apply_ufunc(scipy.signal.spectral._spectral_helper,
-                                  darray, other_darray,
-                                  input_core_dims=[[dim]]*2,
-                                  output_core_dims=[[_FREQUENCY_DIM], ['t'], [_FREQUENCY_DIM, 't']],
-                                  kwargs=kwargs)
+        together = (darray, other_darray)
+        if set(darray.dims) != set(other_darray.dims):
+            together = xarray.broadcast(*together)
+        d_val, od_val = (d.values for d in together)
+
+    # should be the same for other_darray after align
+    axis = darray.get_axis_num(dim)
+    f, t, Pxy = scipy.signal.spectral._spectral_helper(d_val,
+                                                       od_val,
+                                                       fs, window, nperseg,
+                                                       noverlap, nfft, detrend,
+                                                       return_onesided,
+                                                       scaling, axis, mode)
     t_0 = float(darray.coords[dim][0])
-    Pxy.coords['t'] = t + t_0
-    Pxy.coords[_FREQUENCY_DIM] = f
-    Pxy = Pxy.rename(t=dim)
+    t_axis = t + t_0
     # new dimensions and coordinates construction
     coord_darr = darray if darray.ndim >= other_darray.ndim else other_darray
+    new_dims = list(coord_darr.dims)
+    # frequency replaces data dim
+    new_dims[new_dims.index(dim)] = _FREQUENCY_DIM
+    new_dims.append(dim)   # make data dim last
     # select nearest times on other possible coordinates
     coords_ds = coord_darr.coords.to_dataset()
-    coords_ds = coords_ds.sel(**{dim: Pxy.time, 'method':'nearest'})
-    Pxy = Pxy.assign_coords(**coords_ds.coords)
-    Pxy.name = 'crossspectrogram_{}_{}'.format(darray.name, other_darray.name)
-    return Pxy
+    coords_ds = coords_ds.sel(**{dim:t_axis, 'method':'nearest'})
+    coords_ds[dim] = t_axis
+    coords_ds[_FREQUENCY_DIM] = f
+    new_name = 'crossspectrogram_{}_{}'.format(darray.name, other_darray.name)
+    return xarray.DataArray(Pxy, name=new_name,
+                            dims=new_dims, coords=coords_ds.coords)
 
 
 @_add2docstring_common_params
