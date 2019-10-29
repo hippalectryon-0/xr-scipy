@@ -30,10 +30,10 @@ _DOCSTRING_COMMON_PARAMS = """    fs : float, optional
         length of the window.
     noverlap: int, optional
         Number of points to overlap between segments. If `None`,
-        ``noverlap = nperseg // overlap_ratio``. Defaults to `None`.
-    overlap_ratio : int, optional
-        Used to calculate noverlap, if this is not specified (see above).
-        Defaults to 2.
+        ``noverlap = np.rint(nperseg * overlap_ratio)``. Defaults to `None`.
+    overlap_ratio : float, optional
+        Used to calculate noverlap, if it is not specified (see above).
+        Defaults to 0.5.
     nfft : int, optional
         Length of the FFT used, if a zero padded FFT is desired. If
         `None`, the FFT length is `nperseg`. Defaults to `None`.
@@ -78,7 +78,7 @@ def _add2docstring_common_params(func):
 
 @_add2docstring_common_params
 def crossspectrogram(darray, other_darray, fs=None, seglen=None,
-                     overlap_ratio=2, window='hann', nperseg=256,
+                     overlap_ratio=0.5, window='hann', nperseg=256,
                      noverlap=None, nfft=None, detrend='constant',
                      return_onesided=True, dim=None, scaling='density',
                      mode='psd'):
@@ -132,7 +132,7 @@ def crossspectrogram(darray, other_darray, fs=None, seglen=None,
         nperseg = int(np.rint(seglen / dt))
         nfft = next_fast_len(nperseg)
     if noverlap is None:
-        noverlap = nperseg // overlap_ratio
+        noverlap = np.rint(nperseg * overlap_ratio)
     if darray is other_darray:
         d_val = od_val = darray.values
     else:
@@ -171,7 +171,7 @@ def crossspectrogram(darray, other_darray, fs=None, seglen=None,
 
 
 @_add2docstring_common_params
-def csd(darray, other_darray, fs=None, seglen=None, overlap_ratio=2,
+def csd(darray, other_darray, fs=None, seglen=None, overlap_ratio=0.5,
         window='hann', nperseg=256, noverlap=None, nfft=None,
         detrend='constant', return_onesided=True, dim=None, scaling='density',
         mode='psd'):
@@ -264,7 +264,7 @@ def freq2lag(darray, is_onesided=False, f_dim=_FREQUENCY_DIM):
 
 @_add2docstring_common_params
 def xcorrelation(darray, other_darray, normalize=True, fs=None, seglen=None,
-                 overlap_ratio=2, window='hann', nperseg=256, noverlap=None,
+                 overlap_ratio=0.5, window='hann', nperseg=256, noverlap=None,
                  nfft=None, detrend='constant', dim=None):
     """
     Calculate the crosscorrelation.
@@ -299,7 +299,7 @@ def xcorrelation(darray, other_darray, normalize=True, fs=None, seglen=None,
 
 
 @_add2docstring_common_params
-def spectrogram(darray, fs=None, seglen=None, overlap_ratio=2, window='hann',
+def spectrogram(darray, fs=None, seglen=None, overlap_ratio=0.5, window='hann',
                 nperseg=256, noverlap=None, nfft=None, detrend='constant',
                 return_onesided=True, dim=None, scaling='density', mode='psd'):
     """
@@ -326,7 +326,7 @@ def spectrogram(darray, fs=None, seglen=None, overlap_ratio=2, window='hann',
 
 
 @_add2docstring_common_params
-def psd(darray, fs=None, seglen=None, overlap_ratio=2, window='hann',
+def psd(darray, fs=None, seglen=None, overlap_ratio=0.5, window='hann',
         nperseg=256, noverlap=None, nfft=None, detrend='constant',
         return_onesided=True, scaling='density', dim=None, mode='psd'):
     """
@@ -355,7 +355,7 @@ def psd(darray, fs=None, seglen=None, overlap_ratio=2, window='hann',
 
 # TODO f_res
 @_add2docstring_common_params
-def coherogram(darray, other_darray, fs=None, seglen=None, overlap_ratio=2,
+def coherogram(darray, other_darray, fs=None, seglen=None, overlap_ratio=0.5,
                nrolling=8, window='hann', nperseg=256, noverlap=None,
                nfft=None, detrend='constant', return_onesided=True, dim=None):
     """
@@ -398,7 +398,7 @@ def coherogram(darray, other_darray, fs=None, seglen=None, overlap_ratio=2,
 
 
 @_add2docstring_common_params
-def coherence(darray, other_darray, fs=None, seglen=None, overlap_ratio=2,
+def coherence(darray, other_darray, fs=None, seglen=None, overlap_ratio=0.5,
               window='hann', nperseg=256, noverlap=None, nfft=None,
               detrend='constant', dim=None):
     """
@@ -460,14 +460,14 @@ def hilbert(darray, N=None, dim=None):
                               kwargs=dict(N = N, n_orig = n_orig, N_unspecified = N_unspecified))
 
     return out
-    
+
 
 def _hilbert_wraper(darray, N, n_orig, N_unspecified, axis = -1):
     """
     Hilbert wraper used to keep the signal dimension length constant
     """
     out = scipy.signal.hilbert(np.asarray(darray), N, axis = axis)
-    
+
     if n_orig != N and N_unspecified:
         sl = [slice(None)] * out.ndim
         sl[axis] = slice(None, n_orig)
