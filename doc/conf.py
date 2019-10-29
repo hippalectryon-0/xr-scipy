@@ -40,7 +40,7 @@ extensions = [
     'sphinx.ext.intersphinx',
     'sphinx.ext.extlinks',
     'sphinx.ext.mathjax',
-    'numpydoc',
+    'sphinx.ext.napoleon',
     'IPython.sphinxext.ipython_directive',
     'IPython.sphinxext.ipython_console_highlighting',
 ]
@@ -304,5 +304,6 @@ texinfo_documents = [
 intersphinx_mapping = {
     'python': ('https://docs.python.org/3/', None),
     'pandas': ('https://pandas.pydata.org/pandas-docs/stable/', None),
-    'xarray': ('http://xarray.pydata.org/', None),
+    'xarray': ('http://xarray.pydata.org/en/stable', None),
+    'scipy':  ('https://docs.scipy.org/doc/scipy/reference', None),
 }
