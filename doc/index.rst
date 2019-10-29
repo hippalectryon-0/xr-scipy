@@ -22,6 +22,8 @@ Documentation
 * :doc:`grad_integ`
 * :doc:`fft`
 * :doc:`interpolate`
+* :doc:`filters`
+* :doc:`spectral`
 
 .. toctree::
    :maxdepth: 1
@@ -31,6 +33,8 @@ Documentation
    grad_integ
    fft
    interpolate
+   filters
+   spectral
 
 **Help & reference**
 
