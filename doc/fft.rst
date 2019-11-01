@@ -22,26 +22,28 @@ Let us consider an example DataArray
                        dims=('x'), coords={'x': np.linspace(0, 5, 30)})
     arr
 
-Our :py:func:`~xrscipy.fft.rfft` takes an xarray object
+Our :py:func:`~xrscipy.fft.fft` takes an xarray object
 (possibly high dimensional) and a coordinate name which direction we compute
 the Fourier transform.
 
 .. ipython:: python
 
-    rfft = xrscipy.fft.rfft(arr, 'x')
-    rfft
+    fft = xrscipy.fft.fft(arr, 'x')
+    fft
 
 The coordinate `x` is also converted to frequency.
 
 .. ipython:: python
+    :okwarning:
 
     plt.figure(figsize=(10, 4))
     plt.subplot(1, 2, 1)
     arr.plot()
     plt.subplot(1, 2, 2)
-    np.abs(rfft).plot()
-    @savefig rfft.png width=4in
+    np.abs(fft).plot()
+    @savefig fft.png width=4in
     plt.show()
+
 
 .. note::
 
@@ -67,6 +69,7 @@ coordinates.
     fftn
 
 .. ipython:: python
+    :okwarning:
 
     plt.figure(figsize=(10, 4))
     plt.subplot(1, 2, 1)

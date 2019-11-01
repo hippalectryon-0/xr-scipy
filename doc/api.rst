@@ -74,3 +74,32 @@ fftpack
    fftpack.idct
    fftpack.dst
    fftpack.idst
+
+Spectral (FFT) analysis
+=======================
+
+.. autosummary::
+   :toctree: generated/
+
+   signal.csd
+   signal.psd
+   signal.coherence
+   signal.xcorrelation
+   signal.crossspectrogram
+   signal.spectrogram
+   signal.coherogram
+   signal.hilbert
+
+Digital filters
+===============
+
+.. autosummary::
+   :toctree: generated/
+
+   signal.frequency_filter
+   signal.lowpass
+   signal.highpass
+   signal.bandpass
+   signal.bandstop
+   signal.decimate
+   signal.savgol_filter
