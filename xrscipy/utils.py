@@ -6,7 +6,6 @@ import xarray as xr
 _TEMP_DIM = xr.core.utils.ReprObject('<temporal-dim>')
 
 
-
 def wrap_dataset(func, y, *dims, **kwargs):
     """
     Wrap Dataset for Array func. If y is Dataset, the func is applied for all
@@ -41,8 +40,8 @@ def wrap_dataset(func, y, *dims, **kwargs):
                 ds[key] = y[key]
 
         for key in y.coords:
-            if (keep_coords != 'drop'
-                    or not any(d in dims for d in y[key].dims)):
+            if (keep_coords != 'drop' or
+                    not any(d in dims for d in y[key].dims)):
                 ds.coords[key] = y[key]
 
     else:  # also applied to coord

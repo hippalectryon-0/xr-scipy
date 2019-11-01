@@ -4,6 +4,7 @@ from functools import partial
 import numpy as np
 from numpy import fft as fft_
 import xarray as xr
+from xarray.core.utils import either_dict_or_kwargs
 from . import errors
 from . import utils
 from .docs import DocParser
@@ -96,6 +97,122 @@ def _wrapnd(func, freq_func, y, *coords, **kwargs):
         freq = freq_func(size, dx)
         ds[c] = (d, ), freq
     return ds
+
+
+def _fft_numpy(obj, coords, ):
+    pass
+
+
+def fft(obj, coords=None, engine='scipy', **coords_kwargs):
+    """
+    Return (multidimensional) discrete Fourier transform.
+
+    Parameters
+    ----------
+    obj : DataArray or Dataset
+        The (n-dimensional) array to transform.
+    coords : dict, optional
+        Mapping from keys that should be dimension names to be transformed
+        along to new names that corresponding to the frequency.
+    engine: 'scipy' or 'numpy'
+        Whether scipy.fftpack or numpy.fft.fft is used.
+    **coords_kwarg : {dim: coordinate, ...}, optional
+        The keyword arguments form of ``coords``.
+        One of coords or coords_kwargs must be provided.
+
+    Returns
+    -------
+    y : Complex-valued xarray object.
+        The (n-dimensional) DFT of the input array(s).
+
+    See Also
+    --------
+    ifft
+    numpy.fft.fft
+    numpy.fft.fftn
+    scipy.fftpack.fft
+    scipy.fftpack.fftn
+
+    Examples
+    --------
+    >>> from scipy.fftpack import fftn, ifftn
+    >>> y = (-np.arange(16), 8 - np.arange(16), np.arange(16))
+    >>> np.allclose(y, fftn(ifftn(y)))
+    True
+    """
+    coords = either_dict_or_kwargs(coords, coords_kwargs, 'fft')
+    if engine == 'numpy':
+        return utils.wrap_dataset(_fft_numpy, obj, coords.keys(),
+                                  keep_coords='drop')
+    elif engine == 'scipy':
+        return utils.wrap_dataset(_fft_scipy, obj, coords.keys(),
+                                  keep_coords='drop')
+
+    raise ValueError('fft engine {} was given.'.format(engine))
+
+
+def rfft(obj, coords=None, engine='scipy', **coords_kwargs):
+    """
+    Compute the one-dimensional discrete Fourier Transform for real input.
+
+    Parameters
+    ----------
+    obj : DataArray or Dataset
+        The (n-dimensional) real valued array to transform.
+    coords : dict, optional
+        Mapping from keys that should be dimension names to be transformed
+        along to new names that corresponding to the frequency.
+    engine: 'scipy' or 'numpy'
+        Whether scipy.fftpack or numpy.fft.fft is used.
+    **coords_kwarg : {dim: coordinate, ...}, optional
+        The keyword arguments form of ``coords``.
+        One of coords or coords_kwargs must be provided.
+
+    Returns
+    -------
+    y : Complex-valued xarray object.
+        The (n-dimensional) DFT of the input array(s).
+
+    See Also
+    --------
+    ifft
+    numpy.fft.fft
+    numpy.fft.fftn
+    scipy.fftpack.fft
+    scipy.fftpack.fftn
+
+    Examples
+    --------
+    >>> from scipy.fftpack import fftn, ifftn
+    >>> y = (-np.arange(16), 8 - np.arange(16), np.arange(16))
+    >>> np.allclose(y, fftn(ifftn(y)))
+    True
+    """
+    coords = either_dict_or_kwargs(coords, coords_kwargs, 'fft')
+    if len(coords) != 1:
+        raise ValueError('rfft perform 1-dimensional Fourier transform. '
+                         'Given more than one coordinates: {}.'.format(
+                            list(coords.keys())))
+    if engine == 'numpy':
+        return utils.wrap_dataset(_rfft_numpy, obj, coords.keys(),
+                                  keep_coords='drop')
+    elif engine == 'scipy':
+        return utils.wrap_dataset(_rfft_scipy, obj, coords.keys(),
+                                  keep_coords='drop')
+
+    raise ValueError('fft engine {} was given.'.format(engine))
+
+
+def ifft(obj, coords_dict, **coords):
+    """
+    """
+
+
+def irfft(obj, coords_dict, **coords):
+    """
+    """
+
+
 
 
 def _inject_docs(func, func_name, description=None, nd=False):
