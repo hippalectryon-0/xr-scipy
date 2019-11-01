@@ -1,16 +1,12 @@
 name: xr-scipy-docs
 channels:
-  - conda-forge
   - defaults
 dependencies:
-  - python=3.6
-  - numpy=1.13
-  - pandas=0.21.0
+  - python=3.7
+  - numpy
   - xarray
-  - scipy=1.0
-  - numpydoc=0.7.0
-  - matplotlib=2.1.2
-  - ipython=6.2.1
-  - sphinx=1.5
-  - sphinx-gallery
+  - scipy
+  - matplotlib
+  - ipython
+  - sphinx
   - flake8
