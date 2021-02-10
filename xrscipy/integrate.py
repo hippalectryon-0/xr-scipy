@@ -43,8 +43,10 @@ def inject_docs(func, func_name, description=None):
     except errors.NoDocstringError:
         return
 
+    if 'y' in doc.parameters:
+        doc.replace_params(
+            y='obj : xarray object\n' + doc.parameters['y'][1])
     doc.replace_params(
-        y='obj : xarray object\n' + doc.parameters['y'][1],
         axis='coord : string\n    The coordinate along which to integrate.\n')
     doc.remove_params('dx', 'x')
 
