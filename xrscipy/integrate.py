@@ -43,8 +43,10 @@ def inject_docs(func, func_name, description=None):
     except errors.NoDocstringError:
         return
 
+    if 'y' in doc.parameters:
+        doc.replace_params(
+            y='obj : xarray object\n' + doc.parameters['y'][1])
     doc.replace_params(
-        y='obj : xarray object\n' + doc.parameters['y'][1],
         axis='coord : string\n    The coordinate along which to integrate.\n')
     doc.remove_params('dx', 'x')
 
@@ -73,14 +75,31 @@ def inject_docs(func, func_name, description=None):
     func.__name__ = func_name
 
 
+romb = partial(_wrap, integrate.romb, True)
+inject_docs(romb, 'romb', description='romb(obj, coord, show=False)')
+
+# scipy >= 1.6.0
+if hasattr(integrate, 'trapezoid'):
+    trapezoid = partial(_wrap, integrate.trapezoid, True)
+    inject_docs(trapezoid, 'trapezoid', description='trapezoid(obj, coord)')
+
+if hasattr(integrate, 'simpson'):
+    simpson = partial(_wrap, integrate.simpson, True)
+    inject_docs(simpson, 'simpson',
+                description='simpson(obj, coord, even=\'avg\')')
+
+if hasattr(integrate, 'cumulative_trapezoid'):
+    cumulative_trapezoid = partial(_wrap, integrate.cumulative_trapezoid,
+                                   False, initial=0)
+    inject_docs(cumulative_trapezoid, 'cumulative_trapezoid',
+                description='cumulative_trapezoid(obj, coord)')
+
+# scipy < 1.6.0
 trapz = partial(_wrap, integrate.trapz, True)
 inject_docs(trapz, 'trapz', description='trapz(obj, coord)')
 
 simps = partial(_wrap, integrate.simps, True)
 inject_docs(simps, 'simps', description='simps(obj, coord, even=\'avg\')')
-
-romb = partial(_wrap, integrate.romb, True)
-inject_docs(romb, 'romb', description='romb(obj, coord, show=False)')
 
 cumtrapz = partial(_wrap, integrate.cumtrapz, False, initial=0)
 inject_docs(cumtrapz, 'cumtrapz', description='cumtrapz(obj, coord)')
