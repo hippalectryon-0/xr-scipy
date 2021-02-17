@@ -34,4 +34,4 @@ def test_doc_parser():
     print(parser)
     assert repr(parser) == dedent(example_func.__doc__)
 
-    parser.replace_params(a='c : int\n    Replaced parameter.\n')
+    parser.replace_params(a="c : int\n    Replaced parameter.\n")
