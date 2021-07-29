@@ -12,7 +12,7 @@ xr-scipy wraps these functions to use native coordinate objects of xarray
 and returns an xarray object with the computed data.
 This enables more xarray-oriented data analysis with scipy.
 
-Other usage/options are kept almost the same to the original scipy function.
+Other usage/options are kept almost the same as the original scipy function.
 
 # Example
 
