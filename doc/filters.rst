@@ -89,7 +89,7 @@ The other keyword arguments are passed on to :py:func:`~xrscipy.signal.lowpass`.
 Savitzky-Golay LSQ filtering
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The Savitzky-Golay filter as a special type of a FIR filter which is equivalent to replacing filtered values by leas-square fits of polynomials (or their derivatives) of a given order within a rolling window. For details see `their Wikipedia page`_ Such a filter is very useful when temporal or spatial features in the signal are of greater interest than frequency or wavenumber bands, respectively.
+The Savitzky-Golay filter as a special type of a FIR filter which is equivalent to replacing filtered values by least-square fits of polynomials (or their derivatives) of a given order within a rolling window. For details see `their Wikipedia page`_ Such a filter is very useful when temporal or spatial features in the signal are of greater interest than frequency or wavenumber bands, respectively.
 
 .. _`their Wikipedia page`: https://en.wikipedia.org/wiki/Savitzky%E2%80%93Golay_filter
 
