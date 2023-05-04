@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [ '3.9', '3.10', '3.11' ]
+        python-version: [ '3.11' ]
 
     steps:
       - name: Checkout code
@@ -22,7 +22,7 @@ jobs:
           architecture: 'x64'
 
       - name: Install Poetry
-        run: curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python -
+        run: curl -sSL https://install.python-poetry.org | python -
 
       - name: Install dependencies
         run: |
