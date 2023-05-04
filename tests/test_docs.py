@@ -32,4 +32,4 @@ def test_doc_parser():
     parser = docs.DocParser(example_func.__doc__)
     assert repr(parser) == dedent(example_func.__doc__)
 
-    parser.replace_params(_a='_c : int\n    Replaced parameter.\n')
+    parser.replace_params(_a="_c : int\n    Replaced parameter.\n")

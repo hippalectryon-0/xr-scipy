@@ -29,8 +29,8 @@ def gradient(f, coord, edge_order=1):
     -------
     gradient: xarray object
     """
-    if LooseVersion(np.__version__) < LooseVersion('1.13'):
-        raise ImportError('Gradient requires numpy >= 1.13')
+    if LooseVersion(np.__version__) < LooseVersion("1.13"):
+        raise ImportError("Gradient requires numpy >= 1.13")
 
     errors.raise_not_sorted(f[coord])
 
@@ -42,11 +42,13 @@ def gradient(f, coord, edge_order=1):
 
     def func(v):
         # noinspection PyProtectedMember
-        result = xr.apply_ufunc(gradient, v, input_core_dims=[[dim]], output_core_dims=[[utils._TEMP_DIM]])
+        result = xr.apply_ufunc(
+            gradient, v, input_core_dims=[[dim]], output_core_dims=[[utils._TEMP_DIM]]
+        )
         # noinspection PyProtectedMember
         dims = [d if d != dim else utils._TEMP_DIM for d in v.dims]
         result = result.transpose(*dims)
         result.dims = v.dims
         return result
 
-    return utils.wrap_dataset(func, f, dim, keep_coords='keep')
+    return utils.wrap_dataset(func, f, dim, keep_coords="keep")

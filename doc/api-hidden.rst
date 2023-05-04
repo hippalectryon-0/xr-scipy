@@ -6,5 +6,3 @@
 
 .. autosummary::
    :toctree: generated/
-
-   

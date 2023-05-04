@@ -34,19 +34,20 @@ print(f"xrscipy: {xrscipy.__version__}, {xrscipy.__file__}")
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    'sphinx.ext.autodoc',
-    'sphinx.ext.autosummary',
-    'sphinx.ext.intersphinx',
-    'sphinx.ext.extlinks',
-    'sphinx.ext.mathjax',
-    'sphinx.ext.napoleon',
-    'IPython.sphinxext.ipython_directive',
-    'IPython.sphinxext.ipython_console_highlighting',
+    "sphinx.ext.autodoc",
+    "sphinx.ext.autosummary",
+    "sphinx.ext.intersphinx",
+    "sphinx.ext.extlinks",
+    "sphinx.ext.mathjax",
+    "sphinx.ext.napoleon",
+    "IPython.sphinxext.ipython_directive",
+    "IPython.sphinxext.ipython_console_highlighting",
 ]
 
-extlinks = {'issue': ('https://github.com/fujiisoup/xr-scipy/issues/%s', 'GH'),
-            'pull': ('https://github.com/fujiisoup/xr-scipy/pull/%s', 'PR'),
-            }
+extlinks = {
+    "issue": ("https://github.com/fujiisoup/xr-scipy/issues/%s", "GH"),
+    "pull": ("https://github.com/fujiisoup/xr-scipy/pull/%s", "PR"),
+}
 
 autosummary_generate = True
 
@@ -54,20 +55,20 @@ numpydoc_class_members_toctree = True
 numpydoc_show_class_members = False
 
 # Add any paths that contain templates here, relative to this directory.
-templates_path = ['_templates']
+templates_path = ["_templates"]
 
 # The suffix of source filenames.
-source_suffix = '.rst'
+source_suffix = ".rst"
 
 # The encoding of source files.
 # source_encoding = 'utf-8-sig'
 
 # The master toctree document.
-master_doc = 'index'
+master_doc = "index"
 
 # General information about the project.
-project = 'xrscipy'
-copyright_ = f'2014-{datetime.datetime.now().year}, xrscipy Developers'
+project = "xrscipy"
+copyright_ = f"2014-{datetime.datetime.now().year}, xrscipy Developers"
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -86,11 +87,11 @@ release = xrscipy.__version__
 # non-false value, then it is used:
 # today = ''
 # Else, today_fmt is used as the format for a strftime call.
-today_fmt = '%Y-%m-%d'
+today_fmt = "%Y-%m-%d"
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
-exclude_patterns = ['_build']
+exclude_patterns = ["_build"]
 
 # The reST default role (used for this markup: `text`) to use for all
 # documents.
@@ -108,7 +109,7 @@ exclude_patterns = ['_build']
 # show_authors = False
 
 # The name of the Pygments (syntax highlighting) style to use.
-pygments_style = 'sphinx'
+pygments_style = "sphinx"
 
 # A list of ignored prefixes for module index sorting.
 # modindex_common_prefix = []
@@ -124,12 +125,12 @@ pygments_style = 'sphinx'
 
 # on_rtd is whether we are on readthedocs.org, this line of code grabbed from
 # docs.readthedocs.org
-on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
+on_rtd = os.environ.get("READTHEDOCS", None) == "True"
 
 if not on_rtd:  # only import and set the theme if we're building docs locally
     import sphinx_rtd_theme
 
-    html_theme = 'sphinx_rtd_theme'
+    html_theme = "sphinx_rtd_theme"
     html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 
 # otherwise, readthedocs.org uses their theme by default, so no need to specify it
@@ -161,13 +162,14 @@ if not on_rtd:  # only import and set the theme if we're building docs locally
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
+html_static_path = ["_static"]
 
 # Sometimes the savefig directory doesn't exist and needs to be created
 # https://github.com/ipython/ipython/issues/8733
 # becomes obsolete when we can pin ipython>=5.2; see doc/environment.yml
-ipython_savefig_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                                   '_build', 'html', '_static')
+ipython_savefig_dir = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), "_build", "html", "_static"
+)
 if not os.path.exists(ipython_savefig_dir):
     os.makedirs(ipython_savefig_dir)
 
@@ -218,17 +220,15 @@ html_last_updated_fmt = today_fmt
 # html_file_suffix = None
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'xrscipydoc'
+htmlhelp_basename = "xrscipydoc"
 
 # -- Options for LaTeX output ---------------------------------------------
 
 latex_elements = {
     # The paper size ('letterpaper' or 'a4paper').
     # 'papersize': 'letterpaper',
-
     # The font size ('10pt', '11pt' or '12pt').
     # 'pointsize': '10pt',
-
     # Additional stuff for the LaTeX preamble.
     # 'preamble': '',
 }
@@ -237,8 +237,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    ('index', 'xrscipy.tex', 'xr-scipy Documentation',
-     'xr-scipy Developers', 'manual'),
+    ("index", "xrscipy.tex", "xr-scipy Documentation", "xr-scipy Developers", "manual"),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -266,10 +265,7 @@ latex_documents = [
 
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
-man_pages = [
-    ('index', 'xrscipy', 'xr-scipy Documentation',
-     ['xr-scipy Developers'], 1)
-]
+man_pages = [("index", "xrscipy", "xr-scipy Documentation", ["xr-scipy Developers"], 1)]
 
 # If true, show URL addresses after external links.
 # man_show_urls = False
@@ -281,9 +277,15 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    ('index', 'xrscipy', 'xr-scipy Documentation',
-     'xr-scipy Developers', 'xr-scipy', 'Scipy for xarray',
-     'Miscellaneous'),
+    (
+        "index",
+        "xrscipy",
+        "xr-scipy Documentation",
+        "xr-scipy Developers",
+        "xr-scipy",
+        "Scipy for xarray",
+        "Miscellaneous",
+    ),
 ]
 
 # Documents to append as an appendix to all manuals.
@@ -301,8 +303,8 @@ texinfo_documents = [
 
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {
-    'python': ('https://docs.python.org/3/', None),
-    'pandas': ('https://pandas.pydata.org/pandas-docs/stable/', None),
-    'xarray': ('https://xarray.pydata.org/en/stable', None),
-    'scipy': ('https://docs.scipy.org/doc/scipy/reference', None),
+    "python": ("https://docs.python.org/3/", None),
+    "pandas": ("https://pandas.pydata.org/pandas-docs/stable/", None),
+    "xarray": ("https://xarray.pydata.org/en/stable", None),
+    "scipy": ("https://docs.scipy.org/doc/scipy/reference", None),
 }

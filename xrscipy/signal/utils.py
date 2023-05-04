@@ -6,13 +6,13 @@ class UnevenSamplingWarning(Warning):
 
 
 # always (not just once) show decimation warnings to see the responsible signal
-warnings.filterwarnings('always', category=UnevenSamplingWarning)
+warnings.filterwarnings("always", category=UnevenSamplingWarning)
 
 
 def get_maybe_only_dim(darray, dim):
     """
     Check the dimension of the signal.
-    
+
     Parameters
     ----------
     darray : DataArray
@@ -46,6 +46,11 @@ def get_sampling_step(darray, dim=None, rtol=1e-3):
 
     if abs(dt_avg - dt_first) > rtol * min(dt_first, dt_avg):
         # show warning at caller level to see which signal it is related to
-        warnings.warn('Average sampling {:.3g} != first sampling step {:.3g}'.format(
-            dt_avg, dt_first), UnevenSamplingWarning, stacklevel=2)
+        warnings.warn(
+            "Average sampling {:.3g} != first sampling step {:.3g}".format(
+                dt_avg, dt_first
+            ),
+            UnevenSamplingWarning,
+            stacklevel=2,
+        )
     return dt_avg  # should be more precise

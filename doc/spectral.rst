@@ -25,7 +25,7 @@ To demonstrate the basic functionality, let's create two simple example DataArra
     time_ax = np.arange(0,100,0.01)
     sig_1 = xr.DataArray(np.sin(100 * time_ax) + np.random.rand(len(time_ax))*3,
                          coords=[("time", time_ax)], name='sig_1')
-    sig_2 = xr.DataArray((np.cos(100 * time_ax) + np.random.rand(len(time_ax))*3 + 
+    sig_2 = xr.DataArray((np.cos(100 * time_ax) + np.random.rand(len(time_ax))*3 +
                           3*np.sin(30 * time_ax**1.3)),
                          coords=[("time", time_ax)], name='sig_2')
 
@@ -132,6 +132,3 @@ The cross-correlation is calculated similarly as :math:`\gamma`, but with :math:
 
 
 A partially averaged counterpart to :py:func:`~xrscipy.signal.coherence` is :py:func:`~xrscipy.signal.coherogram` which uses a running average over ``nrolling`` FFT windows.
-
-
-
