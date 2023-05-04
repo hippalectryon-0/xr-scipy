@@ -14,31 +14,18 @@ Other usage/options are kept almost the same as the original scipy function.
 # Example
 
 ```python
-In[1]: da = xr.DataArray([0, 3, 2, 4, 6], dims='x',
-                         ...:                       coords = {'x': np.linspace(0, 1, 5)})
+In[1]: da = xr.DataArray([0, 3, 2, 4, 6], coords={'x': np.linspace(0, 1, 5)})
 In[2]: da
 Out[2]:
-< xarray.DataArray(x: 5) >
+<xarray.DataArray (x: 5)>
 array([0, 3, 2, 4, 6])
 Coordinates:
-*x(x)
-float64
-0.0
-0.25
-0.5
-0.75
-1.0
+  * x        (x) float64 0.0 0.25 0.5 0.75 1.0
 
 In[3]: xrscipy.integrate.cumtrapz(da, coord='x')
 Out[3]:
-< xarray.DataArray(x: 5) >
-array([0., 0.375, 1., 1.75, 3.])
+<xarray.DataArray (x: 5)>
+array([0.   , 0.375, 1.   , 1.75 , 3.   ])
 Coordinates:
-*x(x)
-float64
-0.0
-0.25
-0.5
-0.75
-1.0
+  * x        (x) float64 0.0 0.25 0.5 0.75 1.0
 ```
