@@ -23,7 +23,7 @@ allowed_failures = set()
 
 print("python exec:", sys.executable)
 print("sys.path:", sys.path)
-print("xrscipy: %s, %s" % (xrscipy.__version__, xrscipy.__file__))
+print(f"xrscipy: {xrscipy.__version__}, {xrscipy.__file__}")
 
 # -- General configuration ------------------------------------------------
 
@@ -67,7 +67,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'xrscipy'
-copyright = '2014-%s, xrscipy Developers' % datetime.datetime.now().year
+copyright_ = f'2014-{datetime.datetime.now().year}, xrscipy Developers'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the

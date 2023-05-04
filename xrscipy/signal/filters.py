@@ -96,8 +96,7 @@ def frequency_filter(darray, f_crit, order=None, irtype='iir', filtfilt=True,
         or scipy.signal.firwin.            
     """
     if irtype not in _BA_FUNCS:
-        raise ValueError('Wrong argument for irtype: {}, must be one of {}'.format(
-            irtype, _BA_FUNCS.keys()))
+        raise ValueError(f'Wrong argument for irtype: {irtype}, must be one of {_BA_FUNCS.keys()}')
     if order is None:
         order = _ORDER_DEFAULTS[irtype]
     if apply_kwargs is None:

@@ -14,8 +14,7 @@ from .docs import DocParser
 
 def _get_spacing(x):
     if x.ndim != 1:
-        raise ValueError('Coordinate for FFT should be one dimensional. '
-                         'Axis {} is {}-dimensional.'.format(x.name, x.ndim))
+        raise ValueError(f'Coordinate for FFT should be one dimensional. Axis {x.name} is {x.ndim}-dimensional.')
     dx = np.diff(x)
     mean = dx.mean()
     jitter = dx.std()
@@ -137,9 +136,7 @@ def _inject_docs(func, func_name, description=None, nd=False):
     if description is not None:
         doc.insert_description(description)
 
-    doc.insert_see_also(**{
-        'numpy.fft.' + func_name:
-            'numpy.fft.' + func_name + ' : Original numpy implementation\n'})
+    doc.insert_see_also(**{f'numpy.fft.{func_name}': f'numpy.fft.{func_name} : Original numpy implementation\n'})
 
     # inject
     func.__doc__ = str(doc)

@@ -20,13 +20,12 @@ def get_maybe_only_dim(darray, dim):
     dim : string
         Specifies the dimension.
     """
-    if dim is None:
-        if len(darray.dims) == 1:
-            return darray.dims[0]
-        else:
-            raise ValueError("Specify the dimension")
-    else:
+    if dim is not None:
         return dim
+    if len(darray.dims) == 1:
+        return darray.dims[0]
+    else:
+        raise ValueError("Specify the dimension")
 
 
 def get_maybe_last_dim_axis(darray, dim=None):

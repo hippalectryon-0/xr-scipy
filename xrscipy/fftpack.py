@@ -12,7 +12,7 @@ from .fft import _wrap1d, _wrapnd
 
 def _get_spacing(x):
     if x.ndim != 1:
-        raise ValueError('Coordinate for FFT should be one dimensional. Axis {} is {}-dimensional.'.format(x.name, x.ndim))
+        raise ValueError(f'Coordinate for FFT should be one dimensional. Axis {x.name} is {x.ndim}-dimensional.')
     dx = np.diff(x)
     mean = dx.mean()
     jitter = dx.std()
@@ -63,9 +63,7 @@ def _inject_docs(func, func_name, description=None, nd=False):
     if description is not None:
         doc.insert_description(description)
 
-    doc.insert_see_also(**{
-        'scipy.fftpack.' + func_name:
-            'scipy.fftpack.' + func_name + ' : Original scipy implementation\n'})
+    doc.insert_see_also(**{f'scipy.fftpack.{func_name}': f'scipy.fftpack.{func_name} : Original scipy implementation\n'})
 
     # inject
     func.__doc__ = str(doc)

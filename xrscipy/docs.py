@@ -43,11 +43,10 @@ class DocParser(object):
                     key = ALIASES[key]
                 if key not in self.sections:
                     self.sections[key] = []
+            elif key is None:
+                self.description.append(doc + '\n')
             else:
-                if key is None:
-                    self.description.append(doc + '\n')
-                else:
-                    self.sections[key].append(doc + '\n')
+                self.sections[key].append(doc + '\n')
         self.parameters = self._parser_subsection('Parameters')
         self.returns = self._parser_subsection('Returns')
         self.see_also = self._parser_subsection('See Also')
@@ -77,7 +76,7 @@ class DocParser(object):
         funcname = string.split('(')[0]
         # if original doc already has a description, remove this.
         for i in range(min(4, len(self.description))):
-            if funcname + '(' in self.description[i]:
+            if f'{funcname}(' in self.description[i]:
                 self.description.pop(i)
                 self.description.pop(i)
 
@@ -89,10 +88,11 @@ class DocParser(object):
     def replace_returns(self, **kwargs):
         self.returns = self._replace_subsections(self.returns, **kwargs)
 
-    def _replace_subsections(self, subsection, **kwargs):
+    @staticmethod
+    def _replace_subsections(subsection, **kwargs):
         new_subsec = OrderedDict()
         for key, item in subsection.items():
-            if key in kwargs.keys():
+            if key in kwargs:
                 new_key = kwargs[key].split(':')[0].strip()
                 new_subsec[new_key] = kwargs[key]
             else:
@@ -129,8 +129,7 @@ class DocParser(object):
 
     def __repr__(self):
         """ print this docstrings """
-        docs = ''.join(self.description)
-        docs += ''.join(['Parameters\n', '----------\n'])
+        docs = ''.join(self.description) + ''.join(['Parameters\n', '----------\n'])
         for key, item in self.parameters.items():
             docs += ''.join(item)
         if docs[-2] != '\n':

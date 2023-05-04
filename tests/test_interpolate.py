@@ -66,7 +66,9 @@ def get_obj_for_interp(mode):
     def func2(x, y):
         return x * (1 - x) * np.cos(pi4 * x ** 2) * np.sin(pi4 * y) ** 2
 
+    # noinspection PyArgumentList
     x = rng.rand(100)
+    # noinspection PyArgumentList
     y = rng.rand(100)
 
     if mode in [0, 1, 5]:
@@ -102,7 +104,9 @@ def get_obj_for_interp(mode):
         return da, (grid_x_da, grid_y_da)
 
     elif mode == 4:  # interpolate grid data
+        # noinspection PyArgumentList
         x = rng.rand(10)
+        # noinspection PyArgumentList
         y = rng.rand(10)
         da = xr.DataArray(func1(x.reshape(10, 1), y.reshape(1, 10)),
                           dims=['x', 'y'],

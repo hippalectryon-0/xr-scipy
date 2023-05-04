@@ -1,6 +1,6 @@
 import numpy as np
 import scipy.signal
-import xarray
+import xarray as xr
 
 try:
     from scipy.fftpack import next_fast_len
@@ -79,11 +79,8 @@ def _add2docstring_common_params(func):
 
 
 @_add2docstring_common_params
-def crossspectrogram(darray, other_darray, fs=None, seglen=None,
-                     overlap_ratio=0.5, window='hann', nperseg=256,
-                     noverlap=None, nfft=None, detrend='constant',
-                     return_onesided=True, dim=None, scaling='density',
-                     mode='psd'):
+def crossspectrogram(darray: xr.DataArray, other_darray: xr.DataArray, fs=None, seglen=None, overlap_ratio=0.5, window='hann', nperseg=256, noverlap=None,
+                     nfft=None, detrend='constant', return_onesided=True, dim=None, scaling='density', mode='psd'):
     """Calculate the cross spectrogram.
 
     Parameters
@@ -139,21 +136,17 @@ def crossspectrogram(darray, other_darray, fs=None, seglen=None,
         d_val = od_val = darray.values
     else:
         # outer join align to ensure proper sampling
-        darray, other_darray = xarray.align(darray, other_darray, join='outer',
-                                            copy=False)
+        darray, other_darray = xr.align(darray, other_darray, join='outer', copy=False)
         together = (darray, other_darray)
         if set(darray.dims) != set(other_darray.dims):
-            together = xarray.broadcast(*together)
+            together = xr.broadcast(*together)
         d_val, od_val = (d.values for d in together)
 
     # should be the same for other_darray after align
     axis = darray.get_axis_num(dim)
-    f, t, Pxy = scipy.signal.spectral._spectral_helper(d_val,
-                                                       od_val,
-                                                       fs, window, nperseg,
-                                                       noverlap, nfft, detrend,
-                                                       return_onesided,
-                                                       scaling, axis, mode)
+    # noinspection PyProtectedMember
+    f, t, Pxy = scipy.signal.spectral._spectral_helper(
+        d_val, od_val, fs, window, nperseg, noverlap, nfft, detrend, return_onesided, scaling, axis, mode)
     t_0 = float(darray.coords[dim][0])
     t_axis = t + t_0
     # new dimensions and coordinates construction
@@ -167,16 +160,14 @@ def crossspectrogram(darray, other_darray, fs=None, seglen=None,
     coords_ds = coords_ds.sel(**{dim: t_axis, 'method': 'nearest'})
     coords_ds[dim] = t_axis
     coords_ds[_FREQUENCY_DIM] = f
-    new_name = 'crossspectrogram_{}_{}'.format(darray.name, other_darray.name)
-    return xarray.DataArray(Pxy, name=new_name,
-                            dims=new_dims, coords=coords_ds.coords)
+    new_name = f'crossspectrogram_{darray.name}_{other_darray.name}'
+    return xr.DataArray(Pxy, name=new_name,
+                        dims=new_dims, coords=coords_ds.coords)
 
 
 @_add2docstring_common_params
-def csd(darray, other_darray, fs=None, seglen=None, overlap_ratio=0.5,
-        window='hann', nperseg=256, noverlap=None, nfft=None,
-        detrend='constant', return_onesided=True, dim=None, scaling='density',
-        mode='psd'):
+def csd(darray: xr.DataArray, other_darray: xr.DataArray, fs=None, seglen=None, overlap_ratio=0.5, window='hann', nperseg=256, noverlap=None,
+        nfft=None, detrend='constant', return_onesided=True, dim=None, scaling='density', mode='psd'):
     """
     Estimate the cross power spectral density, Pxy, using Welch's method.
 
@@ -216,12 +207,10 @@ def csd(darray, other_darray, fs=None, seglen=None, overlap_ratio=0.5,
     .. [2] Rabiner, Lawrence R., and B. Gold. "Theory and Application of
            Digital Signal Processing" Prentice-Hall, pp. 414-419, 1975
     """
-    Pxy = crossspectrogram(darray, other_darray, fs, seglen,
-                           overlap_ratio, window, nperseg, noverlap, nfft, detrend,
-                           return_onesided, dim, scaling, mode)
+    Pxy = crossspectrogram(darray, other_darray, fs, seglen, overlap_ratio, window, nperseg, noverlap, nfft, detrend, return_onesided, dim, scaling, mode)
     dim = get_maybe_only_dim(darray, dim)
     Pxy = Pxy.mean(dim=dim)
-    Pxy.name = 'csd_{}_{}'.format(darray.name, other_darray.name)
+    Pxy.name = f'csd_{darray.name}_{other_darray.name}'
     return Pxy
 
 
@@ -246,16 +235,11 @@ def freq2lag(darray, is_onesided=False, f_dim=_FREQUENCY_DIM):
     """
     axis = darray.get_axis_num(f_dim)
     if is_onesided:
-        ret = xarray.apply_ufunc(np.fft.irfft, darray,
-                                 input_core_dims=[[f_dim]],
-                                 output_core_dims=[[f_dim]])
-        ret = ret.real
+        ret = xr.apply_ufunc(np.fft.irfft, darray, input_core_dims=[[f_dim]], output_core_dims=[[f_dim]])
     else:
-        ret = xarray.apply_ufunc(np.fft.ifft, darray,
-                                 input_core_dims=[[f_dim]],
-                                 output_core_dims=[[f_dim]])
-        ret = ret.real
-    ret.name = 'ifft_' + darray.name
+        ret = xr.apply_ufunc(np.fft.ifft, darray, input_core_dims=[[f_dim]], output_core_dims=[[f_dim]])
+    ret = ret.real
+    ret.name = f'ifft_{darray.name}'
     f = ret.coords[f_dim]
     df = f[1] - f[0]
     dt = 1.0 / (df * darray.shape[axis])
@@ -265,9 +249,8 @@ def freq2lag(darray, is_onesided=False, f_dim=_FREQUENCY_DIM):
 
 
 @_add2docstring_common_params
-def xcorrelation(darray, other_darray, normalize=True, fs=None, seglen=None,
-                 overlap_ratio=0.5, window='hann', nperseg=256, noverlap=None,
-                 nfft=None, detrend='constant', dim=None):
+def xcorrelation(darray, other_darray, normalize=True, fs=None, seglen=None, overlap_ratio=0.5, window='hann', nperseg=256,
+                 noverlap=None, nfft=None, detrend='constant', dim=None):
     """
     Calculate the crosscorrelation.
 
@@ -323,7 +306,7 @@ def spectrogram(darray, fs=None, seglen=None, overlap_ratio=0.5, window='hann',
     Pxx = crossspectrogram(darray, darray, fs, seglen, overlap_ratio, window,
                            nperseg, noverlap, nfft, detrend, return_onesided,
                            dim, scaling, mode)
-    Pxx.name = 'spectrogram_{}'.format(darray.name)
+    Pxx.name = f'spectrogram_{darray.name}'
     return Pxx
 
 
@@ -352,7 +335,7 @@ def psd(darray, fs=None, seglen=None, overlap_ratio=0.5, window='hann',
                       mode)
     dim = get_maybe_only_dim(darray, dim)
     Pxx = Pxx.mean(dim=dim)
-    Pxx.name = 'psd_{}'.format(darray.name)
+    Pxx.name = f'psd_{darray.name}'
     return Pxx
 
 
@@ -396,7 +379,7 @@ def coherogram(darray, other_darray, fs=None, seglen=None, overlap_ratio=0.5,
     coh = (Pxy.rolling(**rol_kw).mean() /
            (Pxx.rolling(**rol_kw).mean() * Pyy.rolling(**rol_kw).mean()) ** 0.5)
     coh.dropna(dim=dim)  # drop nan from averaging edges
-    coh.name = 'coherogram_{}_{}'.format(darray.name, other_darray.name)
+    coh.name = f'coherogram_{darray.name}_{other_darray.name}'
     return coh
 
 
@@ -428,7 +411,7 @@ def coherence(darray, other_darray, fs=None, seglen=None, overlap_ratio=0.5,
     Pxy = csd(darray, other_darray, fs, seglen, overlap_ratio,
               window, nperseg, noverlap, nfft, detrend, dim=dim)
     coh = Pxy / np.sqrt(Pxx * Pyy)  # magnitude squared coherence
-    coh.name = 'coherence_{}_{}'.format(darray.name, other_darray.name)
+    coh.name = f'coherence_{darray.name}_{other_darray.name}'
     return coh
 
 
@@ -457,12 +440,9 @@ def hilbert(darray, N=None, dim=None):
     N_unspecified = N is None
     if N_unspecified:
         N = next_fast_len(n_orig)
-    out = xarray.apply_ufunc(_hilbert_wraper, darray,
-                             input_core_dims=[[dim]],
-                             output_core_dims=[[dim]],
-                             kwargs=dict(N=N, n_orig=n_orig, N_unspecified=N_unspecified))
-
-    return out
+    return xr.apply_ufunc(
+        _hilbert_wraper, darray, input_core_dims=[[dim]], output_core_dims=[[dim]], kwargs=dict(N=N, n_orig=n_orig, N_unspecified=N_unspecified),
+    )
 
 
 def _hilbert_wraper(darray, N, n_orig, N_unspecified, axis=-1):

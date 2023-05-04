@@ -15,10 +15,6 @@ _SAMPLE_DIM = "__sample_dim__"
 _DIMENSION_DIM = "__dimension_dim__"
 
 
-def _get_safename(base):
-    pass
-
-
 class _VaribaleInterp(object):
     """ Base class for _Variable1dInterp and VariableNdInterp """
 
@@ -56,8 +52,7 @@ class _Variable1dInterp(_VaribaleInterp):
 
     def __call__(self, *x, **kwargs):
         if len(x) != 1:
-            raise ValueError('Only one coordinate should be given. '
-                             'Given {}.'.format(len(x)))
+            raise ValueError(f'Only one coordinate should be given. Given {len(x)}.')
         value = self.interp_obj(x[0])
         # consider x's dimension
         if hasattr(x[0], 'dims'):
@@ -96,7 +91,7 @@ class _VariableNdInterp(_VaribaleInterp):
             kwargs for interp_cls
         """
         self.dims = variable.dims
-        self._shapes = {d: s for d, s in zip(variable.dims, variable.shape)}
+        self._shapes = dict(zip(variable.dims, variable.shape))
         if isinstance(variable, xr.DataArray):
             variable = variable.variable
 
@@ -106,8 +101,7 @@ class _VariableNdInterp(_VaribaleInterp):
         self.coord_dims = [x1.dims for x1 in x]
         # stack all the dims other than dim
         self._non_stack_dims = [d for d in self.dims if d not in dim]
-        stacked = variable.stack(**{_SAMPLE_DIM: dim}).set_dims(
-            [_SAMPLE_DIM] + self._non_stack_dims)
+        stacked = variable.stack(**{_SAMPLE_DIM: dim}).set_dims([_SAMPLE_DIM] + self._non_stack_dims)
         x, _, _ = _concat_and_stack(*x)
         self.interp_obj = interp_cls(x, stacked.data, **kwargs)
         self.interp_dim = dim
@@ -120,7 +114,7 @@ class _VariableNdInterp(_VaribaleInterp):
         assert all(isinstance(xi, xr.DataArray) for xi in x)
         stacked_x, coord_shape, coord_dims = _concat_and_stack(*x)
         assert stacked_x.ndim == 2
-        keep_dimorder = False if self.interp_dim != coord_dims else True
+        keep_dimorder = self.interp_dim == coord_dims
 
         value = self.interp_obj(stacked_x)  # [_SAMPLE_DIM, _DIMENSION_DIM]
         variable = xr.Variable([_SAMPLE_DIM] + self._non_stack_dims, value)
@@ -150,7 +144,7 @@ class _VariableGridInterp(_VariableNdInterp):
             kwargs for interp_cls
         """
         self.dims = variable.dims
-        self._shapes = {d: s for d, s in zip(variable.dims, variable.shape)}
+        self._shapes = dict(zip(variable.dims, variable.shape))
         if isinstance(variable, xr.DataArray):
             variable = variable.variable
 
@@ -181,8 +175,7 @@ class DataArrayInterp(object):
             coords = self._coords
         else:
             allowed_dims = set(variable.dims)
-            coords = OrderedDict((k, v) for k, v in self._coords.items()
-                                 if set(v.dims) <= allowed_dims)
+            coords = OrderedDict((k, v) for k, v in self._coords.items() if set(v.dims) <= allowed_dims)
 
         return type(self)(variable, coords, name=self.name)
 
@@ -194,10 +187,11 @@ class DataArrayInterp(object):
 
     def __call__(self, *xi, **kwargs):
         dataset = self._to_temp_dataset()(*xi, **kwargs)
+        # noinspection PyProtectedMember
         variable = dataset._variables.pop(_THIS_ARRAY)
+        # noinspection PyProtectedMember
         coords = dataset._variables
-        return xr.DataArray(variable, dims=variable.dims, coords=coords,
-                            name=self.name)
+        return xr.DataArray(variable, dims=variable.dims, coords=coords, name=self.name)
 
 
 class DatasetInterp(object):
@@ -232,10 +226,7 @@ class DatasetInterp(object):
         variables = OrderedDict()
         coords = OrderedDict()
         for k, v in self._variables.items():
-            if isinstance(v, _VaribaleInterp):
-                v = v(*xi, **kwargs)
-            else:
-                v = v.copy()
+            v = v(*xi, **kwargs) if isinstance(v, _VaribaleInterp) else v.copy()
             if k in self._coords:
                 coords[k] = v
             else:
@@ -294,8 +285,7 @@ def _inject_doc_1d(func, func_name, description=None):
     if description is not None:
         doc.insert_description(description)
 
-    doc.insert_see_also(**{
-        'scipy.interpolate.' + func_name: f'scipy.interpolate.{func_name} : Original scipy implementation\n'})
+    doc.insert_see_also(**{f'scipy.interpolate.{func_name}': f'scipy.interpolate.{func_name} : Original scipy implementation\n'})
 
     # inject
     func.__doc__ = str(doc)
@@ -303,7 +293,8 @@ def _inject_doc_1d(func, func_name, description=None):
 
 
 interp1d = partial(_wrap_interp1d, interpolate.interp1d)
-_inject_doc_1d(interp1d, 'interp1d', description='interp1d(obj, coord, kind=\'linear\', copy=True, bounds_error=None, fill_value=nan, assume_sorted=False)')
+_inject_doc_1d(interp1d, 'interp1d',
+               description='interp1d(obj, coord, kind=\'linear\', copy=True, bounds_error=None, fill_value=nan, assume_sorted=False)')
 
 PchipInterpolator = partial(_wrap_interp1d, interpolate.PchipInterpolator)
 _inject_doc_1d(PchipInterpolator, 'PchipInterpolator', description='PchipInterpolator(obj, coord, extrapolate=None)')
@@ -312,7 +303,8 @@ Akima1DInterpolator = partial(_wrap_interp1d, interpolate.Akima1DInterpolator)
 _inject_doc_1d(Akima1DInterpolator, 'Akima1DInterpolator', description='Akima1DInterpolator(obj, coord)')
 
 CubicSpline = partial(_wrap_interp1d, interpolate.CubicSpline)
-_inject_doc_1d(CubicSpline, 'CubicSpline', description='CubicSpline(obj, coord, bc_type=\'not-a-knot\', extrapolate=None)')
+_inject_doc_1d(CubicSpline, 'CubicSpline',
+               description='CubicSpline(obj, coord, bc_type=\'not-a-knot\', extrapolate=None)')
 
 
 def _wrap_interp_nd(interp_cls, grid, obj, *coords, **kwargs):
@@ -363,7 +355,7 @@ def _inject_doc_nd(func, func_name, description=None):
     if description is not None:
         doc.insert_description(description)
 
-    doc.insert_see_also(**{'scipy.interpolate.' + func_name: f'scipy.interpolate.{func_name} : Original scipy implementation\n'})
+    doc.insert_see_also(**{f'scipy.interpolate.{func_name}': f'scipy.interpolate.{func_name} : Original scipy implementation\n'})
 
     # inject
     func.__doc__ = str(doc)
@@ -372,7 +364,8 @@ def _inject_doc_nd(func, func_name, description=None):
 
 LinearNDInterpolator = partial(_wrap_interp_nd,
                                interpolate.LinearNDInterpolator, False)
-_inject_doc_nd(LinearNDInterpolator, 'LinearNDInterpolator', description='LinearNDInterpolator(obj, *coords, fill_value=np.nan, rescale=False)')
+_inject_doc_nd(LinearNDInterpolator, 'LinearNDInterpolator',
+               description='LinearNDInterpolator(obj, *coords, fill_value=np.nan, rescale=False)')
 
 NearestNDInterpolator = partial(_wrap_interp_nd,
                                 interpolate.NearestNDInterpolator, False)
@@ -380,13 +373,15 @@ _inject_doc_nd(NearestNDInterpolator, 'NearestNDInterpolator', description='Near
 
 CloughTocher2DInterpolator = partial(
     _wrap_interp_nd, interpolate.CloughTocher2DInterpolator, False)
-_inject_doc_nd(CloughTocher2DInterpolator, 'CloughTocher2DInterpolator', description='CloughTocher2DInterpolator(obj, *coords, fill_value=np.nan, tol=False, maxiter, rescale)')
+_inject_doc_nd(CloughTocher2DInterpolator, 'CloughTocher2DInterpolator',
+               description='CloughTocher2DInterpolator(obj, *coords, fill_value=np.nan, tol=False, maxiter, rescale)')
 
 RegularGridInterpolator = partial(_wrap_interp_nd, interpolate.RegularGridInterpolator, True)
-_inject_doc_nd(RegularGridInterpolator, 'RegularGridInterpolator', description='RegularGridInterpolator(obj, *coords, method=\'linear\', bounds_error=True, fill_value=nan)')
+_inject_doc_nd(RegularGridInterpolator, 'RegularGridInterpolator',
+               description='RegularGridInterpolator(obj, *coords, method=\'linear\', bounds_error=True, fill_value=nan)')
 
 
-def _wrap_griddata(func, obj, coords, new_coords, **kwargs):
+def _wrap_griddata(func, obj, coords, new_coords):
     """
     Wrapper for griddata.
     coords: sequence of strings.
@@ -410,8 +405,7 @@ def _wrap_griddata(func, obj, coords, new_coords, **kwargs):
 
     new_dims = [c.name if c.name is not None else c_old for c, c_old
                 in zip(new_coords, coords)]
-    dest_ds = xr.Dataset({}, coords={d: c for d, c in
-                                     zip(new_dims, new_coords)})
+    dest_ds = xr.Dataset({}, coords=dict(zip(new_dims, new_coords)))
 
     dest = dest_ds.stack(_points2=list(dest_ds.dims))
     dest_arrays = np.stack([dest[d] for d in new_dims], axis=-1)
@@ -434,7 +428,8 @@ def _wrap_griddata(func, obj, coords, new_coords, **kwargs):
 
         target_func = np.vectorize(func_vectorized, signature='(m,d),(m),(n,d)->(n)')
 
-    result = xr.apply_ufunc(target_func, points, obj, dest_arrays, input_core_dims=[[], ['_points'], []], output_core_dims=[['_points2']])
+    result = xr.apply_ufunc(target_func, points, obj, dest_arrays, input_core_dims=[[], ['_points'], []],
+                            output_core_dims=[['_points2']])
     # append new coordinates
     result.coords.update(dest.coords)
     result = result.set_index('_points2')

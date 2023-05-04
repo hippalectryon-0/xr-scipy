@@ -30,10 +30,7 @@ def _wrap(func, reduces, y, coord, **kwargs):
         result = xr.apply_ufunc(
             func, v, input_core_dims=[[dim]],
             output_core_dims=[output_core_dim], kwargs=kwargs)
-        if not reduces:
-            return result.transpose(*y.dims)
-        else:
-            return result
+        return result if reduces else result.transpose(*y.dims)
 
     return utils.wrap_dataset(apply_func, y, dim, keep_coords='keep')
 
@@ -45,8 +42,7 @@ def inject_docs(func, func_name, description=None):
         return
 
     if 'y' in doc.parameters:
-        doc.replace_params(
-            y='obj : xarray object\n' + doc.parameters['y'][1])
+        doc.replace_params(y='obj : xarray object\n' + doc.parameters['y'][1])
     doc.replace_params(
         axis='coord : string\n    The coordinate along which to integrate.\n')
     doc.remove_params('dx', 'x')
@@ -67,9 +63,7 @@ def inject_docs(func, func_name, description=None):
     doc.description = [item.replace('axis', 'coordinate') for item in
                        doc.description]
 
-    doc.insert_see_also(**{
-        'scipy.integrate.' + func_name:
-            'scipy.integrate.' + func_name + ' : Original scipy implementation\n'})
+    doc.insert_see_also(**{f'scipy.integrate.{func_name}': f'scipy.integrate.{func_name} : Original scipy implementation\n'})
 
     # inject
     func.__doc__ = str(doc)

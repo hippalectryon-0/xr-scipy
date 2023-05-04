@@ -24,6 +24,7 @@ def wrap_dataset(func: Callable, y: xr.Dataset | xr.DataArray, *dims, **kwargs) 
             raise ValueError(f'{d} is not a valid dimension for the object. The valid dimension is {y.dims}.')
 
     if isinstance(y, xr.DataArray):
+        # noinspection PyProtectedMember
         result = wrap_dataset(func, y._to_temp_dataset(), *dims, keep_coords=keep_coords)
         # Drop unnecessary coordinate.
         da = result[list(result.data_vars.keys())[0]]
@@ -33,22 +34,14 @@ def wrap_dataset(func: Callable, y: xr.Dataset | xr.DataArray, *dims, **kwargs) 
     ds = xr.Dataset({})
     if keep_coords in ['keep', 'drop']:
         for key in y.data_vars:
-            if any(d in y[key].dims for d in dims):
-                ds[key] = func(y[key].variable)
-            else:
-                ds[key] = y[key]
-
+            ds[key] = (func(y[key].variable) if any(d in y[key].dims for d in dims) else y[key])
         for key in y.coords:
-            if (keep_coords != 'drop'
-                    or not any(d in dims for d in y[key].dims)):
+            if keep_coords != 'drop' or all(d not in dims for d in y[key].dims):
                 ds.coords[key] = y[key]
 
     else:  # also applied to coord
         for key in y.variables:
-            if any(d in y[key].dims for d in dims):
-                ds[key] = func(y[key].variable)
-            else:
-                ds[key] = y[key]
+            ds[key] = (func(y[key].variable) if any(d in y[key].dims for d in dims) else y[key])
         ds = ds.set_coords(list(y.coords.keys()))
 
     return ds
