@@ -21,7 +21,7 @@ xarray = ">=0.10"
 scipy = ">=1.0"
 
 [tool.poetry.group.dev.dependencies]
-pytest = ">=2.7.1"
+pytest-cov = ">=4.0.0"
 flake8 = "^6.0.0"
 
 [build-system]
