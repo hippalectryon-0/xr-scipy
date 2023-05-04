@@ -1,7 +1,8 @@
 import warnings
-import xarray
-import scipy.signal
+
 import numpy as np
+import scipy.signal
+import xarray
 
 try:
     from scipy.signal import sosfiltfilt
@@ -9,6 +10,7 @@ except ImportError:
     sosfiltfilt = None
 
 from .utils import get_sampling_step, get_maybe_only_dim
+
 
 def _firwin_ba(*args, **kwargs):
     if not kwargs.get('pass_zero'):
@@ -19,15 +21,18 @@ def _firwin_ba(*args, **kwargs):
 _BA_FUNCS = {
     'iir': scipy.signal.iirfilter,
     'fir': _firwin_ba,
-    }
+}
 
 _ORDER_DEFAULTS = {
     'iir': 4,
     'fir': 29,
-    }
+}
+
 
 class FilteringNaNWarning(Warning):
     pass
+
+
 # always (not just once) show filtering NaN warnings to see the responsible signal
 warnings.filterwarnings('always', category=FilteringNaNWarning)
 
@@ -99,42 +104,42 @@ def frequency_filter(darray, f_crit, order=None, irtype='iir', filtfilt=True,
         apply_kwargs = {}
     dim = get_maybe_only_dim(darray, dim)
     f_crit_norm = np.asarray(f_crit, dtype=np.float)
-    if not in_nyq:              # normalize by Nyquist frequency
+    if not in_nyq:  # normalize by Nyquist frequency
         f_crit_norm *= 2 * get_sampling_step(darray, dim)
-    if np.any(np.isnan(np.asarray(darray))): # only warn since simple forward-filter or FIR is valid
+    if np.any(np.isnan(np.asarray(darray))):  # only warn since simple forward-filter or FIR is valid
         warnings.warn('data contains NaNs, filter will propagate them',
                       FilteringNaNWarning, stacklevel=2)
-    if sosfiltfilt and irtype == 'iir': # TODO merge with other if branch
+    if sosfiltfilt and irtype == 'iir':  # TODO merge with other if branch
         sos = scipy.signal.iirfilter(order, f_crit_norm, output='sos', **kwargs)
         if filtfilt:
             ret = xarray.apply_ufunc(sosfiltfilt, sos, darray,
-                                     input_core_dims = [[],[dim]],
-                                     output_core_dims = [[dim]],
-                                     kwargs = apply_kwargs)
+                                     input_core_dims=[[], [dim]],
+                                     output_core_dims=[[dim]],
+                                     kwargs=apply_kwargs)
         else:
             ret = xarray.apply_ufunc(scipy.signal.sosfilt, sos, darray,
-                                     input_core_dims = [[],[dim]],
-                                     output_core_dims = [[dim]],
-                                     kwargs = apply_kwargs)
+                                     input_core_dims=[[], [dim]],
+                                     output_core_dims=[[dim]],
+                                     kwargs=apply_kwargs)
     else:
         b, a = _BA_FUNCS[irtype](order, f_crit_norm, **kwargs)
         if filtfilt:
             ret = xarray.apply_ufunc(scipy.signal.filtfilt, b, a, darray,
-                                     input_core_dims = [[],[],[dim]],
-                                     output_core_dims = [[dim]],
-                                     kwargs = apply_kwargs)            
+                                     input_core_dims=[[], [], [dim]],
+                                     output_core_dims=[[dim]],
+                                     kwargs=apply_kwargs)
         else:
             ret = xarray.apply_ufunc(scipy.signal.lfilter, b, a, darray,
-                                     input_core_dims = [[],[],[dim]],
-                                     output_core_dims = [[dim]],
-                                     kwargs = apply_kwargs)
+                                     input_core_dims=[[], [], [dim]],
+                                     output_core_dims=[[dim]],
+                                     kwargs=apply_kwargs)
     return ret
 
 
 def _update_ftype_kwargs(kwargs, iirvalue, firvalue):
     if kwargs.get('irtype', 'iir') == 'iir':
         kwargs.setdefault('btype', iirvalue)
-    else:                       # fir
+    else:  # fir
         kwargs.setdefault('pass_zero', firvalue)
     return kwargs
 
@@ -253,8 +258,11 @@ def bandstop(darray, f_low, f_high, *args, **kwargs):
 
 class DecimationWarning(Warning):
     pass
+
+
 # always (not just once) show decimation warnings to see the responsible signal
 warnings.filterwarnings('always', category=DecimationWarning)
+
 
 def decimate(darray, q=None, target_fs=None, dim=None, **lowpass_kwargs):
     '''Decimate signal by given (int) factor or to closest possible target_fs
@@ -299,7 +307,7 @@ def decimate(darray, q=None, target_fs=None, dim=None, **lowpass_kwargs):
             raise ValueError('either q or target_fs must be given')
         dt = get_sampling_step(darray, dim)
         q = int(np.rint(1.0 / (dt * target_fs)))
-    if q < 2:                   # decimation not possible or useless
+    if q < 2:  # decimation not possible or useless
         # show warning at caller level to see which signal it is related to
         warnings.warn('q factor %i < 2, skipping decimation' % q,
                       DecimationWarning, stacklevel=2)
@@ -310,6 +318,7 @@ def decimate(darray, q=None, target_fs=None, dim=None, **lowpass_kwargs):
     ret = lowpass(darray, new_f_nyq, **lowpass_kwargs)
     ret = ret.isel(**{dim: slice(None, None, q)})
     return ret
+
 
 def savgol_filter(darray, window_length, polyorder, deriv=0, delta=None,
                   dim=None, mode='interp', cval=0.0):
@@ -368,12 +377,13 @@ def savgol_filter(darray, window_length, polyorder, deriv=0, delta=None,
         if window_length % 2 == 0:  # must be odd
             window_length += 1
     return xarray.apply_ufunc(scipy.signal.savgol_filter, darray,
-                              input_core_dims = [[dim]],
-                              output_core_dims = [[dim]],
-                              kwargs=dict(window_length = window_length,
-                                          polyorder = polyorder,
-                                          deriv = deriv, delta = delta,
-                                          mode = mode, cval = cval))
+                              input_core_dims=[[dim]],
+                              output_core_dims=[[dim]],
+                              kwargs=dict(window_length=window_length,
+                                          polyorder=polyorder,
+                                          deriv=deriv, delta=delta,
+                                          mode=mode, cval=cval))
+
 
 @xarray.register_dataarray_accessor('filt')
 class FilterAccessor(object):
@@ -424,7 +434,7 @@ class FilterAccessor(object):
     __call__ = freq
 
     def savgol(self, window_length, polyorder, deriv=0, delta=None,
-                      dim=None, mode='interp', cval=0.0):
+               dim=None, mode='interp', cval=0.0):
         """Savitzky-Golay filter, wraps savgol_filter"""
         return savgol_filter(self.darray, window_length, polyorder, deriv, delta,
                              dim, mode, cval)

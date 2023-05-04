@@ -1,8 +1,8 @@
 from __future__ import absolute_import, division, print_function
 
 import numpy as np
-import scipy as sp
 import pytest
+import scipy as sp
 
 from xrscipy import fftpack, fft
 from xrscipy.docs import DocParser

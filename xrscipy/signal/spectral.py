@@ -1,11 +1,12 @@
-import xarray
-import scipy.signal
 import numpy as np
+import scipy.signal
+import xarray
+
 try:
     from scipy.fftpack import next_fast_len
 except ImportError:
     def next_fast_len(size):
-        return 2**int(np.ceil(np.log2(size)))
+        return 2 ** int(np.ceil(np.log2(size)))
 
 from .utils import get_sampling_step, get_maybe_only_dim
 
@@ -65,6 +66,7 @@ _DOCSTRING_SCALING_PARAM = """scaling : { 'density', 'spectrum' }, optional
         ('spectrum') where `Pxy` has units of V**2, if `darray` and `other_darray` are
         measured in V and `fs` is measured in Hz. Defaults to 'density'.\
 """
+
 
 def _add2docstring_common_params(func):
     if hasattr(func, '__doc__'):
@@ -159,10 +161,10 @@ def crossspectrogram(darray, other_darray, fs=None, seglen=None,
     new_dims = list(coord_darr.dims)
     # frequency replaces data dim
     new_dims[new_dims.index(dim)] = _FREQUENCY_DIM
-    new_dims.append(dim)   # make data dim last
+    new_dims.append(dim)  # make data dim last
     # select nearest times on other possible coordinates
     coords_ds = coord_darr.coords.to_dataset()
-    coords_ds = coords_ds.sel(**{dim:t_axis, 'method':'nearest'})
+    coords_ds = coords_ds.sel(**{dim: t_axis, 'method': 'nearest'})
     coords_ds[dim] = t_axis
     coords_ds[_FREQUENCY_DIM] = f
     new_name = 'crossspectrogram_{}_{}'.format(darray.name, other_darray.name)
@@ -244,20 +246,20 @@ def freq2lag(darray, is_onesided=False, f_dim=_FREQUENCY_DIM):
     """
     axis = darray.get_axis_num(f_dim)
     if is_onesided:
-        ret = xarray.apply_ufunc(np.fft.irfft,darray,
-                                 input_core_dims = [[f_dim]],
-                                 output_core_dims = [[f_dim]])
+        ret = xarray.apply_ufunc(np.fft.irfft, darray,
+                                 input_core_dims=[[f_dim]],
+                                 output_core_dims=[[f_dim]])
         ret = ret.real
     else:
-        ret = xarray.apply_ufunc(np.fft.ifft,darray,
-                                 input_core_dims = [[f_dim]],
-                                 output_core_dims = [[f_dim]])
-        ret = ret.real    
+        ret = xarray.apply_ufunc(np.fft.ifft, darray,
+                                 input_core_dims=[[f_dim]],
+                                 output_core_dims=[[f_dim]])
+        ret = ret.real
     ret.name = 'ifft_' + darray.name
     f = ret.coords[f_dim]
     df = f[1] - f[0]
     dt = 1.0 / (df * darray.shape[axis])
-    lag =  f /df * dt
+    lag = f / df * dt
     ret.coords['lag'] = lag
     return ret.swap_dims({f_dim: 'lag'}).isel(lag=lag.argsort().values)
 
@@ -292,7 +294,7 @@ def xcorrelation(darray, other_darray, normalize=True, fs=None, seglen=None,
         for sig in (darray, other_darray):
             sig_std = psd(sig, fs, seglen, overlap_ratio, window, nperseg,
                           noverlap, nfft, detrend, return_onesided=False,
-                          scaling='spectrum', dim=dim, mode='psd').mean(dim=_FREQUENCY_DIM)**0.5
+                          scaling='spectrum', dim=dim, mode='psd').mean(dim=_FREQUENCY_DIM) ** 0.5
             norm = norm * sig_std
         xcorr /= norm
     return xcorr
@@ -353,6 +355,7 @@ def psd(darray, fs=None, seglen=None, overlap_ratio=0.5, window='hann',
     Pxx.name = 'psd_{}'.format(darray.name)
     return Pxx
 
+
 # TODO f_res
 @_add2docstring_common_params
 def coherogram(darray, other_darray, fs=None, seglen=None, overlap_ratio=0.5,
@@ -391,8 +394,8 @@ def coherogram(darray, other_darray, fs=None, seglen=None, overlap_ratio=0.5,
     dim = get_maybe_only_dim(darray, dim)
     rol_kw = {dim: nrolling, 'center': True}
     coh = (Pxy.rolling(**rol_kw).mean() /
-           (Pxx.rolling(**rol_kw).mean() * Pyy.rolling(**rol_kw).mean())**0.5)
-    coh.dropna(dim=dim)         # drop nan from averaging edges
+           (Pxx.rolling(**rol_kw).mean() * Pyy.rolling(**rol_kw).mean()) ** 0.5)
+    coh.dropna(dim=dim)  # drop nan from averaging edges
     coh.name = 'coherogram_{}_{}'.format(darray.name, other_darray.name)
     return coh
 
@@ -419,11 +422,11 @@ def coherence(darray, other_darray, fs=None, seglen=None, overlap_ratio=0.5,
         It is complex and abs(coh)**2 is the squared magnitude coherohram.
     """
     Pxx = psd(darray, fs, seglen, overlap_ratio, window, nperseg,
-                      noverlap, nfft, detrend, dim=dim)
+              noverlap, nfft, detrend, dim=dim)
     Pyy = psd(other_darray, fs, seglen, overlap_ratio, window, nperseg,
-                      noverlap, nfft, detrend, dim=dim)
+              noverlap, nfft, detrend, dim=dim)
     Pxy = csd(darray, other_darray, fs, seglen, overlap_ratio,
-                           window, nperseg, noverlap, nfft, detrend, dim=dim)
+              window, nperseg, noverlap, nfft, detrend, dim=dim)
     coh = Pxy / np.sqrt(Pxx * Pyy)  # magnitude squared coherence
     coh.name = 'coherence_{}_{}'.format(darray.name, other_darray.name)
     return coh
@@ -455,22 +458,21 @@ def hilbert(darray, N=None, dim=None):
     if N_unspecified:
         N = next_fast_len(n_orig)
     out = xarray.apply_ufunc(_hilbert_wraper, darray,
-                              input_core_dims = [[dim]],
-                              output_core_dims = [[dim]],
-                              kwargs=dict(N = N, n_orig = n_orig, N_unspecified = N_unspecified))
+                             input_core_dims=[[dim]],
+                             output_core_dims=[[dim]],
+                             kwargs=dict(N=N, n_orig=n_orig, N_unspecified=N_unspecified))
 
     return out
 
 
-def _hilbert_wraper(darray, N, n_orig, N_unspecified, axis = -1):
+def _hilbert_wraper(darray, N, n_orig, N_unspecified, axis=-1):
     """
     Hilbert wraper used to keep the signal dimension length constant
     """
-    out = scipy.signal.hilbert(np.asarray(darray), N, axis = axis)
+    out = scipy.signal.hilbert(np.asarray(darray), N, axis=axis)
 
     if n_orig != N and N_unspecified:
         sl = [slice(None)] * out.ndim
         sl[axis] = slice(None, n_orig)
         out = out[sl]
     return out
-

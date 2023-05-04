@@ -1,4 +1,3 @@
-
 Scipy for Xarray
 ================
 

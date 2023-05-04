@@ -1,10 +1,8 @@
 import xarray as xr
 
-
 # Used as the key corresponding to a DataArray's variable when converting
 # arbitrary DataArray objects to datasets
 _TEMP_DIM = xr.core.utils.ReprObject('<temporal-dim>')
-
 
 
 def wrap_dataset(func, y, *dims, **kwargs):

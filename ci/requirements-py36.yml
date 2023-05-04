@@ -10,5 +10,5 @@ dependencies:
   - scipy
   - xarray
   - pip:
-    - coveralls
-    - pytest-cov
+      - coveralls
+      - pytest-cov

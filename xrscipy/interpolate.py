@@ -1,12 +1,14 @@
 from __future__ import absolute_import, division, print_function
-from functools import partial
+
 from collections import OrderedDict
-from scipy import interpolate
+from functools import partial
+
 import numpy as np
 import xarray as xr
+from scipy import interpolate
+
 from . import errors
 from .docs import DocParser
-
 
 _THIS_ARRAY = xr.core.utils.ReprObject('<this-array>')
 _SAMPLE_DIM = "__sample_dim__"
@@ -294,8 +296,8 @@ def _inject_doc_1d(func, func_name, description=None):
 
     doc.insert_see_also(**{
         'scipy.interpolate.' + func_name:
-        'scipy.interpolate.' + func_name +
-        ' : Original scipy implementation\n'})
+            'scipy.interpolate.' + func_name +
+            ' : Original scipy implementation\n'})
 
     # inject
     func.__doc__ = str(doc)
@@ -305,7 +307,7 @@ def _inject_doc_1d(func, func_name, description=None):
 interp1d = partial(_wrap_interp1d, interpolate.interp1d)
 _inject_doc_1d(interp1d, 'interp1d',
                description='interp1d(obj, coord, kind=\'linear\', copy=True, '
-               'bounds_error=None, fill_value=nan, assume_sorted=False)')
+                           'bounds_error=None, fill_value=nan, assume_sorted=False)')
 
 PchipInterpolator = partial(_wrap_interp1d, interpolate.PchipInterpolator)
 _inject_doc_1d(PchipInterpolator, 'PchipInterpolator',
@@ -318,7 +320,7 @@ _inject_doc_1d(Akima1DInterpolator, 'Akima1DInterpolator',
 CubicSpline = partial(_wrap_interp1d, interpolate.CubicSpline)
 _inject_doc_1d(CubicSpline, 'CubicSpline',
                description='CubicSpline(obj, coord, bc_type=\'not-a-knot\', '
-               'extrapolate=None)')
+                           'extrapolate=None)')
 
 
 def _wrap_interp_nd(interp_cls, grid, obj, *coords, **kwargs):
@@ -363,7 +365,7 @@ def _inject_doc_nd(func, func_name, description=None):
     doc.add_params(
         obj='obj : xarray object\n',
         coord='*coord : strings\n    '
-        'Coordinates along which to interpolate.\n')
+              'Coordinates along which to interpolate.\n')
     doc.reorder_params('obj', 'coord')
     doc.remove_params('points', 'values', 'x', 'y')
 
@@ -374,8 +376,8 @@ def _inject_doc_nd(func, func_name, description=None):
 
     doc.insert_see_also(**{
         'scipy.interpolate.' + func_name:
-        'scipy.interpolate.' + func_name +
-        ' : Original scipy implementation\n'})
+            'scipy.interpolate.' + func_name +
+            ' : Original scipy implementation\n'})
 
     # inject
     func.__doc__ = str(doc)
@@ -386,7 +388,7 @@ LinearNDInterpolator = partial(_wrap_interp_nd,
                                interpolate.LinearNDInterpolator, False)
 _inject_doc_nd(LinearNDInterpolator, 'LinearNDInterpolator',
                description='LinearNDInterpolator(obj, *coords, '
-               'fill_value=np.nan, rescale=False)')
+                           'fill_value=np.nan, rescale=False)')
 
 NearestNDInterpolator = partial(_wrap_interp_nd,
                                 interpolate.NearestNDInterpolator, False)
@@ -397,13 +399,13 @@ CloughTocher2DInterpolator = partial(
     _wrap_interp_nd, interpolate.CloughTocher2DInterpolator, False)
 _inject_doc_nd(CloughTocher2DInterpolator, 'CloughTocher2DInterpolator',
                description='CloughTocher2DInterpolator(obj, *coords, '
-               'fill_value=np.nan, tol=False, maxiter, rescale)')
+                           'fill_value=np.nan, tol=False, maxiter, rescale)')
 
 RegularGridInterpolator = partial(
     _wrap_interp_nd, interpolate.RegularGridInterpolator, True)
 _inject_doc_nd(RegularGridInterpolator, 'RegularGridInterpolator',
                description='RegularGridInterpolator(obj, *coords, '
-               'method=\'linear\', bounds_error=True, fill_value=nan)')
+                           'method=\'linear\', bounds_error=True, fill_value=nan)')
 
 
 def _wrap_griddata(func, obj, coords, new_coords, **kwargs):

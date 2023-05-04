@@ -1,9 +1,8 @@
 from __future__ import absolute_import, division, print_function
 
 import numpy as np
-import scipy as sp
 import pytest
-
+import scipy as sp
 import xarray as xr
 
 from xrscipy import interpolate
@@ -66,10 +65,10 @@ def get_obj_for_interp(mode):
     pi4 = 4 * np.pi
 
     def func1(x, y):
-        return x * (1 - x)*np.cos(pi4 * x) * np.sin(pi4 * y**2)**2
+        return x * (1 - x) * np.cos(pi4 * x) * np.sin(pi4 * y ** 2) ** 2
 
     def func2(x, y):
-        return x * (1 - x)*np.cos(pi4 * x**2) * np.sin(pi4 * y)**2
+        return x * (1 - x) * np.cos(pi4 * x ** 2) * np.sin(pi4 * y) ** 2
 
     x = rng.rand(100)
     y = rng.rand(100)
@@ -94,7 +93,7 @@ def get_obj_for_interp(mode):
     elif mode == 2:  # should work with 1 dimensional case
         da = xr.DataArray(func1(x, 0.2), dims=['a'], coords={'x': ('a', x)})
         grid_x_da = xr.DataArray(np.linspace(0, 1, 200), dims=['b'], name='xx')
-        return da, (grid_x_da, )
+        return da, (grid_x_da,)
 
     elif mode == 3:  # should work with multivariate values
         values = np.stack([func1(x, y), func2(x, y)], axis=0)
@@ -168,10 +167,10 @@ def get_obj_grid(mode):
     pi4 = 4 * np.pi
 
     def func1(x, y):
-        return x * (1 - x)*np.cos(pi4 * x) * np.sin(pi4 * y**2)**2
+        return x * (1 - x) * np.cos(pi4 * x) * np.sin(pi4 * y ** 2) ** 2
 
     def func2(x, y):
-        return x * (1 - x)*np.cos(pi4 * x**2) * np.sin(pi4 * y)**2
+        return x * (1 - x) * np.cos(pi4 * x ** 2) * np.sin(pi4 * y) ** 2
 
     if mode == 0:
         x = np.linspace(0, 1, 10)
@@ -214,7 +213,7 @@ def test_griddata(mode):
         actual = interpolate.griddata(obj, ('x', 'y'), grid_das)
         points = np.stack([obj['x'], obj['y']], axis=-1)
     elif mode in [2]:
-        actual = interpolate.griddata(obj, ('x', ), grid_das)
+        actual = interpolate.griddata(obj, ('x',), grid_das)
         points = np.stack([obj['x'], ], axis=-1)
     elif mode == 4:
         actual = interpolate.griddata(obj, ('x', 'y'), grid_das)

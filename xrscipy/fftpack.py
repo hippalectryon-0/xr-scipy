@@ -1,11 +1,13 @@
 from __future__ import absolute_import, division, print_function
+
 from functools import partial
 
 import numpy as np
 from scipy import fftpack
+
 from . import errors
-from .fft import _wrap1d, _wrapnd
 from .docs import DocParser
+from .fft import _wrap1d, _wrapnd
 
 
 def _get_spacing(x):
@@ -16,7 +18,7 @@ def _get_spacing(x):
     mean = dx.mean()
     jitter = dx.std()
 
-    if np.abs(jitter / mean) > 1e-4:     # heuristic value
+    if np.abs(jitter / mean) > 1e-4:  # heuristic value
         raise ValueError('Coordinate for FFT should be evenly spaced.')
 
     return mean
@@ -42,18 +44,18 @@ def _inject_docs(func, func_name, description=None, nd=False):
         doc.replace_params(
             x='obj : xarray object\n' + doc.parameters['x'][1],
             axis='coord : string\n' +
-            doc.parameters['axis'][1].split(';')[0].replace('Axis',
-                                                            'Coordinate') +
-            '.\n    The coordinate must be evenly spaced.\n')
+                 doc.parameters['axis'][1].split(';')[0].replace('Axis',
+                                                                 'Coordinate') +
+                 '.\n    The coordinate must be evenly spaced.\n')
     else:
         doc.replace_params(
             x='obj : xarray object\n' +
-            '    Object which the transform is applied.\n',
+              '    Object which the transform is applied.\n',
             axes='coords : string\n' +
-            '    Coordinates along which the transform is applied.\n'
-            '    The coordinate must be evenly spaced.\n',
+                 '    Coordinates along which the transform is applied.\n'
+                 '    The coordinate must be evenly spaced.\n',
             shape='shape : mapping from coords to size, optional\n'
-            '    The shape of the result.')
+                  '    The shape of the result.')
 
     doc.remove_params('overwrite_x')
     doc.reorder_params('obj', 'coord')
@@ -71,7 +73,7 @@ def _inject_docs(func, func_name, description=None, nd=False):
 
     doc.insert_see_also(**{
         'scipy.fftpack.' + func_name:
-        'scipy.fftpack.' + func_name + ' : Original scipy implementation\n'})
+            'scipy.fftpack.' + func_name + ' : Original scipy implementation\n'})
 
     # inject
     func.__doc__ = str(doc)

@@ -1,9 +1,10 @@
 from __future__ import absolute_import, division, print_function
 
 from functools import partial
-from scipy import integrate
 
 import xarray as xr
+from scipy import integrate
+
 from . import errors
 from . import utils
 from .docs import DocParser
@@ -68,7 +69,7 @@ def inject_docs(func, func_name, description=None):
 
     doc.insert_see_also(**{
         'scipy.integrate.' + func_name:
-        'scipy.integrate.' + func_name + ' : Original scipy implementation\n'})
+            'scipy.integrate.' + func_name + ' : Original scipy implementation\n'})
 
     # inject
     func.__doc__ = str(doc)

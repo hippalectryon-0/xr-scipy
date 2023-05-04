@@ -1,9 +1,9 @@
 from __future__ import absolute_import, division, print_function
+
 from collections import OrderedDict
 from textwrap import dedent as dedent_
 
 from . import errors
-
 
 SECTIONS = ['Args', 'Arguments', 'Attributes', 'Example', 'Examples',
             'Keyword Args', 'Keyword Arguments', 'Note', 'Notes', 'Methods',
@@ -20,7 +20,7 @@ def dedent(string):
     if string is None:
         return string
     first_line = string.split('\n')[0]
-    from_second = dedent_(string[len(first_line)+1:])
+    from_second = dedent_(string[len(first_line) + 1:])
     return dedent_(first_line) + '\n' + from_second
 
 

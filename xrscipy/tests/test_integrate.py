@@ -1,13 +1,12 @@
 from __future__ import absolute_import, division, print_function
 
-import scipy as sp
 import pytest
+import scipy as sp
 import xarray as xr
 
 from xrscipy import integrate
 from xrscipy.docs import DocParser
 from .testings import get_obj
-
 
 _trapz_funcs = [integrate.trapz]
 _trapz_names = ['trapz']

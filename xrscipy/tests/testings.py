@@ -15,7 +15,7 @@ def get_obj(mode):
         coords['x'] = np.arange(shapes[0]) * 0.2
         if ndim >= 2:
             coords['z'] = np.linspace(0, 1, shapes[2])
-        coords['time'] = ('x', ), np.linspace(0, 1, shapes[0])
+        coords['time'] = ('x',), np.linspace(0, 1, shapes[0])
         da = xr.DataArray(rng.randn(*shapes[:ndim]), dims=dims[:ndim],
                           coords=coords)
         da.attrs['comment'] = 'dummy comment.'

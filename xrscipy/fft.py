@@ -1,9 +1,11 @@
 from __future__ import absolute_import, division, print_function
+
 from functools import partial
 
 import numpy as np
-from numpy import fft as fft_
 import xarray as xr
+from numpy import fft as fft_
+
 from . import errors
 from . import utils
 from .docs import DocParser
@@ -17,7 +19,7 @@ def _get_spacing(x):
     mean = dx.mean()
     jitter = dx.std()
 
-    if np.abs(jitter / mean) > 1e-4:     # heuristic value
+    if np.abs(jitter / mean) > 1e-4:  # heuristic value
         raise ValueError('Coordinate for FFT should be evenly spaced.')
 
     return mean
@@ -50,7 +52,7 @@ def _wrap1d(func, freq_func, y, coord, **kwargs):
     if size is None:
         size = len(y[dim])
     freq = freq_func(size, dx)
-    ds[coord] = (dim, ), freq
+    ds[coord] = (dim,), freq
     return ds
 
 
@@ -78,7 +80,7 @@ def _wrapnd(func, freq_func, y, *coords, **kwargs):
         kwargs_tmp = kwargs.copy()
         kwargs_tmp.pop('s', None)
         input_core_dims = [d for d in dims if d in v.dims]
-        kwargs_tmp['axes'] = -np.arange(len(input_core_dims))[::-1]-1
+        kwargs_tmp['axes'] = -np.arange(len(input_core_dims))[::-1] - 1
         if shape is not None:
             kwargs_tmp['s'] = [shape[d] for d in input_core_dims]
         result = xr.apply_ufunc(
@@ -94,7 +96,7 @@ def _wrapnd(func, freq_func, y, *coords, **kwargs):
         if size is None:
             size = len(y[d])
         freq = freq_func(size, dx)
-        ds[c] = (d, ), freq
+        ds[c] = (d,), freq
     return ds
 
 
@@ -108,17 +110,17 @@ def _inject_docs(func, func_name, description=None, nd=False):
         doc.replace_params(
             a='a : xarray object\n    The data tp transform.',
             axis='coord : string\n' +
-            '    The axis along which the transform is applied. ' +
-            '.\n    The coordinate must be evenly spaced.\n')
+                 '    The axis along which the transform is applied. ' +
+                 '.\n    The coordinate must be evenly spaced.\n')
     else:
         doc.replace_params(
             a='a : xarray object\n' +
-            '    Object which the transform is applied.\n',
+              '    Object which the transform is applied.\n',
             axes='coords : string\n' +
-            '    Coordinates along which the transform is applied.\n'
-            '    The coordinate must be evenly spaced.\n',
+                 '    Coordinates along which the transform is applied.\n'
+                 '    The coordinate must be evenly spaced.\n',
             s='s: mapping from coords to size, optional\n'
-            '    The shape of the result.')
+              '    The shape of the result.')
 
     doc.reorder_params('a', 'coord')
     doc.remove_sections('Notes', 'Examples')
@@ -136,7 +138,7 @@ def _inject_docs(func, func_name, description=None, nd=False):
 
     doc.insert_see_also(**{
         'numpy.fft.' + func_name:
-        'numpy.fft.' + func_name + ' : Original numpy implementation\n'})
+            'numpy.fft.' + func_name + ' : Original numpy implementation\n'})
 
     # inject
     func.__doc__ = str(doc)
