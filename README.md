@@ -3,13 +3,10 @@
 
 # scipy for xarray
 
-xr-scipy is a thin wrapper of scipy for the
-[xarray](https://docs.xarray.dev) eco-system.
+xr-scipy is a thin wrapper of scipy for the [xarray](https://docs.xarray.dev) eco-system.
 
-Many scipy functions, such as `scipy.integrate.trapz` requires coordinate
-array as an argument.
-xr-scipy wraps these functions to use native coordinate objects of xarray
-and returns an xarray object with the computed data.
+Many scipy functions, such as `scipy.integrate.trapz` requires coordinate array as an argument.
+xr-scipy wraps these functions to use native coordinate objects of xarray and returns an xarray object with the computed data.
 This enables more xarray-oriented data analysis with scipy.
 
 Other usage/options are kept almost the same as the original scipy function.
