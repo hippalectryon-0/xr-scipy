@@ -15,13 +15,12 @@ def test_gradient(mode, edge_order, dim):
 
     axis = da.get_axis_num(da[dim].dims[0])
     actual = gradient(da, dim, edge_order=edge_order)
-    expected = np.gradient(da.values, da[dim].values, edge_order=edge_order,
-                           axis=axis)
+    expected = np.gradient(da.values, da[dim].values, edge_order=edge_order, axis=axis)
 
     assert (actual.values == expected).all()
 
     # make sure the original data does not change
-    da.values.ndim == get_obj(mode).ndim
+    assert da.values.ndim == get_obj(mode).ndim
 
     # make sure the coordinate is propagated
     for key, v in da.coords.items():

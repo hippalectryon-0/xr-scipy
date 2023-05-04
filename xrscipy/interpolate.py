@@ -295,9 +295,7 @@ def _inject_doc_1d(func, func_name, description=None):
         doc.insert_description(description)
 
     doc.insert_see_also(**{
-        'scipy.interpolate.' + func_name:
-            'scipy.interpolate.' + func_name +
-            ' : Original scipy implementation\n'})
+        'scipy.interpolate.' + func_name: f'scipy.interpolate.{func_name} : Original scipy implementation\n'})
 
     # inject
     func.__doc__ = str(doc)
@@ -305,22 +303,16 @@ def _inject_doc_1d(func, func_name, description=None):
 
 
 interp1d = partial(_wrap_interp1d, interpolate.interp1d)
-_inject_doc_1d(interp1d, 'interp1d',
-               description='interp1d(obj, coord, kind=\'linear\', copy=True, '
-                           'bounds_error=None, fill_value=nan, assume_sorted=False)')
+_inject_doc_1d(interp1d, 'interp1d', description='interp1d(obj, coord, kind=\'linear\', copy=True, bounds_error=None, fill_value=nan, assume_sorted=False)')
 
 PchipInterpolator = partial(_wrap_interp1d, interpolate.PchipInterpolator)
-_inject_doc_1d(PchipInterpolator, 'PchipInterpolator',
-               description='PchipInterpolator(obj, coord, extrapolate=None)')
+_inject_doc_1d(PchipInterpolator, 'PchipInterpolator', description='PchipInterpolator(obj, coord, extrapolate=None)')
 
 Akima1DInterpolator = partial(_wrap_interp1d, interpolate.Akima1DInterpolator)
-_inject_doc_1d(Akima1DInterpolator, 'Akima1DInterpolator',
-               description='Akima1DInterpolator(obj, coord)')
+_inject_doc_1d(Akima1DInterpolator, 'Akima1DInterpolator', description='Akima1DInterpolator(obj, coord)')
 
 CubicSpline = partial(_wrap_interp1d, interpolate.CubicSpline)
-_inject_doc_1d(CubicSpline, 'CubicSpline',
-               description='CubicSpline(obj, coord, bc_type=\'not-a-knot\', '
-                           'extrapolate=None)')
+_inject_doc_1d(CubicSpline, 'CubicSpline', description='CubicSpline(obj, coord, bc_type=\'not-a-knot\', extrapolate=None)')
 
 
 def _wrap_interp_nd(interp_cls, grid, obj, *coords, **kwargs):
@@ -362,10 +354,7 @@ def _inject_doc_nd(func, func_name, description=None):
     except errors.NoDocstringError:
         return
 
-    doc.add_params(
-        obj='obj : xarray object\n',
-        coord='*coord : strings\n    '
-              'Coordinates along which to interpolate.\n')
+    doc.add_params(obj='obj : xarray object\n', coord='*coord : strings\n    Coordinates along which to interpolate.\n')
     doc.reorder_params('obj', 'coord')
     doc.remove_params('points', 'values', 'x', 'y')
 
@@ -374,10 +363,7 @@ def _inject_doc_nd(func, func_name, description=None):
     if description is not None:
         doc.insert_description(description)
 
-    doc.insert_see_also(**{
-        'scipy.interpolate.' + func_name:
-            'scipy.interpolate.' + func_name +
-            ' : Original scipy implementation\n'})
+    doc.insert_see_also(**{'scipy.interpolate.' + func_name: f'scipy.interpolate.{func_name} : Original scipy implementation\n'})
 
     # inject
     func.__doc__ = str(doc)
@@ -386,26 +372,18 @@ def _inject_doc_nd(func, func_name, description=None):
 
 LinearNDInterpolator = partial(_wrap_interp_nd,
                                interpolate.LinearNDInterpolator, False)
-_inject_doc_nd(LinearNDInterpolator, 'LinearNDInterpolator',
-               description='LinearNDInterpolator(obj, *coords, '
-                           'fill_value=np.nan, rescale=False)')
+_inject_doc_nd(LinearNDInterpolator, 'LinearNDInterpolator', description='LinearNDInterpolator(obj, *coords, fill_value=np.nan, rescale=False)')
 
 NearestNDInterpolator = partial(_wrap_interp_nd,
                                 interpolate.NearestNDInterpolator, False)
-_inject_doc_nd(NearestNDInterpolator, 'NearestNDInterpolator',
-               description='NearestNDInterpolator(obj, *coords)')
+_inject_doc_nd(NearestNDInterpolator, 'NearestNDInterpolator', description='NearestNDInterpolator(obj, *coords)')
 
 CloughTocher2DInterpolator = partial(
     _wrap_interp_nd, interpolate.CloughTocher2DInterpolator, False)
-_inject_doc_nd(CloughTocher2DInterpolator, 'CloughTocher2DInterpolator',
-               description='CloughTocher2DInterpolator(obj, *coords, '
-                           'fill_value=np.nan, tol=False, maxiter, rescale)')
+_inject_doc_nd(CloughTocher2DInterpolator, 'CloughTocher2DInterpolator', description='CloughTocher2DInterpolator(obj, *coords, fill_value=np.nan, tol=False, maxiter, rescale)')
 
-RegularGridInterpolator = partial(
-    _wrap_interp_nd, interpolate.RegularGridInterpolator, True)
-_inject_doc_nd(RegularGridInterpolator, 'RegularGridInterpolator',
-               description='RegularGridInterpolator(obj, *coords, '
-                           'method=\'linear\', bounds_error=True, fill_value=nan)')
+RegularGridInterpolator = partial(_wrap_interp_nd, interpolate.RegularGridInterpolator, True)
+_inject_doc_nd(RegularGridInterpolator, 'RegularGridInterpolator', description='RegularGridInterpolator(obj, *coords, method=\'linear\', bounds_error=True, fill_value=nan)')
 
 
 def _wrap_griddata(func, obj, coords, new_coords, **kwargs):
@@ -454,12 +432,9 @@ def _wrap_griddata(func, obj, coords, new_coords, **kwargs):
             return target_func_copy(
                 np.array(points), np.array(values), np.array(xi), **kwargs)
 
-        target_func = np.vectorize(
-            func_vectorized, signature='(m,d),(m),(n,d)->(n)')
+        target_func = np.vectorize(func_vectorized, signature='(m,d),(m),(n,d)->(n)')
 
-    result = xr.apply_ufunc(target_func, points, obj, dest_arrays,
-                            input_core_dims=[[], ['_points'], []],
-                            output_core_dims=[['_points2']])
+    result = xr.apply_ufunc(target_func, points, obj, dest_arrays, input_core_dims=[[], ['_points'], []], output_core_dims=[['_points2']])
     # append new coordinates
     result.coords.update(dest.coords)
     result = result.set_index('_points2')
@@ -471,8 +446,7 @@ def _wrap_griddata(func, obj, coords, new_coords, **kwargs):
         result = result.rename({'_points2': new_coords[0].dims[0]})
 
     # drop coordinate that is not coordinate in new_coords
-    drop_coords = [c for c in dest.reset_index('_points2').coords
-                   if c not in new_dims and c in result.coords]
+    drop_coords = [c for c in dest.reset_index('_points2').coords if c not in new_dims and c in result.coords]
     for c in drop_coords:
         del result[c]
     return result

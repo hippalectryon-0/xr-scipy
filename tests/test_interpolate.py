@@ -1,5 +1,3 @@
-from __future__ import absolute_import, division, print_function
-
 import numpy as np
 import pytest
 import scipy as sp
@@ -10,8 +8,7 @@ from .testings import get_obj
 
 
 @pytest.mark.parametrize('mode', [0, 1])
-@pytest.mark.parametrize('func', ['interp1d', 'PchipInterpolator',
-                                  'Akima1DInterpolator', 'CubicSpline'])
+@pytest.mark.parametrize('func', ['interp1d', 'PchipInterpolator', 'Akima1DInterpolator', 'CubicSpline'])
 @pytest.mark.parametrize('coord', ['x', 'time'])
 def test_interpolate1d(mode, func, coord):
     da = get_obj(mode)
@@ -19,12 +16,11 @@ def test_interpolate1d(mode, func, coord):
 
     axis = da.get_axis_num(da[coord].dims[0])
     actual = getattr(interpolate, func)(da, coord)(new_x)
-    expected = getattr(sp.interpolate, func)(x=da[coord].values, y=da.values,
-                                             axis=axis)(new_x)
+    expected: np.ndarray = getattr(sp.interpolate, func)(x=da[coord].values, y=da.values, axis=axis)(new_x)
     assert (actual.values == expected).all()
 
     # make sure the original data does not change
-    da.values.ndim == get_obj(mode).ndim
+    assert da.values.ndim == get_obj(mode).ndim
 
     # make sure the coordinate is propagated
     for key, v in da.coords.items():
@@ -74,8 +70,7 @@ def get_obj_for_interp(mode):
     y = rng.rand(100)
 
     if mode in [0, 1, 5]:
-        da = xr.DataArray(func1(x, y), dims=['a'],
-                          coords={'x': ('a', x), 'y': ('a', y)})
+        da = xr.DataArray(func1(x, y), dims=['a'], coords={'x': ('a', x), 'y': ('a', y)})
         if mode == 0:
             grid_x, grid_y = np.mgrid[0:1:100j, 0:1:200j]
             grid_x_da = xr.DataArray(grid_x, dims=['b', 'c'], name='xx')
@@ -88,6 +83,8 @@ def get_obj_for_interp(mode):
             grid = np.linspace(0, 1, 200)
             grid_x_da = xr.DataArray(grid, dims=['b'], name='xx')
             grid_y_da = xr.DataArray(grid, dims=['b'])
+        else:
+            raise ValueError
         return da, (grid_x_da, grid_y_da)
 
     elif mode == 2:  # should work with 1 dimensional case
@@ -121,8 +118,7 @@ def get_obj_for_interp(mode):
 
 
 @pytest.mark.parametrize('mode', [0, 1, 3, 4, 5, 6])
-@pytest.mark.parametrize(
-    'func', ['LinearNDInterpolator', 'NearestNDInterpolator'])
+@pytest.mark.parametrize('func', ['LinearNDInterpolator', 'NearestNDInterpolator'])
 def test_interpolate_nd(mode, func):
     obj, grid_das = get_obj_for_interp(mode)
     obj_values = obj.values
@@ -143,15 +139,17 @@ def test_interpolate_nd(mode, func):
     xi = np.stack(xr.broadcast(*grid_das), axis=-1)
 
     if mode == 3:
+        # noinspection PyUnboundLocalVariable
         expected = np.stack(
-            [getattr(sp.interpolate, func)(points, v)(xi)
-             for v in obj_values], axis=0)
+            [getattr(sp.interpolate, func)(points, v)(xi) for v in obj_values], axis=0)
     else:
+        # noinspection PyUnboundLocalVariable
         expected = getattr(sp.interpolate, func)(points, obj_values)
         expected = expected(xi)
 
     if len(grid_das) == 1:
         expected = np.squeeze(expected, axis=-1)
+    # noinspection PyUnboundLocalVariable
     assert np.allclose(actual.values, expected, equal_nan=True)
 
     if mode == 1:
@@ -168,9 +166,6 @@ def get_obj_grid(mode):
 
     def func1(x, y):
         return x * (1 - x) * np.cos(pi4 * x) * np.sin(pi4 * y ** 2) ** 2
-
-    def func2(x, y):
-        return x * (1 - x) * np.cos(pi4 * x ** 2) * np.sin(pi4 * y) ** 2
 
     if mode == 0:
         x = np.linspace(0, 1, 10)
@@ -225,13 +220,15 @@ def test_griddata(mode):
     xi = np.stack(xr.broadcast(*grid_das), axis=-1)
 
     if mode == 3:
-        expected = np.stack([sp.interpolate.griddata(points, v, xi)
-                             for v in obj_values], axis=0)
+        # noinspection PyUnboundLocalVariable
+        expected = np.stack([sp.interpolate.griddata(points, v, xi) for v in obj_values], axis=0)
     else:
+        # noinspection PyUnboundLocalVariable
         expected = sp.interpolate.griddata(points, obj_values, xi)
 
     if len(grid_das) == 1:
         expected = np.squeeze(expected, axis=-1)
+    # noinspection PyUnboundLocalVariable
     assert np.allclose(actual.values, expected, equal_nan=True)
 
     if mode == 1:

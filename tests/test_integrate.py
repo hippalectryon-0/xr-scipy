@@ -1,5 +1,4 @@
-from __future__ import absolute_import, division, print_function
-
+import numpy as np
 import pytest
 import scipy as sp
 import xarray as xr
@@ -31,12 +30,11 @@ def test_integrate(mode, func, dim):
     kwargs = {}
     if func in _cumtrapz_names:
         kwargs['initial'] = 0
-    expected = getattr(sp.integrate, func)(da.values, x=da[dim].values,
-                                           axis=axis, **kwargs)
+    expected: np.ndarray = getattr(sp.integrate, func)(da.values, x=da[dim].values, axis=axis, **kwargs)
     assert (actual.values == expected).all()
 
     # make sure the original data does not change
-    da.values.ndim == get_obj(mode).ndim
+    assert da.values.ndim == get_obj(mode).ndim
 
     # make sure the coordinate is propagated
     for key, v in da.coords.items():
