@@ -453,7 +453,7 @@ def hilbert(darray, N=None, dim=None):
         Analytic signal of the Hilbert transform of 'darray' along selected axis.
     """
     dim = get_maybe_only_dim(darray, dim)
-    n_orig = darray.shape[axis]
+    n_orig = darray.shape[dim]
     N_unspecified = N is None
     if N_unspecified:
         N = next_fast_len(n_orig)
