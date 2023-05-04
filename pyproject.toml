@@ -23,6 +23,8 @@ scipy = ">=1.0"
 [tool.poetry.group.dev.dependencies]
 pytest-cov = "^4.0.0"
 flake8 = "^6.0.0"
+sphinx = "^6.0.0"
+sphinx-rtd-theme = "1.2.0"
 
 [build-system]
 requires = ["poetry-core"]

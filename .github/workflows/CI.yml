@@ -35,9 +35,13 @@ jobs:
 
       - name: Run Tests
         run: |
-          poetry run pytest tests --cov=xrscipy --cov-config=ci/.coveragerc --cov-report=xml --cov-report=term-missing
+          poetry run pytest tests --cov=xrscipy --cov-config=.coveragerc --cov-report=xml --cov-report=term-missing
 
       - name: Upload coverage
         uses: codecov/codecov-action@v2
         with:
           fail_ci_if_error: true
+
+      - name: Build docs
+        run: |
+          sphinx-build -n -b html -d _build/doctrees docs docs/_build/html
