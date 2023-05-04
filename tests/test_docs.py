@@ -1,11 +1,10 @@
-from __future__ import absolute_import, division, print_function
-
+"""test docs"""
 from textwrap import dedent
 
 from xrscipy import docs
 
 
-def example_func(a, b):
+def example_func(_a, _b):
     """
     An example of function.
 
@@ -13,9 +12,9 @@ def example_func(a, b):
 
     Parameters
     ----------
-    a : int
+    _a : int
         An example argument.
-    b : float
+    _b : float
         Another example argument
 
     See Also
@@ -31,7 +30,6 @@ def example_func(a, b):
 
 def test_doc_parser():
     parser = docs.DocParser(example_func.__doc__)
-    print(parser)
     assert repr(parser) == dedent(example_func.__doc__)
 
-    parser.replace_params(a='c : int\n    Replaced parameter.\n')
+    parser.replace_params(_a='_c : int\n    Replaced parameter.\n')

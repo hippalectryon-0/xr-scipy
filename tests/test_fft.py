@@ -1,5 +1,3 @@
-from __future__ import absolute_import, division, print_function
-
 import numpy as np
 import pytest
 import scipy as sp
@@ -20,15 +18,15 @@ def test_fft1d(mode, module, func, dim, n):
     axis = da.get_axis_num(da[dim].dims[0])
     if module == 'fftpack':
         actual = getattr(fftpack, func)(da, dim, n=n)
-        expected = getattr(sp.fftpack, func)(da, n, axis=axis)
+        expected = getattr(sp.fftpack, func)(da.values, n, axis=axis)
     else:
         actual = getattr(fft, func)(da, dim, n=n)
-        expected = getattr(np.fft, func)(da, n, axis=axis)
+        expected: np.ndarray = getattr(np.fft, func)(da.values, n, axis=axis)
 
     assert (actual.values == expected).all()
 
     # make sure the original data does not change
-    da.values.shape == get_obj(mode).shape
+    assert da.values.shape == get_obj(mode).shape
 
     # make sure the coordinate is propagated
     for key, v in da.coords.items():
@@ -38,7 +36,6 @@ def test_fft1d(mode, module, func, dim, n):
     # make sure it can be indexed
     d = da[dim].dims[0]
     assert len(da[dim]) == len(da[d])
-    np.abs(actual)
 
 
 @pytest.mark.parametrize('mode', [1])
@@ -50,23 +47,22 @@ def test_fftnd(mode, module, func, coords, shape):
     da = get_obj(mode)
 
     if shape is not None and coords == ['x']:
-        pytest.skip('shape have invalid val.')
+        pytest.skip('invalid shape')
 
     axes = [da.get_axis_num(da[c].dims[0]) for c in coords]
-    shape_sp = [shape[c] if shape is not None and c in shape
-                else da.values.shape[axes[i]] for i, c in enumerate(coords)]
+    shape_sp = [shape[c] if shape is not None and c in shape else da.values.shape[axes[i]] for i, c in enumerate(coords)]
 
     if module == 'fftpack':
         actual = getattr(fftpack, func)(da, *coords, shape=shape)
-        expected = getattr(sp.fftpack, func)(da, axes=axes, shape=shape_sp)
+        expected = getattr(sp.fftpack, func)(da.values, axes=axes, shape=shape_sp)
     else:
         actual = getattr(fft, func)(da, *coords, s=shape)
-        expected = getattr(np.fft, func)(da, axes=axes, s=shape_sp)
+        expected: np.ndarray = getattr(np.fft, func)(da.values, axes=axes, s=shape_sp)
 
     assert (actual.values == expected).all()
 
     # make sure the original data does not change
-    da.values.shape == get_obj(mode).shape
+    assert da.values.shape == get_obj(mode).shape
 
     # make sure the coordinate is propagated
     for key, v in da.coords.items():

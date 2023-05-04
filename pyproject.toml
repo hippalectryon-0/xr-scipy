@@ -16,12 +16,12 @@ classifiers = [
 ]
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = ">=3.9"
 xarray = ">=0.10"
 scipy = ">=1.0"
 
 [tool.poetry.group.dev.dependencies]
-pytest-cov = ">=4.0.0"
+pytest-cov = "^4.0.0"
 flake8 = "^6.0.0"
 
 [build-system]

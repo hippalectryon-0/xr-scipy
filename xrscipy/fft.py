@@ -1,6 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
 from functools import partial
+from typing import Callable
 
 import numpy as np
 import xarray as xr
@@ -25,7 +26,7 @@ def _get_spacing(x):
     return mean
 
 
-def _wrap1d(func, freq_func, y, coord, **kwargs):
+def _wrap1d(func: Callable, freq_func: Callable, y: xr.DataArray, coord: str, **kwargs) -> xr.Dataset:
     """ Wrap function for fft1d """
     errors.raise_invalid_args(['axis', 'overwrite_x'], kwargs)
     errors.raise_not_sorted(y[coord])
@@ -33,16 +34,16 @@ def _wrap1d(func, freq_func, y, coord, **kwargs):
     # In case of dim is a non-dimensional coordinate.
     x = y[coord]
     dim = x.dims[0]
-    output_core_dim = [dim]
-    dx = _get_spacing(x)
 
     kwargs['axis'] = -1
 
-    def apply_func(v):
-        # v: xr.Varaible
-        result = xr.apply_ufunc(
-            func, v, input_core_dims=[[dim]],
-            output_core_dims=[output_core_dim], kwargs=kwargs)
+    def apply_func(v: xr.DataArray) -> xr.DataArray:
+        """
+        Parameters
+        ----------
+        v: xr.Variable
+        """
+        result = xr.apply_ufunc(func, v, input_core_dims=[[dim]], output_core_dims=[[dim]], kwargs=kwargs, exclude_dims={dim})
         return result.set_dims(v.dims)
 
     ds = utils.wrap_dataset(apply_func, y, dim, keep_coords='drop')
@@ -51,19 +52,18 @@ def _wrap1d(func, freq_func, y, coord, **kwargs):
     size = kwargs.pop('n', None)
     if size is None:
         size = len(y[dim])
-    freq = freq_func(size, dx)
+    freq = freq_func(size, _get_spacing(x))
     ds[coord] = (dim,), freq
     return ds
 
 
-def _wrapnd(func, freq_func, y, *coords, **kwargs):
+def _wrapnd(func: Callable, freq_func: Callable, y: xr.DataArray, *coords, **kwargs) -> xr.Dataset:
     """ Wrap function for fftnd """
     errors.raise_invalid_args(['axes', 'overwrite_x'], kwargs)
     shape = kwargs.pop('s', None)
 
     if shape is not None and not isinstance(shape, dict):
-        raise TypeError('shape should be a dict mapping from coord name to '
-                        'size. Given {}.'.format(shape))
+        raise TypeError(f'shape should be a dict mapping from coord name to size. Given {shape}.')
 
     for c in coords:
         errors.raise_not_sorted(y[c])
@@ -71,21 +71,22 @@ def _wrapnd(func, freq_func, y, *coords, **kwargs):
     # In case of dim is a non-dimensional coordinate.
     xs = [y[c] for c in coords]
     dims = [x.dims[0] for x in xs]
-    shape = {d: len(y[d]) if shape is None or c not in shape else shape[c]
-             for d, c in zip(dims, coords)}
+    shape = {d: len(y[d]) if shape is None or c not in shape else shape[c] for d, c in zip(dims, coords)}
     dxs = [_get_spacing(x) for x in xs]
 
-    def apply_func(v):
-        # v: xr.Varaible
+    def apply_func(v: xr.DataArray) -> xr.DataArray:
+        """
+        Parameters
+        ----------
+        v: xr.Variable
+        """
         kwargs_tmp = kwargs.copy()
         kwargs_tmp.pop('s', None)
         input_core_dims = [d for d in dims if d in v.dims]
         kwargs_tmp['axes'] = -np.arange(len(input_core_dims))[::-1] - 1
         if shape is not None:
             kwargs_tmp['s'] = [shape[d] for d in input_core_dims]
-        result = xr.apply_ufunc(
-            func, v, input_core_dims=[input_core_dims],
-            output_core_dims=[input_core_dims], kwargs=kwargs_tmp)
+        result = xr.apply_ufunc(func, v, input_core_dims=[input_core_dims], output_core_dims=[input_core_dims], kwargs=kwargs_tmp, exclude_dims={*input_core_dims})
         return result.set_dims(v.dims)
 
     ds = utils.wrap_dataset(apply_func, y, *dims, keep_coords='drop')

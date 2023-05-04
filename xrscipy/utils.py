@@ -1,3 +1,5 @@
+from typing import Callable
+
 import xarray as xr
 
 # Used as the key corresponding to a DataArray's variable when converting
@@ -5,7 +7,7 @@ import xarray as xr
 _TEMP_DIM = xr.core.utils.ReprObject('<temporal-dim>')
 
 
-def wrap_dataset(func, y, *dims, **kwargs):
+def wrap_dataset(func: Callable, y: xr.Dataset | xr.DataArray, *dims, **kwargs) -> xr.Dataset:
     """
     Wrap Dataset for Array func. If y is Dataset, the func is applied for all
     the data vars if it has dim in its dimension.
@@ -15,16 +17,14 @@ def wrap_dataset(func, y, *dims, **kwargs):
     keep_coords = kwargs.pop('keep_coords', 'apply')
 
     if not isinstance(y, (xr.DataArray, xr.Dataset)):
-        raise TypeError('Invalid data type {} is given.'.format(type(y)))
+        raise TypeError(f'Got invalid data type {type(y)}.')
 
     for d in dims:
         if d not in y.dims:
-            raise ValueError('{} is not a valid dimension for the object. '
-                             'The valid dimension is {}.'.format(d, y.dims))
+            raise ValueError(f'{d} is not a valid dimension for the object. The valid dimension is {y.dims}.')
 
     if isinstance(y, xr.DataArray):
-        result = wrap_dataset(func, y._to_temp_dataset(), *dims,
-                              keep_coords=keep_coords)
+        result = wrap_dataset(func, y._to_temp_dataset(), *dims, keep_coords=keep_coords)
         # Drop unnecessary coordinate.
         da = result[list(result.data_vars.keys())[0]]
         da.name = y.name
