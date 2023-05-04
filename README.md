@@ -4,7 +4,7 @@
 # scipy for xarray
 
 xr-scipy is a thin wrapper of scipy for the
-[xarray](xarray.pydata.org) eco-system.
+[xarray](https://docs.xarray.dev) eco-system.
 
 Many scipy functions, such as `scipy.integrate.trapz` requires coordinate
 array as an argument.

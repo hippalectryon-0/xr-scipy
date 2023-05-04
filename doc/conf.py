@@ -303,6 +303,6 @@ texinfo_documents = [
 intersphinx_mapping = {
     'python': ('https://docs.python.org/3/', None),
     'pandas': ('https://pandas.pydata.org/pandas-docs/stable/', None),
-    'xarray': ('http://xarray.pydata.org/en/stable', None),
+    'xarray': ('https://xarray.pydata.org/en/stable', None),
     'scipy': ('https://docs.scipy.org/doc/scipy/reference', None),
 }
