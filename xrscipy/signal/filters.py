@@ -265,7 +265,7 @@ warnings.filterwarnings('always', category=DecimationWarning)
 
 
 def decimate(darray, q=None, target_fs=None, dim=None, **lowpass_kwargs):
-    '''Decimate signal by given (int) factor or to closest possible target_fs
+    """Decimate signal by given (int) factor or to closest possible target_fs
     along the specified dimension.
 
     Decimation: lowpass to new nyquist frequency and then downsample by factor `q`
@@ -276,7 +276,7 @@ def decimate(darray, q=None, target_fs=None, dim=None, **lowpass_kwargs):
     frequency fs.
 
     If `q` < 2, decimation is skipped and a DecimationWarning is emitted
-    
+
     Parameters
     ----------
     darray : DataArray
@@ -300,7 +300,7 @@ def decimate(darray, q=None, target_fs=None, dim=None, **lowpass_kwargs):
     lowpass_kwargs :
         Arbitrary keyword arguments passed to the lowpass method. See lowpass
         method for further details.
-    '''
+    """
     dim = get_maybe_only_dim(darray, dim)
     if q is None:
         if target_fs is None:
@@ -387,14 +387,14 @@ def savgol_filter(darray, window_length, polyorder, deriv=0, delta=None,
 
 @xarray.register_dataarray_accessor('filt')
 class FilterAccessor(object):
-    '''Accessor exposing common frequency and other filtering methods'''
+    """Accessor exposing common frequency and other filtering methods"""
 
     def __init__(self, darray):
         self.darray = darray
 
     @property
     def dt(self):
-        '''Sampling step of last axis'''
+        """Sampling step of last axis"""
         return get_sampling_step(self.darray)
 
     @property
@@ -404,7 +404,7 @@ class FilterAccessor(object):
 
     @property
     def dx(self):
-        '''Sampling steps for all axes as array'''
+        """Sampling steps for all axes as array"""
         return np.array([get_sampling_step(self.darray, dim) for dim in self.darray.dims])
 
     # NOTE: the arguments are coded explicitly for tab-completion to work,

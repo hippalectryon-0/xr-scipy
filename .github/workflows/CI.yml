@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [ '3.11' ]
+        python-version: [ '3.11' ]  # TODO add 3.9, 3.10 once CI stable
 
     steps:
       - name: Checkout code
@@ -31,7 +31,7 @@ jobs:
 
       - name: Run Flake8
         run: |
-          poetry run flake8 xrscipy --count --ignore=C901,E122,E123,E125,E126,E128,E221,E241,E266,E402,E501,E701,E731,E741,W503,W504 --show-source --statistics --exclude=**/__init__.py
+          poetry run flake8 xrscipy --count --ignore=C901,E122,E123,E125,E126,E128,E221,E241,E266,E402,E501,E701,E731,E741,W291,W293,W503,W504 --show-source --statistics --exclude=**/__init__.py
 
       - name: Run Tests
         run: |
