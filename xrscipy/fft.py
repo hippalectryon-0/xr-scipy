@@ -7,16 +7,13 @@ import numpy as np
 import xarray as xr
 from numpy import fft as fft_
 
-from . import errors
-from . import utils
+from . import errors, utils
 from .docs import DocParser
 
 
 def _get_spacing(x):
     if x.ndim != 1:
-        raise ValueError(
-            f"Coordinate for FFT should be one dimensional. Axis {x.name} is {x.ndim}-dimensional."
-        )
+        raise ValueError(f"Coordinate for FFT should be one dimensional. Axis {x.name} is {x.ndim}-dimensional.")
     dx = np.diff(x)
     mean = dx.mean()
     jitter = dx.std()
@@ -27,9 +24,7 @@ def _get_spacing(x):
     return mean
 
 
-def _wrap1d(
-    func: Callable, freq_func: Callable, y: xr.DataArray, coord: str, **kwargs
-) -> xr.Dataset:
+def _wrap1d(func: Callable, freq_func: Callable, y: xr.DataArray, coord: str, **kwargs) -> xr.Dataset:
     """Wrap function for fft1d"""
     errors.raise_invalid_args(["axis", "overwrite_x"], kwargs)
     errors.raise_not_sorted(y[coord])
@@ -67,17 +62,13 @@ def _wrap1d(
     return ds
 
 
-def _wrapnd(
-    func: Callable, freq_func: Callable, y: xr.DataArray, *coords, **kwargs
-) -> xr.Dataset:
+def _wrapnd(func: Callable, freq_func: Callable, y: xr.DataArray, *coords, **kwargs) -> xr.Dataset:
     """Wrap function for fftnd"""
     errors.raise_invalid_args(["axes", "overwrite_x"], kwargs)
     shape = kwargs.pop("s", None)
 
     if shape is not None and not isinstance(shape, dict):
-        raise TypeError(
-            f"shape should be a dict mapping from coord name to size. Given {shape}."
-        )
+        raise TypeError(f"shape should be a dict mapping from coord name to size. Given {shape}.")
 
     for c in coords:
         errors.raise_not_sorted(y[c])
@@ -85,10 +76,7 @@ def _wrapnd(
     # In case of dim is a non-dimensional coordinate.
     xs = [y[c] for c in coords]
     dims = [x.dims[0] for x in xs]
-    shape = {
-        d: len(y[d]) if shape is None or c not in shape else shape[c]
-        for d, c in zip(dims, coords)
-    }
+    shape = {d: len(y[d]) if shape is None or c not in shape else shape[c] for d, c in zip(dims, coords)}
     dxs = [_get_spacing(x) for x in xs]
 
     def apply_func(v: xr.DataArray) -> xr.DataArray:
@@ -141,11 +129,9 @@ def _inject_docs(func, func_name, description=None, nd=False):
     else:
         doc.replace_params(
             a="a : xarray object\n" + "    Object which the transform is applied.\n",
-            axes="coords : string\n"
-            + "    Coordinates along which the transform is applied.\n"
+            axes="coords : string\n" + "    Coordinates along which the transform is applied.\n"
             "    The coordinate must be evenly spaced.\n",
-            s="s: mapping from coords to size, optional\n"
-            "    The shape of the result.",
+            s="s: mapping from coords to size, optional\n" "    The shape of the result.",
         )
 
     doc.reorder_params("a", "coord")
@@ -155,21 +141,14 @@ def _inject_docs(func, func_name, description=None, nd=False):
     returns = doc.returns.copy()
     for key, item in doc.returns.items():
         returns[key] = [
-            it.replace("ndarray", "xarray object")
-            .replace("axes", "coords")
-            .replace("axis", "coord")
-            for it in item
+            it.replace("ndarray", "xarray object").replace("axes", "coords").replace("axis", "coord") for it in item
         ]
     doc.returns = returns
 
     if description is not None:
         doc.insert_description(description)
 
-    doc.insert_see_also(
-        **{
-            f"numpy.fft.{func_name}": f"numpy.fft.{func_name} : Original numpy implementation\n"
-        }
-    )
+    doc.insert_see_also(**{f"numpy.fft.{func_name}": f"numpy.fft.{func_name} : Original numpy implementation\n"})
 
     # inject
     func.__doc__ = str(doc)
@@ -189,24 +168,16 @@ irfft = partial(_wrap1d, fft_.irfft, fft_.rfftfreq)
 _inject_docs(irfft, "irfft", description="irfft(a, coord, n=None, norm=None)")
 
 fftn = partial(_wrapnd, fft_.fftn, fft_.fftfreq)
-_inject_docs(
-    fftn, "fftn", nd=True, description="fftn(a, *coords, shape=None, norm=None)"
-)
+_inject_docs(fftn, "fftn", nd=True, description="fftn(a, *coords, shape=None, norm=None)")
 
 ifftn = partial(_wrapnd, fft_.ifftn, fft_.fftfreq)
-_inject_docs(
-    ifftn, "ifftn", nd=True, description="ifftn(a, *coords, shape=None, norm=None)"
-)
+_inject_docs(ifftn, "ifftn", nd=True, description="ifftn(a, *coords, shape=None, norm=None)")
 
 rfftn = partial(_wrapnd, fft_.rfftn, fft_.rfftfreq)
-_inject_docs(
-    rfftn, "rfftn", nd=True, description="rfftn(a, *coords, shape=None, norm=None)"
-)
+_inject_docs(rfftn, "rfftn", nd=True, description="rfftn(a, *coords, shape=None, norm=None)")
 
 irfftn = partial(_wrapnd, fft_.irfftn, fft_.rfftfreq)
-_inject_docs(
-    irfftn, "irfftn", nd=True, description="irfftn(a, *coords, shape=None, norm=None)"
-)
+_inject_docs(irfftn, "irfftn", nd=True, description="irfftn(a, *coords, shape=None, norm=None)")
 
 hfft = partial(_wrap1d, fft_.hfft, fft_.rfftfreq)
 _inject_docs(hfft, "hfft", description="hfft(a, coord, n=None, norm=None)")

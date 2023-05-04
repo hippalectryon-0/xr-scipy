@@ -2,8 +2,9 @@ import numpy as np
 import pytest
 import scipy as sp
 
-from xrscipy import fftpack, fft
+from xrscipy import fft, fftpack
 from xrscipy.docs import DocParser
+
 from .testings import get_obj
 
 
@@ -51,8 +52,7 @@ def test_fftnd(mode, module, func, coords, shape):
 
     axes = [da.get_axis_num(da[c].dims[0]) for c in coords]
     shape_sp = [
-        shape[c] if shape is not None and c in shape else da.values.shape[axes[i]]
-        for i, c in enumerate(coords)
+        shape[c] if shape is not None and c in shape else da.values.shape[axes[i]] for i, c in enumerate(coords)
     ]
 
     if module == "fftpack":

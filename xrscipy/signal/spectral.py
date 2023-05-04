@@ -10,7 +10,7 @@ except ImportError:
         return 2 ** int(np.ceil(np.log2(size)))
 
 
-from .utils import get_sampling_step, get_maybe_only_dim
+from .utils import get_maybe_only_dim, get_sampling_step
 
 _FREQUENCY_DIM = "frequency"
 
@@ -291,13 +291,9 @@ def freq2lag(darray, is_onesided=False, f_dim=_FREQUENCY_DIM):
     """
     axis = darray.get_axis_num(f_dim)
     if is_onesided:
-        ret = xr.apply_ufunc(
-            np.fft.irfft, darray, input_core_dims=[[f_dim]], output_core_dims=[[f_dim]]
-        )
+        ret = xr.apply_ufunc(np.fft.irfft, darray, input_core_dims=[[f_dim]], output_core_dims=[[f_dim]])
     else:
-        ret = xr.apply_ufunc(
-            np.fft.ifft, darray, input_core_dims=[[f_dim]], output_core_dims=[[f_dim]]
-        )
+        ret = xr.apply_ufunc(np.fft.ifft, darray, input_core_dims=[[f_dim]], output_core_dims=[[f_dim]])
     ret = ret.real
     ret.name = f"ifft_{darray.name}"
     f = ret.coords[f_dim]
@@ -570,10 +566,7 @@ def coherogram(
     )
     dim = get_maybe_only_dim(darray, dim)
     rol_kw = {dim: nrolling, "center": True}
-    coh = (
-        Pxy.rolling(**rol_kw).mean()
-        / (Pxx.rolling(**rol_kw).mean() * Pyy.rolling(**rol_kw).mean()) ** 0.5
-    )
+    coh = Pxy.rolling(**rol_kw).mean() / (Pxx.rolling(**rol_kw).mean() * Pyy.rolling(**rol_kw).mean()) ** 0.5
     coh.dropna(dim=dim)  # drop nan from averaging edges
     coh.name = f"coherogram_{darray.name}_{other_darray.name}"
     return coh

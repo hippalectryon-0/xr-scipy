@@ -5,8 +5,7 @@ from functools import partial
 import xarray as xr
 from scipy import integrate
 
-from . import errors
-from . import utils
+from . import errors, utils
 from .docs import DocParser
 
 
@@ -47,9 +46,7 @@ def inject_docs(func, func_name, description=None):
 
     if "y" in doc.parameters:
         doc.replace_params(y="obj : xarray object\n" + doc.parameters["y"][1])
-    doc.replace_params(
-        axis="coord : string\n    The coordinate along which to integrate.\n"
-    )
+    doc.replace_params(axis="coord : string\n    The coordinate along which to integrate.\n")
     doc.remove_params("dx", "x")
 
     doc.remove_sections("Notes", "Examples")
@@ -57,10 +54,7 @@ def inject_docs(func, func_name, description=None):
     # update return statement
     returns = doc.returns.copy()
     for key, item in doc.returns.items():
-        returns[key] = [
-            it.replace("ndarray", "xarray object").replace("axis", "coordiante")
-            for it in item
-        ]
+        returns[key] = [it.replace("ndarray", "xarray object").replace("axis", "coordiante") for it in item]
     doc.returns = returns
 
     if description is not None:
@@ -69,9 +63,7 @@ def inject_docs(func, func_name, description=None):
     doc.description = [item.replace("axis", "coordinate") for item in doc.description]
 
     doc.insert_see_also(
-        **{
-            f"scipy.integrate.{func_name}": f"scipy.integrate.{func_name} : Original scipy implementation\n"
-        }
+        **{f"scipy.integrate.{func_name}": f"scipy.integrate.{func_name} : Original scipy implementation\n"}
     )
 
     # inject
@@ -92,9 +84,7 @@ if hasattr(integrate, "simpson"):
     inject_docs(simpson, "simpson", description="simpson(obj, coord, even='avg')")
 
 if hasattr(integrate, "cumulative_trapezoid"):
-    cumulative_trapezoid = partial(
-        _wrap, integrate.cumulative_trapezoid, False, initial=0
-    )
+    cumulative_trapezoid = partial(_wrap, integrate.cumulative_trapezoid, False, initial=0)
     inject_docs(
         cumulative_trapezoid,
         "cumulative_trapezoid",

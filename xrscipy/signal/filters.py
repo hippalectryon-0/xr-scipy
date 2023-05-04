@@ -9,7 +9,7 @@ try:
 except ImportError:
     sosfiltfilt = None
 
-from .utils import get_sampling_step, get_maybe_only_dim
+from .utils import get_maybe_only_dim, get_sampling_step
 
 
 def _firwin_ba(*args, **kwargs):
@@ -105,9 +105,7 @@ def frequency_filter(
         or scipy.signal.firwin.
     """
     if irtype not in _BA_FUNCS:
-        raise ValueError(
-            f"Wrong argument for irtype: {irtype}, must be one of {_BA_FUNCS.keys()}"
-        )
+        raise ValueError(f"Wrong argument for irtype: {irtype}, must be one of {_BA_FUNCS.keys()}")
     if order is None:
         order = _ORDER_DEFAULTS[irtype]
     if apply_kwargs is None:
@@ -116,9 +114,7 @@ def frequency_filter(
     f_crit_norm = np.asarray(f_crit, dtype=np.float)
     if not in_nyq:  # normalize by Nyquist frequency
         f_crit_norm *= 2 * get_sampling_step(darray, dim)
-    if np.any(
-        np.isnan(np.asarray(darray))
-    ):  # only warn since simple forward-filter or FIR is valid
+    if np.any(np.isnan(np.asarray(darray))):  # only warn since simple forward-filter or FIR is valid
         warnings.warn(
             "data contains NaNs, filter will propagate them",
             FilteringNaNWarning,
@@ -342,9 +338,7 @@ def decimate(darray, q=None, target_fs=None, dim=None, **lowpass_kwargs):
         q = int(np.rint(1.0 / (dt * target_fs)))
     if q < 2:  # decimation not possible or useless
         # show warning at caller level to see which signal it is related to
-        warnings.warn(
-            "q factor %i < 2, skipping decimation" % q, DecimationWarning, stacklevel=2
-        )
+        warnings.warn("q factor %i < 2, skipping decimation" % q, DecimationWarning, stacklevel=2)
         return darray
     new_f_nyq = 1.0 / q
     lowpass_kwargs.setdefault("dim", dim)
@@ -454,9 +448,7 @@ class FilterAccessor(object):
     @property
     def dx(self):
         """Sampling steps for all axes as array"""
-        return np.array(
-            [get_sampling_step(self.darray, dim) for dim in self.darray.dims]
-        )
+        return np.array([get_sampling_step(self.darray, dim) for dim in self.darray.dims])
 
     # NOTE: the arguments are coded explicitly for tab-completion to work,
     # using a decorator wrapper with *args would not expose them
@@ -513,9 +505,7 @@ class FilterAccessor(object):
         cval=0.0,
     ):
         """Savitzky-Golay filter, wraps savgol_filter"""
-        return savgol_filter(
-            self.darray, window_length, polyorder, deriv, delta, dim, mode, cval
-        )
+        return savgol_filter(self.darray, window_length, polyorder, deriv, delta, dim, mode, cval)
 
     def decimate(self, q=None, target_fs=None, dim=None, **lowpass_kwargs):
         """Decimate signal, wraps decimate"""

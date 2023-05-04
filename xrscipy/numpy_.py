@@ -42,9 +42,7 @@ def gradient(f, coord, edge_order=1):
 
     def func(v):
         # noinspection PyProtectedMember
-        result = xr.apply_ufunc(
-            gradient, v, input_core_dims=[[dim]], output_core_dims=[[utils._TEMP_DIM]]
-        )
+        result = xr.apply_ufunc(gradient, v, input_core_dims=[[dim]], output_core_dims=[[utils._TEMP_DIM]])
         # noinspection PyProtectedMember
         dims = [d if d != dim else utils._TEMP_DIM for d in v.dims]
         result = result.transpose(*dims)

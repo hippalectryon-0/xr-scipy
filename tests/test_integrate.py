@@ -5,6 +5,7 @@ import xarray as xr
 
 from xrscipy import integrate
 from xrscipy.docs import DocParser
+
 from .testings import get_obj
 
 _trapz_funcs = [integrate.trapz]
@@ -30,9 +31,7 @@ def test_integrate(mode, func, dim):
     kwargs = {}
     if func in _cumtrapz_names:
         kwargs["initial"] = 0
-    expected: np.ndarray = getattr(sp.integrate, func)(
-        da.values, x=da[dim].values, axis=axis, **kwargs
-    )
+    expected: np.ndarray = getattr(sp.integrate, func)(da.values, x=da[dim].values, axis=axis, **kwargs)
     assert (actual.values == expected).all()
 
     # make sure the original data does not change
@@ -65,9 +64,7 @@ def test_integrate_error(trapz_func):
         trapz_func(da, axis="x")
 
 
-@pytest.mark.parametrize(
-    "func", _trapz_names + _cumtrapz_names + _simps_names + _romb_names
-)
+@pytest.mark.parametrize("func", _trapz_names + _cumtrapz_names + _simps_names + _romb_names)
 def test_doc_all(func):
     parser = DocParser(func.__doc__)
 
