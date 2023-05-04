@@ -1,0 +1,30 @@
+[tool.poetry]
+name = "xrscipy"
+version = "0.0.1"
+authors = ["xarray Developers <xarray@googlegroups.com>"]
+license = "Apache"
+description = "Scipy integrated into xarray"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+    "Intended Audience :: Science/Research",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Scientific/Engineering",
+]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+xarray = ">=0.10"
+scipy = ">=1.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = ">=2.7.1"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+
