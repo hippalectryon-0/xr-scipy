@@ -49,4 +49,4 @@ def gradient(f, coord, edge_order=1):
         result.dims = v.dims
         return result
 
-    return utils.wrap_dataset(func, f, dim, keep_coords="keep")
+    return utils.apply_func_to_DAS(func, f, dim, keep_coords="keep")

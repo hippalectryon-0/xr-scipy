@@ -1,6 +1,5 @@
-"""mirrors numpy.fft"""
-import functools
-from typing import Callable, TypeVar
+"""mirrors scipy.fft"""
+from typing import Callable
 
 import numpy as np
 import xarray as xr
@@ -8,64 +7,45 @@ from numpy import fft as fft_
 
 from . import errors, utils
 from .docs import CDParam, DocParser
-
-_F = TypeVar("_F", bound=Callable)
-
-
-def partial(f0: Callable, f1: _F, *args, **kwargs) -> _F:
-    """wrapper around partial that conserves the name of the second function"""
-    f = functools.partial(f0, f1, *args, **kwargs)
-    f.__name__ = f1.__name__
-    return f
+from .utils import _DAS, get_1D_spacing, partial
 
 
-def _get_spacing(x: xr.DataArray):
-    if x.ndim != 1:
-        raise ValueError(f"Coordinate for FFT should be one dimensional. Axis {x.name} is {x.ndim}-dimensional.")
-    dx = np.diff(x)
-    mean = dx.mean()
-    jitter = dx.std()
+def _wrap1d(func: Callable, freq_func: Callable, x: _DAS, coord: str, **kwargs) -> _DAS:
+    """Wrap function for fft1d
 
-    if np.abs(jitter / mean) > 1e-4:  # heuristic value
-        raise ValueError("Coordinate for FFT should be evenly spaced.")
-
-    return mean
-
-
-def _wrap1d(func: Callable, freq_func: Callable, y: xr.DataArray, coord: str, **kwargs) -> xr.Dataset:
-    """Wrap function for fft1d"""
-    errors.raise_invalid_args(["axis", "overwrite_x"], kwargs)
-    errors.raise_not_sorted(y[coord])
+    Parameters
+    ----------
+    coord : str
+        the coord along which to do the transform. Must map to a single dimension.
+    """
+    errors.raise_invalid_args(["axis", "overwrite_x", "workers", "plan"], kwargs)
+    errors.raise_not_sorted(x[coord])
 
     # In case of dim is a non-dimensional coordinate.
-    x = y[coord]
-    dim = x.dims[0]
+    coord_da = x[coord]
+    if len(coord_da.dims) > 1:
+        raise ValueError(f"coord {coord} coresponds to more than one dimension: {coord_da.dims}")
+    dim = coord_da.dims[0]
 
     kwargs["axis"] = -1
 
-    def apply_func(v: xr.DataArray) -> xr.DataArray:
-        """
-        Parameters
-        ----------
-        v: xr.Variable
-        """
+    # noinspection PyMissingOrEmptyDocstring
+    def apply_func_to_da(da: xr.DataArray) -> xr.DataArray:
         result = xr.apply_ufunc(
             func,
-            v,
+            da,
             input_core_dims=[[dim]],
             output_core_dims=[[dim]],
             kwargs=kwargs,
             exclude_dims={dim},
         )
-        return result.set_dims(v.dims)
+        return result.set_dims(da.dims)
 
-    ds = utils.wrap_dataset(apply_func, y, dim, keep_coords="drop")
+    ds = utils.apply_func_to_DAS(apply_func_to_da, x, dim, keep_coords="drop")
 
     # attach frequency coordinate
-    size = kwargs.pop("n", None)
-    if size is None:
-        size = len(y[dim])
-    freq = freq_func(size, _get_spacing(x))
+    size = kwargs.pop("n", len(x[dim]))
+    freq = freq_func(size, get_1D_spacing(coord_da))
     ds[coord] = (dim,), freq
     return ds
 
@@ -85,7 +65,7 @@ def _wrapnd(func: Callable, freq_func: Callable, y: xr.DataArray, *coords, **kwa
     xs = [y[c] for c in coords]
     dims = [x.dims[0] for x in xs]
     shape = {d: len(y[d]) if shape is None or c not in shape else shape[c] for d, c in zip(dims, coords)}
-    dxs = [_get_spacing(x) for x in xs]
+    dxs = [get_1D_spacing(x) for x in xs]
 
     def apply_func(v: xr.DataArray) -> xr.DataArray:
         """
@@ -109,7 +89,7 @@ def _wrapnd(func: Callable, freq_func: Callable, y: xr.DataArray, *coords, **kwa
         )
         return result.set_dims(v.dims)
 
-    ds = utils.wrap_dataset(apply_func, y, *dims, keep_coords="drop")
+    ds = utils.apply_func_to_DAS(apply_func, y, *dims, keep_coords="drop")
 
     # attach frequency coordinate
     for c, d, dx in zip(coords, dims, dxs):
@@ -160,7 +140,7 @@ def _inject_docs(func: Callable, description: str = None, nd: bool = False) -> N
     doc.replace_strings_returns(("ndarray", "xarray object"), ("axes", "coords"), ("axis", "coord"))
 
     doc.insert_description(description)
-    doc.insert_see_also(f"numpy.fft.{func_name} : numpy.fft.{func_name} : Original numpy implementation")
+    doc.insert_see_also(f"scipy.fft.{func_name} : scipy.fft.{func_name} : Original scipy implementation")
 
     # inject
     func.__doc__ = str(doc)

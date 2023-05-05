@@ -35,7 +35,7 @@ def _wrap(func, reduces, y, coord, **kwargs):
         )
         return result if reduces else result.transpose(*y.dims)
 
-    return utils.wrap_dataset(apply_func, y, dim, keep_coords="keep")
+    return utils.apply_func_to_DAS(apply_func, y, dim, keep_coords="keep")
 
 
 def inject_docs(func, func_name, description=None):

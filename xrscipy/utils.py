@@ -1,47 +1,74 @@
-from typing import Callable
+import functools
+from typing import Callable, TypeVar
 
+import numpy as np
 import xarray as xr
+
+from xrscipy.errors import raise_not_1d
 
 # Used as the key corresponding to a DataArray's variable when converting
 # arbitrary DataArray objects to datasets
 _TEMP_DIM = xr.core.utils.ReprObject("<temporal-dim>")
+_DAS = TypeVar("_DAS", xr.DataArray, xr.Dataset)
 
 
-def wrap_dataset(func: Callable, y: xr.Dataset | xr.DataArray, *dims, **kwargs) -> xr.Dataset:
+def apply_func_to_DAS(func: Callable, x: _DAS, *dims, **kwargs) -> _DAS:
     """
-    Wrap Dataset for Array func. If y is Dataset, the func is applied for all
-    the data vars if it has dim in its dimension.
+    Apply func to each DataArray of x (or to x if x is a DataArray).
 
     keep_coords: 'apply' | 'keep' | 'drop'
     """
     keep_coords = kwargs.pop("keep_coords", "apply")
 
-    if not isinstance(y, (xr.DataArray, xr.Dataset)):
-        raise TypeError(f"Got invalid data type {type(y)}.")
+    if not isinstance(x, (xr.DataArray, xr.Dataset)):
+        raise TypeError(f"Got invalid data type {type(x)}.")
 
     for d in dims:
-        if d not in y.dims:
-            raise ValueError(f"{d} is not a valid dimension for the object. The valid dimension is {y.dims}.")
+        if d not in x.dims:
+            raise ValueError(f"{d} is not a valid dimension for the object. The valid dimension are {x.dims}.")
 
-    if isinstance(y, xr.DataArray):
+    if isinstance(x, xr.DataArray):
+        """apply to mock dataset"""
         # noinspection PyProtectedMember
-        result = wrap_dataset(func, y._to_temp_dataset(), *dims, keep_coords=keep_coords)
+        result = apply_func_to_DAS(func, x._to_temp_dataset(), *dims, keep_coords=keep_coords)
         # Drop unnecessary coordinate.
-        da = result[list(result.data_vars.keys())[0]]
-        da.name = y.name
+        da = next(iter(result.data_vars.values()))
+        da.name = x.name
         return da
 
     ds = xr.Dataset({})
     if keep_coords in ["keep", "drop"]:
-        for key in y.data_vars:
-            ds[key] = func(y[key].variable) if any(d in y[key].dims for d in dims) else y[key]
-        for key in y.coords:
-            if keep_coords != "drop" or all(d not in dims for d in y[key].dims):
-                ds.coords[key] = y[key]
+        for key in x.data_vars:
+            ds[key] = func(x[key].variable) if any(d in x[key].dims for d in dims) else x[key]
+        for key in x.coords:
+            if keep_coords != "drop" or all(d not in dims for d in x[key].dims):
+                ds.coords[key] = x[key]
 
     else:  # also applied to coord
-        for key in y.variables:
-            ds[key] = func(y[key].variable) if any(d in y[key].dims for d in dims) else y[key]
-        ds = ds.set_coords(list(y.coords.keys()))
+        for key in x.variables:
+            ds[key] = func(x[key].variable) if any(d in x[key].dims for d in dims) else x[key]
+        ds = ds.set_coords(list(x.coords.keys()))
 
     return ds
+
+
+_F = TypeVar("_F", bound=Callable)
+
+
+def partial(f0: Callable, f1: _F, *args, **kwargs) -> _F:
+    """wrapper around partial that conserves the name of the second function"""
+    f = functools.partial(f0, f1, *args, **kwargs)
+    f.__name__ = f1.__name__
+    return f
+
+
+def get_1D_spacing(x: xr.DataArray) -> float:
+    """get avg. spacing from the da"""
+    raise_not_1d(x)
+    dx = np.diff(x)
+    mean, std = dx.mean(), dx.std()
+
+    if np.abs(std / mean) > 1e-4:  # heuristic value
+        raise ValueError("Coordinate for FFT should be evenly spaced.")
+
+    return mean

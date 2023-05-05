@@ -1,34 +1,11 @@
 """mirrors scipy.fftpack"""
-import functools
-from typing import Callable, TypeVar
+from typing import Callable
 
-import numpy as np
 from scipy import fftpack
 
 from .docs import CDParam, DocParser
 from .fft import _wrap1d, _wrapnd
-
-_F = TypeVar("_F", bound=Callable)
-
-
-def partial(f0: Callable, f1: _F, *args, **kwargs) -> _F:
-    """wrapper around partial that conserves the name of the second function"""
-    f = functools.partial(f0, f1, *args, **kwargs)
-    f.__name__ = f1.__name__
-    return f
-
-
-def _get_spacing(x):
-    if x.ndim != 1:
-        raise ValueError(f"Coordinate for FFT should be one dimensional. Axis {x.name} is {x.ndim}-dimensional.")
-    dx = np.diff(x)
-    mean = dx.mean()
-    jitter = dx.std()
-
-    if np.abs(jitter / mean) > 1e-4:  # heuristic value
-        raise ValueError("Coordinate for FFT should be evenly spaced.")
-
-    return mean
+from .utils import partial
 
 
 def _wrapfftpack(func, freq_func, y, *coords, **kwargs):
