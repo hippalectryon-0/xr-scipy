@@ -28,6 +28,7 @@ jobs:
       - name: Install dependencies
         run: |
           poetry install
+          poetry config virtualenvs.in-project true
 
       - name: Run pre-commit
         run: |
