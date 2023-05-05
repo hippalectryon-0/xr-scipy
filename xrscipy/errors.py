@@ -18,5 +18,5 @@ def raise_not_1d(coord):
         raise ValueError(f"Coordinate should be 1-dimensional. {coord.ndim}-d array is given.")
 
 
-class NoDocstringError(Exception):
+class NoDocstringError(ValueError):
     pass

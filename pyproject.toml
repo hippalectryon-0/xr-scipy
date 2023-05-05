@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "xrscipy"
-version = "0.0.1"
+version = "1.0.0"
 authors = ["xarray Developers <xarray@googlegroups.com>"]
 license = "Apache"
 description = "Scipy integrated into xarray"
@@ -16,9 +16,11 @@ classifiers = [
 ]
 
 [tool.poetry.dependencies]
-python = ">=3.9"
+python = ">=3.9,<4"
 xarray = ">=0.10"
 scipy = ">=1.0"
+docstring-parser = "^0.15"
+urllib3 = ">2"  # poetry bug !!
 
 [tool.poetry.group.dev.dependencies]
 pytest-cov = "^4.0.0"
@@ -26,6 +28,9 @@ flake8 = "^6.0.0"
 sphinx = "^6.0.0"
 sphinx-rtd-theme = "^1.2.0"
 pre-commit = "^3.3.1"
+isort = "5.12.0"
+black = "23.3.00"
+pycln = "2.1.3"
 
 [build-system]
 requires = ["poetry-core"]
