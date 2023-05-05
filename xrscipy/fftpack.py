@@ -1,4 +1,4 @@
-"""mirrors scipy.fftpack"""
+r"""mirrors scipy.fftpack"""
 from typing import Callable
 
 from scipy import fftpack

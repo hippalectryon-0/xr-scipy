@@ -1,4 +1,4 @@
-""".. _integrate:
+r""".. _integrate:
 
 Integration
 ------------------------

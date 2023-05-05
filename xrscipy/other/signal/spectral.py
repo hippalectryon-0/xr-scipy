@@ -1,4 +1,4 @@
-""".. _spectral:
+r""".. _spectral:
 
 Spectral (FFT) analysis
 -----------------------
