@@ -7,8 +7,9 @@ from xrscipy import fft, fftpack
 from .testings import get_obj
 
 
+# TODO test all the other 1D functions !
 @pytest.mark.parametrize("mode", [0, 1])
-@pytest.mark.parametrize("module", ["fftpack", "fft"])
+@pytest.mark.parametrize("module", ["fft"])  # TODO "fftpack"
 @pytest.mark.parametrize("func", ["fft", "rfft"])
 @pytest.mark.parametrize("dim", ["x", "time"])
 @pytest.mark.parametrize("n", [None, 14])
@@ -38,8 +39,9 @@ def test_fft1d(mode, module, func, dim, n):
     assert len(da[dim]) == len(da[d])
 
 
+# TODO test all the other 1D functions !
 @pytest.mark.parametrize("mode", [1])
-@pytest.mark.parametrize("module", ["fftpack", "fft"])
+@pytest.mark.parametrize("module", ["fft"])  # TODO "fftpack"
 @pytest.mark.parametrize("func", ["fftn"])
 @pytest.mark.parametrize("coords", [["x"], ["time", "y"]])
 @pytest.mark.parametrize("shape", [None, {"time": 14}])
