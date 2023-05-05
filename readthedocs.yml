@@ -5,14 +5,7 @@ build:
     tools:
       python: "3.11"
     jobs:
-      pre_create_environment:
-        - asdf plugin add poetry
-        - asdf install poetry latest
-        - asdf global poetry latest
-        - poetry config virtualenvs.create false
       post_install:
-        - poetry install
-
-sphinx:
-  configuration: source/conf.py
-  fail_on_warning: false
+        - pip install poetry==1.2.0b1
+        - poetry config virtualenvs.create false
+        - poetry install --with doc
