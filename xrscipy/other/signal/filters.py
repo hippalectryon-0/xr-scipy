@@ -1,18 +1,17 @@
 import warnings
+from typing import Any, TypeVar
 
 import numpy as np
 import scipy.signal
-import xarray
+import xarray as xr
+from numpy import ndarray
+from numpy._typing import ArrayLike
+from scipy.signal import sosfiltfilt
 
-try:
-    from scipy.signal import sosfiltfilt
-except ImportError:
-    sosfiltfilt = None
-
-from xrscipy.signal.utils import get_maybe_only_dim, get_sampling_step
+from xrscipy.other.signal.utils import get_maybe_only_dim, get_sampling_step
 
 
-def _firwin_ba(*args, **kwargs):
+def _firwin_ba(*args, **kwargs) -> tuple[np.ndarray, ndarray]:
     if not kwargs.get("pass_zero"):
         args = (args[0] + 1,) + args[1:]  # numtaps must be odd
     return scipy.signal.firwin(*args, **kwargs), np.array([1])
@@ -38,16 +37,16 @@ warnings.filterwarnings("always", category=FilteringNaNWarning)
 
 
 def frequency_filter(
-    darray,
-    f_crit,
-    order=None,
-    irtype="iir",
-    filtfilt=True,
-    apply_kwargs=None,
-    in_nyq=False,
-    dim=None,
+    darray: xr.DataArray,
+    f_crit: ArrayLike,
+    order: int = None,
+    irtype: str = "iir",
+    filtfilt: bool = True,
+    apply_kwargs: dict = None,
+    in_nyq: bool = False,
+    dim: str = None,
     **kwargs,
-):
+) -> xr.DataArray:
     """Applies given frequency filter to a darray.
 
     This is a 1-d filter. If the darray is one dimensional, then the dimension
@@ -123,7 +122,7 @@ def frequency_filter(
     if sosfiltfilt and irtype == "iir":  # TODO merge with other if branch
         sos = scipy.signal.iirfilter(order, f_crit_norm, output="sos", **kwargs)
         if filtfilt:
-            ret = xarray.apply_ufunc(
+            ret = xr.apply_ufunc(
                 sosfiltfilt,
                 sos,
                 darray,
@@ -132,7 +131,7 @@ def frequency_filter(
                 kwargs=apply_kwargs,
             )
         else:
-            ret = xarray.apply_ufunc(
+            ret = xr.apply_ufunc(
                 scipy.signal.sosfilt,
                 sos,
                 darray,
@@ -143,7 +142,7 @@ def frequency_filter(
     else:
         b, a = _BA_FUNCS[irtype](order, f_crit_norm, **kwargs)
         if filtfilt:
-            ret = xarray.apply_ufunc(
+            ret = xr.apply_ufunc(
                 scipy.signal.filtfilt,
                 b,
                 a,
@@ -153,7 +152,7 @@ def frequency_filter(
                 kwargs=apply_kwargs,
             )
         else:
-            ret = xarray.apply_ufunc(
+            ret = xr.apply_ufunc(
                 scipy.signal.lfilter,
                 b,
                 a,
@@ -165,7 +164,10 @@ def frequency_filter(
     return ret
 
 
-def _update_ftype_kwargs(kwargs, iirvalue, firvalue):
+_D = TypeVar("_D", bound=dict)
+
+
+def _update_ftype_kwargs(kwargs: _D, iirvalue: Any, firvalue: Any) -> _D:
     if kwargs.get("irtype", "iir") == "iir":
         kwargs.setdefault("btype", iirvalue)
     else:  # fir
@@ -173,7 +175,7 @@ def _update_ftype_kwargs(kwargs, iirvalue, firvalue):
     return kwargs
 
 
-def lowpass(darray, f_cutoff, *args, **kwargs):
+def lowpass(darray: xr.DataArray, f_cutoff: ArrayLike, *args, **kwargs) -> xr.DataArray:
     """Applies lowpass filter to a darray.
 
     This is a 1-d filter. If the darray is one dimensional, then the dimension
@@ -200,7 +202,7 @@ def lowpass(darray, f_cutoff, *args, **kwargs):
     return frequency_filter(darray, f_cutoff, *args, **kwargs)
 
 
-def highpass(darray, f_cutoff, *args, **kwargs):
+def highpass(darray: xr.DataArray, f_cutoff: ArrayLike, *args, **kwargs) -> xr.DataArray:
     """Applies highpass filter to a darray.
 
     This is a 1-d filter. If the darray is one dimensional, then the dimension
@@ -227,7 +229,7 @@ def highpass(darray, f_cutoff, *args, **kwargs):
     return frequency_filter(darray, f_cutoff, *args, **kwargs)
 
 
-def bandpass(darray, f_low, f_high, *args, **kwargs):
+def bandpass(darray: xr.DataArray, f_low: ArrayLike, f_high: ArrayLike, *args, **kwargs) -> xr.DataArray:
     """Applies bandpass filter to a darray.
 
     This is a 1-d filter. If the darray is one dimensional, then the dimension
@@ -256,7 +258,7 @@ def bandpass(darray, f_low, f_high, *args, **kwargs):
     return frequency_filter(darray, [f_low, f_high], *args, **kwargs)
 
 
-def bandstop(darray, f_low, f_high, *args, **kwargs):
+def bandstop(darray: xr.DataArray, f_low: ArrayLike, f_high: ArrayLike, *args, **kwargs) -> xr.DataArray:
     """Applies bandstop filter to a darray.
 
     This is a 1-d filter. If the darray is one dimensional, then the dimension
@@ -293,7 +295,9 @@ class DecimationWarning(Warning):
 warnings.filterwarnings("always", category=DecimationWarning)
 
 
-def decimate(darray, q=None, target_fs=None, dim=None, **lowpass_kwargs):
+def decimate(
+    darray: xr.DataArray, q: ArrayLike = None, target_fs: ArrayLike = None, dim: str = None, **lowpass_kwargs
+) -> xr.DataArray:
     """Decimate signal by given (int) factor or to closest possible target_fs
     along the specified dimension.
 
@@ -349,15 +353,15 @@ def decimate(darray, q=None, target_fs=None, dim=None, **lowpass_kwargs):
 
 
 def savgol_filter(
-    darray,
-    window_length,
-    polyorder,
-    deriv=0,
-    delta=None,
-    dim=None,
-    mode="interp",
-    cval=0.0,
-):
+    darray: xr.DataArray,
+    window_length: int,
+    polyorder: int,
+    deriv: int = 0,
+    delta: float = None,
+    dim: str = None,
+    mode: str = "interp",
+    cval: float = 0.0,
+) -> xr.DataArray:
     """Apply a Savitzky-Golay filter to an array.
 
     This is a 1-d filter.  If `darray` has dimension greater than 1, `dim`
@@ -412,7 +416,7 @@ def savgol_filter(
         window_length = int(np.rint(window_length / delta))
         if window_length % 2 == 0:  # must be odd
             window_length += 1
-    return xarray.apply_ufunc(
+    return xr.apply_ufunc(
         scipy.signal.savgol_filter,
         darray,
         input_core_dims=[[dim]],
@@ -428,57 +432,57 @@ def savgol_filter(
     )
 
 
-@xarray.register_dataarray_accessor("filt")
+@xr.register_dataarray_accessor("filt")
 class FilterAccessor(object):
     """Accessor exposing common frequency and other filtering methods"""
 
-    def __init__(self, darray):
+    def __init__(self, darray: xr.DataArray):
         self.darray = darray
 
     @property
-    def dt(self):
+    def dt(self) -> float:
         """Sampling step of last axis"""
         return get_sampling_step(self.darray)
 
     @property
-    def fs(self):
+    def fs(self) -> float:
         """Sampling frequency in inverse units of self.dt"""
         return 1.0 / self.dt
 
     @property
-    def dx(self):
+    def dx(self) -> np.ndarray:
         """Sampling steps for all axes as array"""
         return np.array([get_sampling_step(self.darray, dim) for dim in self.darray.dims])
 
     # NOTE: the arguments are coded explicitly for tab-completion to work,
     # using a decorator wrapper with *args would not expose them
-    def low(self, f_cutoff, *args, **kwargs):
+    def low(self, f_cutoff: ArrayLike, *args, **kwargs) -> xr.DataArray:
         """Lowpass filter, wraps lowpass"""
         return lowpass(self.darray, f_cutoff, *args, **kwargs)
 
-    def high(self, f_cutoff, *args, **kwargs):
+    def high(self, f_cutoff: ArrayLike, *args, **kwargs) -> xr.DataArray:
         """Highpass filter, wraps highpass"""
         return highpass(self.darray, f_cutoff, *args, **kwargs)
 
-    def bandpass(self, f_low, f_high, *args, **kwargs):
+    def bandpass(self, f_low: ArrayLike, f_high: ArrayLike, *args, **kwargs) -> xr.DataArray:
         """Bandpass filter, wraps bandpass"""
         return bandpass(self.darray, f_low, f_high, *args, **kwargs)
 
-    def bandstop(self, f_low, f_high, *args, **kwargs):
+    def bandstop(self, f_low: ArrayLike, f_high: ArrayLike, *args, **kwargs) -> xr.DataArray:
         """Bandstop filter, wraps bandstop"""
         return bandstop(self.darray, f_low, f_high, *args, **kwargs)
 
     def freq(
         self,
-        f_crit,
-        order=None,
-        irtype="iir",
-        filtfilt=True,
-        apply_kwargs=None,
-        in_nyq=False,
-        dim=None,
+        f_crit: ArrayLike,
+        order: int = None,
+        irtype: str = "iir",
+        filtfilt: bool = True,
+        apply_kwargs: dict = None,
+        in_nyq: bool = False,
+        dim: str = None,
         **kwargs,
-    ):
+    ) -> xr.DataArray:
         """General frequency filter, wraps frequency_filter"""
         return frequency_filter(
             self.darray,
@@ -496,17 +500,19 @@ class FilterAccessor(object):
 
     def savgol(
         self,
-        window_length,
-        polyorder,
-        deriv=0,
-        delta=None,
-        dim=None,
-        mode="interp",
-        cval=0.0,
-    ):
+        window_length: int,
+        polyorder: int,
+        deriv: int = 0,
+        delta: float = None,
+        dim: str = None,
+        mode: str = "interp",
+        cval: float = 0.0,
+    ) -> xr.DataArray:
         """Savitzky-Golay filter, wraps savgol_filter"""
         return savgol_filter(self.darray, window_length, polyorder, deriv, delta, dim, mode, cval)
 
-    def decimate(self, q=None, target_fs=None, dim=None, **lowpass_kwargs):
+    def decimate(
+        self, q: ArrayLike = None, target_fs: ArrayLike = None, dim: str = None, **lowpass_kwargs
+    ) -> xr.DataArray:
         """Decimate signal, wraps decimate"""
         return decimate(self.darray, q, target_fs, dim, **lowpass_kwargs)
