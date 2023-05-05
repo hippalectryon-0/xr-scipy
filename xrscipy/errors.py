@@ -1,22 +1,24 @@
+"""xr-scipy-specific errors"""
+
 import numpy as np
 
 
-def raise_invalid_args(keys, kwargs):
+def raise_invalid_args(keys: list[str], kwargs: dict) -> None:
+    """makes sure keys of <keys> are not in <kwargs>"""
     for key in keys:
-        if kwargs.pop(key, None) is not None:
+        if kwargs.get(key) is not None:
             raise ValueError(f"{key} is not valid key for xr-scipy. Given {kwargs[key]}.")
 
 
-def raise_not_sorted(coord):
+def raise_not_sorted(coord) -> None:
+    """makes sure the array is 1D and sorted"""
     raise_not_1d(coord)
-    if not (np.diff(coord) > 0).all() and not (np.diff(coord) < 0).all():
-        raise ValueError("Coordinate should be sorted first. See xr.sortby.")
+    if (np.diff(coord) > 0).all() or (np.diff(coord) < 0).all():
+        return
+    raise ValueError("Coordinate should be sorted first. See xr.sortby.")
 
 
-def raise_not_1d(coord):
+def raise_not_1d(coord: np.ndarray) -> None:
+    """make sure the array is 1D"""
     if coord.ndim != 1:
         raise ValueError(f"Coordinate should be 1-dimensional. {coord.ndim}-d array is given.")
-
-
-class NoDocstringError(ValueError):
-    pass
