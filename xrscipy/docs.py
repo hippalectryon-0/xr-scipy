@@ -57,20 +57,24 @@ class DocParser:
         else:
             self.parsed_doc.short_description = string
             self.parsed_doc.long_description = (
-                f"{sd}\n{ld}" if self.parsed_doc.long_description else self.parsed_doc.short_description
+                f"{sd}\n\n{ld}" if self.parsed_doc.long_description else self.parsed_doc.short_description
             )
 
     def replace_params(self, **kwargs: CDParam) -> None:
         """replace parameters in the docstring"""
-        for i, e in enumerate(self.parsed_doc.params):
+        for i, e in enumerate(self.parsed_doc.meta):
+            if not isinstance(e, docstring_parser.DocstringParam):
+                continue
             if e.arg_name in kwargs:
-                self.parsed_doc.params[i] = kwargs[e.arg_name]
+                self.parsed_doc.meta[i] = kwargs[e.arg_name]
 
     def remove_params(self, *keys: str) -> None:
         """remove params from docstring"""
-        for i, e in enumerate(list(self.parsed_doc.params)):
+        for i, e in enumerate(self.parsed_doc.meta):
+            if not isinstance(e, docstring_parser.DocstringParam):
+                continue
             if e.arg_name in keys:
-                del self.parsed_doc.params[i]
+                del self.parsed_doc.meta[i]
 
     def remove_sections(self, *keys: str) -> None:
         """remove sections from docstring"""
@@ -80,7 +84,7 @@ class DocParser:
 
     def add_params(self, **kwargs: CDParam) -> None:
         """add params to the docstring"""
-        self.parsed_doc.params.append(*kwargs)
+        self.parsed_doc.meta.append(*kwargs)
 
     def reorder_params(self, *keys: str) -> None:
         """reorder params so that the keys in <args> appear first, in the order provided"""

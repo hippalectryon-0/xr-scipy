@@ -9,7 +9,7 @@ try:
 except ImportError:
     sosfiltfilt = None
 
-from .utils import get_maybe_only_dim, get_sampling_step
+from xrscipy.signal.utils import get_maybe_only_dim, get_sampling_step
 
 
 def _firwin_ba(*args, **kwargs):
@@ -111,7 +111,7 @@ def frequency_filter(
     if apply_kwargs is None:
         apply_kwargs = {}
     dim = get_maybe_only_dim(darray, dim)
-    f_crit_norm = np.asarray(f_crit, dtype=np.float)
+    f_crit_norm = np.asarray(f_crit, dtype=float)
     if not in_nyq:  # normalize by Nyquist frequency
         f_crit_norm *= 2 * get_sampling_step(darray, dim)
     if np.any(np.isnan(np.asarray(darray))):  # only warn since simple forward-filter or FIR is valid

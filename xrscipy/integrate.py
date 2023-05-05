@@ -4,9 +4,9 @@ from typing import Callable
 import xarray as xr
 from scipy import integrate
 
-from . import errors
-from .docs import CDParam, DocParser
-from .utils import _DAS, partial
+from xrscipy import errors
+from xrscipy.docs import CDParam, DocParser
+from xrscipy.utils import _DAS, partial
 
 
 def _wrap_integrate(func: Callable, reduces: bool, y: _DAS, coord: str, **kwargs) -> _DAS:

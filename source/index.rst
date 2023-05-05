@@ -20,7 +20,6 @@ Documentation
 
 * :doc:`grad_integ`
 * :doc:`fft`
-* :doc:`interpolate`
 * :doc:`filters`
 * :doc:`spectral`
 
@@ -31,7 +30,6 @@ Documentation
 
    grad_integ
    fft
-   interpolate
    filters
    spectral
 

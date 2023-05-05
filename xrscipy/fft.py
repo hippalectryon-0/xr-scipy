@@ -1,13 +1,15 @@
 """mirrors scipy.fft"""
+import time
 from typing import Callable
 
 import numpy as np
+import pyperclip
 import xarray as xr
 from scipy import fft as sp_fft
 
-from . import errors
-from .docs import CDParam, DocParser
-from .utils import _DAS, get_1D_spacing, partial
+import xrscipy.errors as errors
+from xrscipy.docs import CDParam, DocParser
+from xrscipy.utils import _DAS, get_1D_spacing, partial
 
 
 def _wrap1d(func: Callable, freq_func: Callable, x: _DAS, coord: str, **kwargs) -> _DAS:
@@ -115,27 +117,27 @@ def _inject_docs(func: Callable, description: str = None, nd: bool = False) -> N
 
     if not nd:
         doc.replace_params(
-            a=CDParam("a", "The data to transform.", "xarray object"),
+            x=CDParam("a", "The data to transform.", "xarray object"),
             axis=CDParam(
                 "coord",
-                "The axis along which the transform is applied.\n    The coordinate must be evenly spaced.",
+                "The axis along which the transform is applied. The coordinate must be evenly spaced.",
                 "string",
             ),
         )
     else:
         doc.replace_params(
-            a=CDParam("a", "Object which the transform is applied.", "xarray object"),
+            x=CDParam("a", "Object which the transform is applied.", "xarray object"),
             axes=CDParam(
                 "coord",
-                "The axis along which the transform is applied.\n    The coordinate must be evenly spaced.",
+                "The axis along which the transform is applied. The coordinate must be evenly spaced.",
                 "string",
             ),
             s=CDParam("s", "the shape of the result.", "mapping from coords to size", optional=True),
         )
 
-    doc.reorder_params("a", "coord")
+    doc.reorder_params("a", "n", "coord")
     doc.remove_sections("Notes", "Examples")
-    doc.replace_strings_returns(("ndarray", "xarray object"), ("axes", "coords"), ("axis", "coord"))
+    doc.replace_strings_returns(("array_like", "xarray object"), ("axes", "coords"), ("axis", "coord"))
 
     doc.insert_description(description)
     doc.insert_see_also(f"scipy.fft.{func_name} : scipy.fft.{func_name} : Original scipy implementation")
@@ -147,6 +149,10 @@ def _inject_docs(func: Callable, description: str = None, nd: bool = False) -> N
 
 fft = partial(_wrap1d, sp_fft.fft, sp_fft.fftfreq)
 _inject_docs(fft, description="fft(a, coord, n=None, norm=None)")
+pyperclip.copy(sp_fft.fft.__doc__)
+print("1")
+time.sleep(2)
+pyperclip.copy(fft.__doc__)
 
 ifft = partial(_wrap1d, sp_fft.ifft, sp_fft.fftfreq)
 _inject_docs(ifft, description="ifft(a, coord, n=None, norm=None)")

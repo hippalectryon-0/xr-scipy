@@ -3,9 +3,9 @@ from typing import Callable
 
 from scipy import fftpack
 
-from .docs import CDParam, DocParser
-from .fft import _wrap1d, _wrapnd
-from .utils import _DAS, partial
+from xrscipy.docs import CDParam, DocParser
+from xrscipy.fft import _wrap1d, _wrapnd
+from xrscipy.utils import _DAS, partial
 
 
 def _wrapfftpack(func: Callable, freq_func: Callable, x: _DAS, *coords: str, **kwargs) -> _DAS:
@@ -39,16 +39,16 @@ def _inject_docs(func: Callable, description: str = None, nd: bool = False) -> N
             x=CDParam("obj", doc.get_parameter("x").description, "xarray object"),
             axis=CDParam(
                 "coord",
-                f"{doc.get_parameter('axis').description.split(';')[0].replace('Axis', 'Coordinate')}.\n    The coordinate must be evenly spaced.",
+                f"{doc.get_parameter('axis').description.split(';')[0].replace('Axis', 'Coordinate')}. The coordinate must be evenly spaced.",
                 "string",
             ),
         )
     else:
         doc.replace_params(
-            a=CDParam("a", "Object which the transform is applied.", "xarray object"),
+            x=CDParam("a", "Object on which the transform is applied.", "xarray object"),
             axes=CDParam(
                 "coord",
-                "The axis along which the transform is applied.\n    The coordinate must be evenly spaced.",
+                "The axis along which the transform is applied. The coordinate must be evenly spaced.",
                 "string",
             ),
             s=CDParam("s", "the shape of the result.", "mapping from coords to size", optional=True),

@@ -11,7 +11,7 @@ except ImportError:
         return 2 ** int(np.ceil(np.log2(size)))
 
 
-from .utils import get_maybe_only_dim, get_sampling_step
+from xrscipy.signal.utils import get_maybe_only_dim
 
 _FREQUENCY_DIM = "frequency"
 
@@ -81,116 +81,116 @@ def _add2docstring_common_params(func):
     return func
 
 
-@_add2docstring_common_params
-def crossspectrogram(
-    darray: xr.DataArray,
-    other_darray: xr.DataArray,
-    fs=None,
-    seglen=None,
-    overlap_ratio=0.5,
-    window="hann",
-    nperseg=256,
-    noverlap=None,
-    nfft=None,
-    detrend="constant",
-    return_onesided=True,
-    dim=None,
-    scaling="density",
-    mode="psd",
-):
-    """Calculate the cross spectrogram.
-
-    Parameters
-    ----------
-    darray : xarray
-        Series of measurement values
-    other_darray : xarray
-        Series of measurement values
-    {common_params}
-    {scaling_param}
-    {mode_param}
-
-    Returns
-    -------
-    Pxy : xarray.DataArray
-        Cross spectrogram of 'darray' and 'other_darray'
-        with one new dimmension frequency and new coords for the specified dim.
-
-    Notes
-    -----
-    By convention, Pxy is computed with the conjugate FFT of `darray`
-    multiplied by the FFT of `other_darray`.
-    If the input series differ in length, the shorter series will be
-    zero-padded to match.
-    An appropriate amount of overlap will depend on the choice of window
-    and on your requirements. For the default Hann window an overlap of
-    50% is a reasonable trade off between accurately estimating the
-    signal power, while not over counting any of the data. Narrower
-    windows may require a larger overlap.
-
-
-    References
-    ----------
-    .. [1] P. Welch, "The use of the fast Fourier transform for the
-           estimation of power spectra: A method based on time averaging
-           over short, modified periodograms", IEEE Trans. Audio
-           Electroacoust. vol. 15, pp. 70-73, 1967.
-    .. [2] Rabiner, Lawrence R., and B. Gold. "Theory and Application of
-           Digital Signal Processing" Prentice-Hall, pp. 414-419, 1975
-    """
-    dim = get_maybe_only_dim(darray, dim)
-    if fs is None:
-        dt = get_sampling_step(darray, dim)
-        fs = 1.0 / dt
-    else:
-        dt = 1.0 / fs
-    if seglen is not None:
-        nperseg = int(np.rint(seglen / dt))
-        nfft = next_fast_len(nperseg)
-    if noverlap is None:
-        noverlap = np.rint(nperseg * overlap_ratio)
-    if darray is other_darray:
-        d_val = od_val = darray.values
-    else:
-        # outer join align to ensure proper sampling
-        darray, other_darray = xr.align(darray, other_darray, join="outer", copy=False)
-        together = (darray, other_darray)
-        if set(darray.dims) != set(other_darray.dims):
-            together = xr.broadcast(*together)
-        d_val, od_val = (d.values for d in together)
-
-    # should be the same for other_darray after align
-    axis = darray.get_axis_num(dim)
-    # noinspection PyProtectedMember
-    f, t, Pxy = scipy.signal.spectral._spectral_helper(
-        d_val,
-        od_val,
-        fs,
-        window,
-        nperseg,
-        noverlap,
-        nfft,
-        detrend,
-        return_onesided,
-        scaling,
-        axis,
-        mode,
-    )
-    t_0 = float(darray.coords[dim][0])
-    t_axis = t + t_0
-    # new dimensions and coordinates construction
-    coord_darr = darray if darray.ndim >= other_darray.ndim else other_darray
-    new_dims = list(coord_darr.dims)
-    # frequency replaces data dim
-    new_dims[new_dims.index(dim)] = _FREQUENCY_DIM
-    new_dims.append(dim)  # make data dim last
-    # select nearest times on other possible coordinates
-    coords_ds = coord_darr.coords.to_dataset()
-    coords_ds = coords_ds.sel(**{dim: t_axis, "method": "nearest"})
-    coords_ds[dim] = t_axis
-    coords_ds[_FREQUENCY_DIM] = f
-    new_name = f"crossspectrogram_{darray.name}_{other_darray.name}"
-    return xr.DataArray(Pxy, name=new_name, dims=new_dims, coords=coords_ds.coords)
+# @_add2docstring_common_params  # TODO commented out because uses obsolete funcs
+# def crossspectrogram(
+#     darray: xr.DataArray,
+#     other_darray: xr.DataArray,
+#     fs=None,
+#     seglen=None,
+#     overlap_ratio=0.5,
+#     window="hann",
+#     nperseg=256,
+#     noverlap=None,
+#     nfft=None,
+#     detrend="constant",
+#     return_onesided=True,
+#     dim=None,
+#     scaling="density",
+#     mode="psd",
+# ):
+#     """Calculate the cross spectrogram.
+#
+#     Parameters
+#     ----------
+#     darray : xarray
+#         Series of measurement values
+#     other_darray : xarray
+#         Series of measurement values
+#     {common_params}
+#     {scaling_param}
+#     {mode_param}
+#
+#     Returns
+#     -------
+#     Pxy : xarray.DataArray
+#         Cross spectrogram of 'darray' and 'other_darray'
+#         with one new dimmension frequency and new coords for the specified dim.
+#
+#     Notes
+#     -----
+#     By convention, Pxy is computed with the conjugate FFT of `darray`
+#     multiplied by the FFT of `other_darray`.
+#     If the input series differ in length, the shorter series will be
+#     zero-padded to match.
+#     An appropriate amount of overlap will depend on the choice of window
+#     and on your requirements. For the default Hann window an overlap of
+#     50% is a reasonable trade off between accurately estimating the
+#     signal power, while not over counting any of the data. Narrower
+#     windows may require a larger overlap.
+#
+#
+#     References
+#     ----------
+#     .. [1] P. Welch, "The use of the fast Fourier transform for the
+#            estimation of power spectra: A method based on time averaging
+#            over short, modified periodograms", IEEE Trans. Audio
+#            Electroacoust. vol. 15, pp. 70-73, 1967.
+#     .. [2] Rabiner, Lawrence R., and B. Gold. "Theory and Application of
+#            Digital Signal Processing" Prentice-Hall, pp. 414-419, 1975
+#     """
+#     dim = get_maybe_only_dim(darray, dim)
+#     if fs is None:
+#         dt = get_sampling_step(darray, dim)
+#         fs = 1.0 / dt
+#     else:
+#         dt = 1.0 / fs
+#     if seglen is not None:
+#         nperseg = int(np.rint(seglen / dt))
+#         nfft = next_fast_len(nperseg)
+#     if noverlap is None:
+#         noverlap = np.rint(nperseg * overlap_ratio)
+#     if darray is other_darray:
+#         d_val = od_val = darray.values
+#     else:
+#         # outer join align to ensure proper sampling
+#         darray, other_darray = xr.align(darray, other_darray, join="outer", copy=False)
+#         together = (darray, other_darray)
+#         if set(darray.dims) != set(other_darray.dims):
+#             together = xr.broadcast(*together)
+#         d_val, od_val = (d.values for d in together)
+#
+#     # should be the same for other_darray after align
+#     axis = darray.get_axis_num(dim)
+#     # noinspection PyProtectedMember
+#     f, t, Pxy = scipy.signal.spectral._spectral_helper(
+#         d_val,
+#         od_val,
+#         fs,
+#         window,
+#         nperseg,
+#         noverlap,
+#         nfft,
+#         detrend,
+#         return_onesided,
+#         scaling,
+#         axis,
+#         mode,
+#     )
+#     t_0 = float(darray.coords[dim][0])
+#     t_axis = t + t_0
+#     # new dimensions and coordinates construction
+#     coord_darr = darray if darray.ndim >= other_darray.ndim else other_darray
+#     new_dims = list(coord_darr.dims)
+#     # frequency replaces data dim
+#     new_dims[new_dims.index(dim)] = _FREQUENCY_DIM
+#     new_dims.append(dim)  # make data dim last
+#     # select nearest times on other possible coordinates
+#     coords_ds = coord_darr.coords.to_dataset()
+#     coords_ds = coords_ds.sel(**{dim: t_axis, "method": "nearest"})
+#     coords_ds[dim] = t_axis
+#     coords_ds[_FREQUENCY_DIM] = f
+#     new_name = f"crossspectrogram_{darray.name}_{other_darray.name}"
+#     return xr.DataArray(Pxy, name=new_name, dims=new_dims, coords=coords_ds.coords)
 
 
 @_add2docstring_common_params
