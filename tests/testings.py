@@ -10,7 +10,7 @@ def get_obj(mode: int) -> xr.DataArray | xr.Dataset:
     if mode in {0, 1}:  # 0 = 1D, 1 = 3D
         ndim = 1 if mode == 0 else 3
         dims = ["x", "y", "z"]
-        shapes = [10, 12, 15]
+        shapes = [9, 12, 15]
         coords = {"x": np.arange(shapes[0]) * 0.2}
         if ndim >= 2:
             coords["z"] = np.linspace(0, 1, shapes[2])

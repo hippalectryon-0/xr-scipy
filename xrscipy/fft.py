@@ -104,10 +104,10 @@ def _inject_docs(func: Callable, description: str = None, nd: bool = False) -> N
 
     Parameters
     ----------
-    func : object
+    func : callable
         The function to modify
-    description : object
-    nd : object
+    description : str
+    nd : bool
         Whether the function acts on n-dimentional arrays
     """
     func_name = func.__name__

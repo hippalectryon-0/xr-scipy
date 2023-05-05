@@ -117,9 +117,12 @@ class DocParser:
                 if e.description:
                     e.description.replace(rep_from, rep_to)
 
-    def get_parameter(self, name: str) -> docstring_parser.DocstringParam:
+    def get_parameter(self, name: str) -> docstring_parser.DocstringParam | None:
         """get parameter from name"""
-        for e in self.parsed_doc.params:
-            if e.arg_name == name:
-                return e
-        raise KeyError
+        return next((e for e in self.parsed_doc.params if e.arg_name == name), None)
+
+    def replace_strings_description(self, *replacements: tuple[str, str]) -> None:
+        """replaces strings in description"""
+        for rep_from, rep_to in replacements:
+            self.parsed_doc.long_description = self.parsed_doc.long_description.replace(rep_from, rep_to)
+            self.parsed_doc.short_description = self.parsed_doc.short_description.replace(rep_from, rep_to)

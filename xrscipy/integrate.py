@@ -1,102 +1,95 @@
-from __future__ import absolute_import, division, print_function
-
-from functools import partial
+"""mirrors scipy.integrate"""
+from typing import Callable
 
 import xarray as xr
 from scipy import integrate
 
-from . import errors, utils
-from .docs import DocParser
+from . import errors
+from .docs import CDParam, DocParser
+from .utils import _DAS, partial
 
 
-def _wrap(func, reduces, y, coord, **kwargs):
+def _wrap_integrate(func: Callable, reduces: bool, y: _DAS, coord: str, **kwargs) -> _DAS:
     """
     Wrap scipy functions for xarray data objects
+
+    Parameters
+    ----------
+    reduces : bool
+        whether to return a single value
+    coord : str
+        the coord along which to do the transform. Must map to a single dimension.
     """
-    errors.raise_invalid_args(["x", "dx", "axis"], kwargs)
     errors.raise_not_sorted(y[coord])
 
     # In case of dim is a non-dimensional coordinate.
-    x = y[coord]
-    dim = x.dims[0]
+    coord_da = y[coord]
+    if len(coord_da.dims) > 1:
+        raise ValueError(f"coord {coord} coresponds to more than one dimension: {coord_da.dims}")
+    dim = coord_da.dims[0]
     output_core_dim = [] if reduces else [dim]
 
-    kwargs["x"] = x
     kwargs["axis"] = -1
 
-    def apply_func(v):
-        # v: xr.Varaible
-        result = xr.apply_ufunc(
-            func,
-            v,
-            input_core_dims=[[dim]],
-            output_core_dims=[output_core_dim],
-            kwargs=kwargs,
-        )
-        return result if reduces else result.transpose(*y.dims)
-
-    return utils.apply_func_to_DAS(apply_func, y, dim, keep_coords="keep")
-
-
-def inject_docs(func, func_name, description=None):
-    try:
-        doc = DocParser(getattr(integrate, func_name).__doc__)
-    except errors.NoDocstringError:
-        return
-
-    if "y" in doc.parameters:
-        doc.replace_params(y=f"obj : xarray object\n{doc.parameters['y'][1]}")
-    doc.replace_params(axis="coord : string\n    The coordinate along which to integrate.\n")
-    doc.remove_params("dx", "x")
-
-    doc.remove_sections("Notes", "Examples")
-
-    # update return statement
-    returns = doc.returns.copy()
-    for key, item in doc.returns.items():
-        returns[key] = [it.replace("ndarray", "xarray object").replace("axis", "coordiante") for it in item]
-    doc.returns = returns
-
-    if description is not None:
-        doc.insert_description(description)
-
-    doc.description = [item.replace("axis", "coordinate") for item in doc.description]
-
-    doc.insert_see_also(
-        **{f"scipy.integrate.{func_name}": f"scipy.integrate.{func_name} : Original scipy implementation\n"}
+    return xr.apply_ufunc(
+        func,
+        y,
+        input_core_dims=[[dim]],
+        output_core_dims=[output_core_dim],
+        kwargs=kwargs,
     )
+
+
+def _wrap_integrate_trapz(func: Callable, reduces: bool, y: _DAS, coord: str, **kwargs) -> _DAS:
+    """
+    adapted to trapz signature
+    """
+    errors.raise_invalid_args(["x", "dx", "axis"], kwargs)
+    kwargs["x"] = y[coord]
+    return _wrap_integrate(func, reduces, y, coord, **kwargs)
+
+
+def _inject_docs(func: Callable, description: str = None) -> None:
+    """inject xr docs into integrate docs
+
+    Parameters
+    ----------
+    func : callable
+        The function to modify
+    description : str
+    """
+    func_name = func.__name__
+    doc = DocParser(fun=getattr(integrate, func_name))
+
+    if y_doc := doc.get_parameter("y"):
+        doc.replace_params(y=CDParam("obj", y_doc.description, "xarray object"))
+    doc.replace_params(axis=CDParam("coord", "The coordinate along which to integrate.", "string"))
+
+    doc.remove_params("dx", "x")
+    doc.remove_sections("Notes", "Examples")
+    doc.replace_strings_returns(("ndarray", "xarray object"), ("axis", "coordinate"))
+
+    doc.insert_description(description)
+    doc.replace_strings_description(("axis", "coordinate"))
+
+    doc.insert_see_also(f"scipy.integrate.{func_name}: scipy.integrate.{func_name} : Original scipy implementation")
 
     # inject
     func.__doc__ = str(doc)
     func.__name__ = func_name
 
 
-romb = partial(_wrap, integrate.romb, True)
-inject_docs(romb, "romb", description="romb(obj, coord, show=False)")
+romb = partial(_wrap_integrate, integrate.romb, True)
+_inject_docs(romb, description="romb(obj, coord, show=False)")
 
-# scipy >= 1.6.0
-if hasattr(integrate, "trapezoid"):
-    trapezoid = partial(_wrap, integrate.trapezoid, True)
-    inject_docs(trapezoid, "trapezoid", description="trapezoid(obj, coord)")
+trapezoid = partial(_wrap_integrate_trapz, integrate.trapezoid, True)
+_inject_docs(trapezoid, description="trapezoid(obj, coord)")
 
-if hasattr(integrate, "simpson"):
-    simpson = partial(_wrap, integrate.simpson, True)
-    inject_docs(simpson, "simpson", description="simpson(obj, coord, even='avg')")
+cumulative_trapezoid = partial(_wrap_integrate_trapz, integrate.cumulative_trapezoid, False, initial=0)
+_inject_docs(
+    cumulative_trapezoid,
+    description="cumulative_trapezoid(obj, coord)",
+)
 
-if hasattr(integrate, "cumulative_trapezoid"):
-    cumulative_trapezoid = partial(_wrap, integrate.cumulative_trapezoid, False, initial=0)
-    inject_docs(
-        cumulative_trapezoid,
-        "cumulative_trapezoid",
-        description="cumulative_trapezoid(obj, coord)",
-    )
-
-# scipy < 1.6.0
-trapz = partial(_wrap, integrate.trapz, True)
-inject_docs(trapz, "trapz", description="trapz(obj, coord)")
-
-simps = partial(_wrap, integrate.simps, True)
-inject_docs(simps, "simps", description="simps(obj, coord, even='avg')")
-
-cumtrapz = partial(_wrap, integrate.cumtrapz, False, initial=0)
-inject_docs(cumtrapz, "cumtrapz", description="cumtrapz(obj, coord)")
+simpson = partial(_wrap_integrate_trapz, integrate.simpson, True)
+_inject_docs(simpson, description="simpson(obj, coord, even='avg')")
