@@ -1,4 +1,4 @@
-"""Tools for interatcing with docstrings"""
+"""Tools for interacting with docstrings"""
 from typing import Any, Callable
 
 import docstring_parser

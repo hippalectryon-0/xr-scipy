@@ -5,21 +5,23 @@ from scipy import fftpack
 
 from .docs import CDParam, DocParser
 from .fft import _wrap1d, _wrapnd
-from .utils import partial
+from .utils import _DAS, partial
 
 
-def _wrapfftpack(func, freq_func, y, *coords, **kwargs):
+def _wrapfftpack(func: Callable, freq_func: Callable, x: _DAS, *coords: str, **kwargs) -> _DAS:
+    """wrapper around _wrapnd that changes s<->shape"""
     kwargs["s"] = kwargs.pop("shape", None)
 
-    def new_func(y, **kwargs):
+    # noinspection PyMissingOrEmptyDocstring
+    def s_to_shape(xx: _DAS, **kwargs) -> _DAS:
         kwargs["shape"] = kwargs.pop("s", None)
-        return func(y, **kwargs)
+        return func(xx, **kwargs)
 
-    return _wrapnd(new_func, freq_func, y, *coords, **kwargs)
+    return _wrapnd(s_to_shape, freq_func, x, *coords, **kwargs)
 
 
 def _inject_docs(func: Callable, description: str = None, nd: bool = False) -> None:
-    """inject xr docs into fft docs
+    """inject xr docs into fftpack docs
 
     Parameters
     ----------
@@ -90,7 +92,7 @@ idst = partial(_wrap1d, fftpack.idst, fftpack.rfftfreq)
 _inject_docs(idst, description="idst(obj, coord, type=2, n=None, norm=None)")
 
 fftn = partial(_wrapfftpack, fftpack.fftn, fftpack.fftfreq)
-_inject_docs(fftn, nd=True, description="fftn(obj, *coords, shape=None)")
+_inject_docs(fftn, nd=True, description="fftn(obj, *coords, shape=None, axes=None)")
 
 ifftn = partial(_wrapfftpack, fftpack.ifftn, fftpack.fftfreq)
-_inject_docs(ifftn, nd=True, description="ifftn(obj, *coords, shape=None)")
+_inject_docs(ifftn, nd=True, description="ifftn(obj, *coords, shape=None, axes=None)")

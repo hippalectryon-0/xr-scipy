@@ -38,18 +38,16 @@ def _wrap1d(func: Callable, freq_func: Callable, x: _DAS, coord: str, **kwargs) 
     )
 
     # attach frequency coordinate
-    size = kwargs.pop("n", None)
-    if func.__name__ in ["rfft", "hfft"]:  # /!\ r/hfft changes output dims n -> ~2*n
-        size = (len(ds[dim]) - 1) * 2
-    elif func.__name__ in ["irfft", "ihfft"]:  # /!\ irfft changes output dims n -> ~2*n
-        size = (len(ds[dim]) - 1) * 2
-    size = size or len(ds[dim])
+    size = kwargs.get("n", None) or len(ds[dim])
     freq = freq_func(size, get_1D_spacing(coord_da))
+    if freq.size != ds[dim].size:  # functions such as rfft, hfft, irfft, ihfft in scipy.fft modify the output shape
+        size = (len(ds[dim]) - 1) * 2
+        freq = freq_func(size, get_1D_spacing(coord_da))
     ds[coord] = (dim,), freq
     return ds
 
 
-def _wrapnd(func: Callable, freq_func: Callable, x: _DAS, *coords, **kwargs) -> _DAS:
+def _wrapnd(func: Callable, freq_func: Callable, x: _DAS, *coords: str, **kwargs) -> _DAS:
     """Wrap function for fftnd
 
     Parameters
@@ -84,7 +82,7 @@ def _wrapnd(func: Callable, freq_func: Callable, x: _DAS, *coords, **kwargs) -> 
         kwargs={
             **kwargs,
             "s": [sizes[d] for d in input_core_dims] if sizes else None,
-            "axes": np.arange(len(input_core_dims), 0) or None,
+            "axes": np.arange(-len(input_core_dims), 0) if len(input_core_dims) else None,
         },
         exclude_dims={*input_core_dims},
     )
