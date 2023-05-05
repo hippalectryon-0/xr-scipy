@@ -24,11 +24,11 @@ jobs:
       - name: Install Poetry
         run: |
           curl -sSL https://install.python-poetry.org | python -
+          poetry config virtualenvs.in-project true
 
       - name: Install dependencies
         run: |
           poetry install
-          poetry config virtualenvs.in-project true
 
       - name: Run pre-commit
         run: |
