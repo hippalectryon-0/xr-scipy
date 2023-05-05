@@ -6,9 +6,6 @@ import xarray as xr
 
 from xrscipy.errors import raise_not_1d
 
-# Used as the key corresponding to a DataArray's variable when converting
-# arbitrary DataArray objects to datasets
-_TEMP_DIM = xr.core.utils.ReprObject("<temporal-dim>")
 _DAS = TypeVar("_DAS", xr.DataArray, xr.Dataset)
 
 
