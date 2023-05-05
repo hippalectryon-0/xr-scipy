@@ -1,4 +1,5 @@
 """Tools for interatcing with docstrings"""
+from typing import Any, Callable
 
 import docstring_parser
 
@@ -31,16 +32,25 @@ SECTIONS = [
 ALIASES = {"Return": "Returns", "See also": "See Also"}
 
 
+class CDParam(docstring_parser.DocstringParam):
+    """wrapper around DocstringParam"""
+
+    def __init__(self, name: str, description: str, argtype: str = None, optional: bool = False, default: Any = None):
+        super().__init__(["param", name], description, name, argtype, optional, default)
+
+
 class DocParser:
     """A simple parser for sectioning docstrings."""
 
-    def __init__(self, docstring: str):
-        assert docstring is not None
+    def __init__(self, docstring: str = None, fun: Callable = None):
+        assert docstring is not None or fun is not None
 
-        self.parsed_doc = docstring_parser.parse(docstring)
+        self.parsed_doc = docstring_parser.parse(docstring) if docstring else docstring_parser.parse_from_object(fun)
 
-    def insert_description(self, string: str) -> None:
+    def insert_description(self, string: str | None) -> None:
         """insert a description describing the function's new signature"""
+        if string is None:
+            return
         sd, ld = self.parsed_doc.short_description, self.parsed_doc.long_description
         if string.split("(")[0] == sd.split("(")[0]:  # if original doc already has a description, update
             self.parsed_doc.short_description = string
@@ -52,7 +62,7 @@ class DocParser:
                 else self.parsed_doc.short_description
             )
 
-    def replace_params(self, **kwargs: docstring_parser.DocstringParam) -> None:
+    def replace_params(self, **kwargs: CDParam) -> None:
         """replace parameters in the docstring"""
         for i, e in enumerate(self.parsed_doc.params):
             if e.arg_name in kwargs:
@@ -70,7 +80,7 @@ class DocParser:
             if e.args[0] in keys:
                 del self.parsed_doc.meta[i]
 
-    def add_params(self, **kwargs: docstring_parser.DocstringParam) -> None:
+    def add_params(self, **kwargs: CDParam) -> None:
         """add params to the docstring"""
         self.parsed_doc.params.append(*kwargs)
 
@@ -85,9 +95,8 @@ class DocParser:
             )
         self.parsed_doc.meta = new_meta + old_meta
 
-    def insert_see_also(self, **kwargs: str) -> None:
+    def insert_see_also(self, string: str) -> None:
         """insert an element in see_also"""
-        string = "\n".join(f"{k} : {s}" for k, s in kwargs.items())
         contains_isalso = False
         for e in self.parsed_doc.meta:
             if isinstance(e, docstring_parser.DocstringMeta) and e.args[0] == "see_also":
@@ -100,3 +109,19 @@ class DocParser:
     def __repr__(self) -> str:
         """print this docstrings"""
         return docstring_parser.compose(self.parsed_doc)
+
+    def replace_strings_returns(self, *replacements: tuple[str, str]) -> None:
+        """replaces strings in returns"""
+        for e in self.parsed_doc.meta:
+            if not isinstance(e, docstring_parser.DocstringReturns):
+                continue
+            for rep_from, rep_to in replacements:
+                if e.description:
+                    e.description.replace(rep_from, rep_to)
+
+    def get_parameter(self, name: str) -> docstring_parser.DocstringParam:
+        """get parameter from name"""
+        for e in self.parsed_doc.params:
+            if e.arg_name == name:
+                return e
+        raise KeyError

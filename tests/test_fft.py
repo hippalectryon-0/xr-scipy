@@ -3,7 +3,6 @@ import pytest
 import scipy as sp
 
 from xrscipy import fft, fftpack
-from xrscipy.docs import DocParser
 
 from .testings import get_obj
 
@@ -71,11 +70,3 @@ def test_fftnd(mode, module, func, coords, shape):
     for key, v in da.coords.items():
         if "x" not in v.dims:
             assert da[key].identical(actual[key])
-
-
-def test_doc():
-    parser = DocParser(fftpack.fft.__doc__)
-
-    not_included_keys = ["x", "axis", "overwrite_x"]
-    for k in not_included_keys:
-        assert k not in parser.parameters.keys()

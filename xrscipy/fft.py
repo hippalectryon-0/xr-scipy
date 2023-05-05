@@ -1,17 +1,25 @@
-from __future__ import absolute_import, division, print_function
-
-from functools import partial
-from typing import Callable
+"""mirrors numpy.fft"""
+import functools
+from typing import Callable, TypeVar
 
 import numpy as np
 import xarray as xr
 from numpy import fft as fft_
 
 from . import errors, utils
-from .docs import DocParser
+from .docs import CDParam, DocParser
+
+_F = TypeVar("_F", bound=Callable)
 
 
-def _get_spacing(x):
+def partial(f0: Callable, f1: _F, *args, **kwargs) -> _F:
+    """wrapper around partial that conserves the name of the second function"""
+    f = functools.partial(f0, f1, *args, **kwargs)
+    f.__name__ = f1.__name__
+    return f
+
+
+def _get_spacing(x: xr.DataArray):
     if x.ndim != 1:
         raise ValueError(f"Coordinate for FFT should be one dimensional. Axis {x.name} is {x.ndim}-dimensional.")
     dx = np.diff(x)
@@ -113,42 +121,46 @@ def _wrapnd(func: Callable, freq_func: Callable, y: xr.DataArray, *coords, **kwa
     return ds
 
 
-def _inject_docs(func, func_name, description=None, nd=False):
-    try:
-        doc = DocParser(getattr(fft_, func_name).__doc__)
-    except errors.NoDocstringError:
-        return
+def _inject_docs(func: Callable, description: str = None, nd: bool = False) -> None:
+    """inject xr docs into fft docs
+
+    Parameters
+    ----------
+    func : object
+        The function to modify
+    description : object
+    nd : object
+        Whether the function acts on n-dimentional arrays
+    """
+    func_name = func.__name__
+    doc = DocParser(fun=getattr(fft_, func_name))
 
     if not nd:
         doc.replace_params(
-            a="a : xarray object\n    The data tp transform.",
-            axis="coord : string\n"
-            + "    The axis along which the transform is applied. "
-            + ".\n    The coordinate must be evenly spaced.\n",
+            a=CDParam("a", "The data to transform.", "xarray object"),
+            axis=CDParam(
+                "coord",
+                "The axis along which the transform is applied.\n    The coordinate must be evenly spaced.",
+                "string",
+            ),
         )
     else:
         doc.replace_params(
-            a="a : xarray object\n" + "    Object which the transform is applied.\n",
-            axes="coords : string\n" + "    Coordinates along which the transform is applied.\n"
-            "    The coordinate must be evenly spaced.\n",
-            s="s: mapping from coords to size, optional\n" "    The shape of the result.",
+            a=CDParam("a", "Object which the transform is applied.", "xarray object"),
+            axes=CDParam(
+                "coord",
+                "The axis along which the transform is applied.\n    The coordinate must be evenly spaced.",
+                "string",
+            ),
+            s=CDParam("s", "the shape of the result.", "mapping from coords to size", optional=True),
         )
 
     doc.reorder_params("a", "coord")
     doc.remove_sections("Notes", "Examples")
+    doc.replace_strings_returns(("ndarray", "xarray object"), ("axes", "coords"), ("axis", "coord"))
 
-    # update return statement
-    returns = doc.returns.copy()
-    for key, item in doc.returns.items():
-        returns[key] = [
-            it.replace("ndarray", "xarray object").replace("axes", "coords").replace("axis", "coord") for it in item
-        ]
-    doc.returns = returns
-
-    if description is not None:
-        doc.insert_description(description)
-
-    doc.insert_see_also(**{f"numpy.fft.{func_name}": f"numpy.fft.{func_name} : Original numpy implementation\n"})
+    doc.insert_description(description)
+    doc.insert_see_also(f"numpy.fft.{func_name} : numpy.fft.{func_name} : Original numpy implementation")
 
     # inject
     func.__doc__ = str(doc)
@@ -156,31 +168,31 @@ def _inject_docs(func, func_name, description=None, nd=False):
 
 
 fft = partial(_wrap1d, fft_.fft, fft_.fftfreq)
-_inject_docs(fft, "fft", description="fft(a, coord, n=None, norm=None)")
+_inject_docs(fft, description="fft(a, coord, n=None, norm=None)")
 
 ifft = partial(_wrap1d, fft_.ifft, fft_.fftfreq)
-_inject_docs(ifft, "ifft", description="ifft(a, coord, n=None, norm=None)")
+_inject_docs(ifft, description="ifft(a, coord, n=None, norm=None)")
 
 rfft = partial(_wrap1d, fft_.rfft, fft_.rfftfreq)
-_inject_docs(rfft, "rfft", description="rfft(a, coord, n=None, norm=None)")
+_inject_docs(rfft, description="rfft(a, coord, n=None, norm=None)")
 
 irfft = partial(_wrap1d, fft_.irfft, fft_.rfftfreq)
-_inject_docs(irfft, "irfft", description="irfft(a, coord, n=None, norm=None)")
+_inject_docs(irfft, description="irfft(a, coord, n=None, norm=None)")
 
 fftn = partial(_wrapnd, fft_.fftn, fft_.fftfreq)
-_inject_docs(fftn, "fftn", nd=True, description="fftn(a, *coords, shape=None, norm=None)")
+_inject_docs(fftn, nd=True, description="fftn(a, *coords, shape=None, norm=None)")
 
 ifftn = partial(_wrapnd, fft_.ifftn, fft_.fftfreq)
-_inject_docs(ifftn, "ifftn", nd=True, description="ifftn(a, *coords, shape=None, norm=None)")
+_inject_docs(ifftn, nd=True, description="ifftn(a, *coords, shape=None, norm=None)")
 
 rfftn = partial(_wrapnd, fft_.rfftn, fft_.rfftfreq)
-_inject_docs(rfftn, "rfftn", nd=True, description="rfftn(a, *coords, shape=None, norm=None)")
+_inject_docs(rfftn, nd=True, description="rfftn(a, *coords, shape=None, norm=None)")
 
 irfftn = partial(_wrapnd, fft_.irfftn, fft_.rfftfreq)
-_inject_docs(irfftn, "irfftn", nd=True, description="irfftn(a, *coords, shape=None, norm=None)")
+_inject_docs(irfftn, nd=True, description="irfftn(a, *coords, shape=None, norm=None)")
 
 hfft = partial(_wrap1d, fft_.hfft, fft_.rfftfreq)
-_inject_docs(hfft, "hfft", description="hfft(a, coord, n=None, norm=None)")
+_inject_docs(hfft, description="hfft(a, coord, n=None, norm=None)")
 
 ihfft = partial(_wrap1d, fft_.ihfft, fft_.rfftfreq)
-_inject_docs(ihfft, "ihfft", description="ihfft(a, coord, n=None, norm=None)")
+_inject_docs(ihfft, description="ihfft(a, coord, n=None, norm=None)")
