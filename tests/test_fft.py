@@ -1,16 +1,18 @@
 import numpy as np
 import pytest
+import scipy
 import scipy as sp
 
 from xrscipy import fft, fftpack
 
 from .testings import get_obj
 
+# TODO utest iftt(fft) to make sure we haven't messed up the freqs too badly
 
-# TODO test all the other 1D functions !
+
 @pytest.mark.parametrize("mode", [0, 1])
 @pytest.mark.parametrize("module", ["fft"])  # TODO "fftpack"
-@pytest.mark.parametrize("func", ["fft", "rfft"])
+@pytest.mark.parametrize("func", ["fft", "ifft", "rfft", "irfft", "hfft", "ihfft"])
 @pytest.mark.parametrize("dim", ["x", "time"])
 @pytest.mark.parametrize("n", [None, 14])
 def test_fft1d(mode, module, func, dim, n):
@@ -21,8 +23,8 @@ def test_fft1d(mode, module, func, dim, n):
         actual = getattr(fftpack, func)(da, dim, n=n)
         expected = getattr(sp.fftpack, func)(da.values, n, axis=axis)
     else:
-        actual = getattr(fft, func)(da, dim, n=n)
-        expected: np.ndarray = getattr(np.fft, func)(da.values, n, axis=axis)
+        actual = getattr(fft, func)(da, dim, n=n).transpose(*da.dims)
+        expected: np.ndarray = getattr(scipy.fft, func)(da.values, n, axis=axis)
 
     assert (actual.values == expected).all()
 
@@ -39,10 +41,9 @@ def test_fft1d(mode, module, func, dim, n):
     assert len(da[dim]) == len(da[d])
 
 
-# TODO test all the other 1D functions !
 @pytest.mark.parametrize("mode", [1])
 @pytest.mark.parametrize("module", ["fft"])  # TODO "fftpack"
-@pytest.mark.parametrize("func", ["fftn"])
+@pytest.mark.parametrize("func", ["fftn", "ifftn", "rfftn", "irfftn"])
 @pytest.mark.parametrize("coords", [["x"], ["time", "y"]])
 @pytest.mark.parametrize("shape", [None, {"time": 14}])
 def test_fftnd(mode, module, func, coords, shape):
@@ -60,8 +61,8 @@ def test_fftnd(mode, module, func, coords, shape):
         actual = getattr(fftpack, func)(da, *coords, shape=shape)
         expected = getattr(sp.fftpack, func)(da.values, axes=axes, shape=shape_sp)
     else:
-        actual = getattr(fft, func)(da, *coords, s=shape)
-        expected: np.ndarray = getattr(np.fft, func)(da.values, axes=axes, s=shape_sp)
+        actual = getattr(fft, func)(da, *coords, s=shape).transpose(*da.dims)
+        expected: np.ndarray = getattr(scipy.fft, func)(da.values, axes=axes, s=shape_sp)
 
     assert (actual.values == expected).all()
 

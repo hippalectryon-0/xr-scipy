@@ -3,9 +3,9 @@ from typing import Callable
 
 import numpy as np
 import xarray as xr
-from numpy import fft as fft_
+from scipy import fft as sp_fft
 
-from . import errors, utils
+from . import errors
 from .docs import CDParam, DocParser
 from .utils import _DAS, get_1D_spacing, partial
 
@@ -28,24 +28,22 @@ def _wrap1d(func: Callable, freq_func: Callable, x: _DAS, coord: str, **kwargs) 
     dim = coord_da.dims[0]
 
     kwargs["axis"] = -1
-
-    # noinspection PyMissingOrEmptyDocstring
-    def apply_func_to_da(da: xr.DataArray) -> xr.DataArray:
-        result = xr.apply_ufunc(
-            func,
-            da,
-            input_core_dims=[[dim]],
-            output_core_dims=[[dim]],
-            kwargs=kwargs,
-            exclude_dims={dim},
-        )
-        return result.set_dims(da.dims)
-
-    ds = utils.apply_func_to_DAS(apply_func_to_da, x, dim, keep_coords="drop")
+    ds = xr.apply_ufunc(
+        func,
+        x,
+        input_core_dims=[[dim]],
+        output_core_dims=[[dim]],
+        kwargs=kwargs,
+        exclude_dims={dim},
+    )
 
     # attach frequency coordinate
     size = kwargs.pop("n", None)
-    size = size or len(x[dim])
+    if func.__name__ in ["rfft", "hfft"]:  # /!\ r/hfft changes output dims n -> ~2*n
+        size = (len(ds[dim]) - 1) * 2
+    elif func.__name__ in ["irfft", "ihfft"]:  # /!\ irfft changes output dims n -> ~2*n
+        size = (len(ds[dim]) - 1) * 2
+    size = size or len(ds[dim])
     freq = freq_func(size, get_1D_spacing(coord_da))
     ds[coord] = (dim,), freq
     return ds
@@ -60,6 +58,7 @@ def _wrapnd(func: Callable, freq_func: Callable, x: _DAS, *coords, **kwargs) -> 
         the coords along which to do the transform. Each coord must map to a single dimension."""
     errors.raise_invalid_args(["axes", "overwrite_x", "workers", "plan"], kwargs)
     sizes = kwargs.pop("s", None)
+    _fftfreq = kwargs.pop("_fftfreq", freq_func)
 
     if sizes is not None and not isinstance(sizes, dict):
         raise TypeError(f"shape should be a dict mapping from coord name to size. Given {sizes}.")
@@ -76,28 +75,28 @@ def _wrapnd(func: Callable, freq_func: Callable, x: _DAS, *coords, **kwargs) -> 
     sizes = {d: len(x[d]) if sizes is None or c not in sizes else sizes[c] for d, c in zip(dims, coords)}
     dxs = [get_1D_spacing(x) for x in coords_data]
 
-    # noinspection PyMissingOrEmptyDocstring
-    def apply_func_to_da(da: xr.DataArray) -> xr.DataArray:
-        input_core_dims = [d for d in dims if d in da.dims]
-        result = xr.apply_ufunc(
-            func,
-            da,
-            input_core_dims=[input_core_dims],
-            output_core_dims=[input_core_dims],
-            kwargs={
-                **kwargs,
-                "s": [sizes[d] for d in input_core_dims] if sizes else None,
-                "axes": np.arange(len(input_core_dims), 0) or None,
-            },
-            exclude_dims={*input_core_dims},
-        )
-        return result.set_dims(da.dims)
-
-    ds = utils.apply_func_to_DAS(apply_func_to_da, x, *dims, keep_coords="drop")
+    input_core_dims = [d for d in dims if d in x.dims]
+    ds = xr.apply_ufunc(
+        func,
+        x,
+        input_core_dims=[input_core_dims],
+        output_core_dims=[input_core_dims],
+        kwargs={
+            **kwargs,
+            "s": [sizes[d] for d in input_core_dims] if sizes else None,
+            "axes": np.arange(len(input_core_dims), 0) or None,
+        },
+        exclude_dims={*input_core_dims},
+    )
 
     # attach frequency coordinate
     for coord, dim, dx in zip(coords, dims, dxs):
-        freq = freq_func(sizes[dim], dx)
+        size = sizes[dim]
+        freq = (
+            freq_func((size - 1) * 2 if func.__name__ == "irfftn" and dim == dims[-1] else size, dx)
+            if dim == dims[-1]
+            else _fftfreq(size, dx)
+        )  # /!\ in n dims, rfftn does fft over all axis except last one where it does rfft + irfftn changes output dims n -> ~2*n
         ds[coord] = (dim,), freq
     return ds
 
@@ -114,7 +113,7 @@ def _inject_docs(func: Callable, description: str = None, nd: bool = False) -> N
         Whether the function acts on n-dimentional arrays
     """
     func_name = func.__name__
-    doc = DocParser(fun=getattr(fft_, func_name))
+    doc = DocParser(fun=getattr(sp_fft, func_name))
 
     if not nd:
         doc.replace_params(
@@ -148,32 +147,32 @@ def _inject_docs(func: Callable, description: str = None, nd: bool = False) -> N
     func.__name__ = func_name
 
 
-fft = partial(_wrap1d, fft_.fft, fft_.fftfreq)
+fft = partial(_wrap1d, sp_fft.fft, sp_fft.fftfreq)
 _inject_docs(fft, description="fft(a, coord, n=None, norm=None)")
 
-ifft = partial(_wrap1d, fft_.ifft, fft_.fftfreq)
+ifft = partial(_wrap1d, sp_fft.ifft, sp_fft.fftfreq)
 _inject_docs(ifft, description="ifft(a, coord, n=None, norm=None)")
 
-rfft = partial(_wrap1d, fft_.rfft, fft_.rfftfreq)
+rfft = partial(_wrap1d, sp_fft.rfft, sp_fft.rfftfreq)
 _inject_docs(rfft, description="rfft(a, coord, n=None, norm=None)")
 
-irfft = partial(_wrap1d, fft_.irfft, fft_.rfftfreq)
+irfft = partial(_wrap1d, sp_fft.irfft, sp_fft.rfftfreq)
 _inject_docs(irfft, description="irfft(a, coord, n=None, norm=None)")
 
-fftn = partial(_wrapnd, fft_.fftn, fft_.fftfreq)
+fftn = partial(_wrapnd, sp_fft.fftn, sp_fft.fftfreq)
 _inject_docs(fftn, nd=True, description="fftn(a, *coords, shape=None, norm=None)")
 
-ifftn = partial(_wrapnd, fft_.ifftn, fft_.fftfreq)
+ifftn = partial(_wrapnd, sp_fft.ifftn, sp_fft.fftfreq)
 _inject_docs(ifftn, nd=True, description="ifftn(a, *coords, shape=None, norm=None)")
 
-rfftn = partial(_wrapnd, fft_.rfftn, fft_.rfftfreq)
+rfftn = partial(_wrapnd, sp_fft.rfftn, sp_fft.rfftfreq, _fftfreq=sp_fft.fftfreq)
 _inject_docs(rfftn, nd=True, description="rfftn(a, *coords, shape=None, norm=None)")
 
-irfftn = partial(_wrapnd, fft_.irfftn, fft_.rfftfreq)
+irfftn = partial(_wrapnd, sp_fft.irfftn, sp_fft.rfftfreq, _fftfreq=sp_fft.fftfreq)
 _inject_docs(irfftn, nd=True, description="irfftn(a, *coords, shape=None, norm=None)")
 
-hfft = partial(_wrap1d, fft_.hfft, fft_.rfftfreq)
+hfft = partial(_wrap1d, sp_fft.hfft, sp_fft.rfftfreq)
 _inject_docs(hfft, description="hfft(a, coord, n=None, norm=None)")
 
-ihfft = partial(_wrap1d, fft_.ihfft, fft_.rfftfreq)
+ihfft = partial(_wrap1d, sp_fft.ihfft, sp_fft.rfftfreq)
 _inject_docs(ihfft, description="ihfft(a, coord, n=None, norm=None)")
