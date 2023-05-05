@@ -1,15 +1,14 @@
+"""spectral utilities"""
+from typing import Callable, Literal, TypeVar
+
 import numpy as np
 import scipy.signal
 import scipy.signal.spectral
 import xarray as xr
 
-try:
-    from scipy.fftpack import next_fast_len
-except ImportError:
-
-    def next_fast_len(size):
-        return 2 ** int(np.ceil(np.log2(size)))
-
+# noinspection PyProtectedMember
+from numpy._typing import ArrayLike
+from scipy.fftpack import next_fast_len
 
 from xrscipy.other.signal.utils import get_maybe_only_dim, get_sampling_step
 
@@ -67,11 +66,14 @@ _DOCSTRING_SCALING_PARAM = """scaling : { 'density', 'spectrum' }, optional
         Selects between computing the cross spectral density ('density')
         where `Pxy` has units of V**2/Hz and computing the cross spectrum
         ('spectrum') where `Pxy` has units of V**2, if `darray` and `other_darray` are
-        measured in V and `fs` is measured in Hz. Defaults to 'density'.\
+        measured in V and `fs` is measured in Hz. Defaults to 'density'.
 """
 
+_F = TypeVar("_F", bound=Callable)
 
-def _add2docstring_common_params(func):
+
+def _add2docstring_common_params(func: _F) -> _F:
+    """fill-in modified docstring"""
     if hasattr(func, "__doc__"):
         func.__doc__ = func.__doc__.format(
             common_params=_DOCSTRING_COMMON_PARAMS,
@@ -81,23 +83,24 @@ def _add2docstring_common_params(func):
     return func
 
 
+# noinspection PyIncorrectDocstring
 @_add2docstring_common_params
 def crossspectrogram(
     darray: xr.DataArray,
     other_darray: xr.DataArray,
-    fs=None,
-    seglen=None,
-    overlap_ratio=0.5,
-    window="hann",
-    nperseg=256,
-    noverlap=None,
-    nfft=None,
-    detrend="constant",
-    return_onesided=True,
-    dim=None,
-    scaling="density",
-    mode="psd",
-):
+    fs: float = None,
+    seglen: float = None,
+    overlap_ratio: float = 0.5,
+    window: str | tuple | ArrayLike = "hann",
+    nperseg: int = 256,
+    noverlap: int = None,
+    nfft: int = None,
+    detrend: str | Callable | bool = "constant",
+    return_onesided: bool = True,
+    dim: str = None,
+    scaling: Literal["density", "spectrum"] = "density",
+    mode: str = "psd",
+) -> xr.DataArray:
     """Calculate the cross spectrogram.
 
     Parameters
@@ -193,23 +196,24 @@ def crossspectrogram(
     return xr.DataArray(Pxy, name=new_name, dims=new_dims, coords=coords_ds.coords)
 
 
+# noinspection PyIncorrectDocstring
 @_add2docstring_common_params
 def csd(
     darray: xr.DataArray,
     other_darray: xr.DataArray,
-    fs=None,
-    seglen=None,
-    overlap_ratio=0.5,
-    window="hann",
-    nperseg=256,
-    noverlap=None,
-    nfft=None,
-    detrend="constant",
-    return_onesided=True,
-    dim=None,
-    scaling="density",
-    mode="psd",
-):
+    fs: float = None,
+    seglen: float = None,
+    overlap_ratio: float = 0.5,
+    window: str | tuple | ArrayLike = "hann",
+    nperseg: int = 256,
+    noverlap: int = None,
+    nfft: int = None,
+    detrend: str | Callable | bool = "constant",
+    return_onesided: bool = True,
+    dim: str = None,
+    scaling: Literal["density", "spectrum"] = "density",
+    mode: str = "psd",
+) -> xr.DataArray:
     """
     Estimate the cross power spectral density, Pxy, using Welch's method.
 
@@ -271,7 +275,7 @@ def csd(
     return Pxy
 
 
-def freq2lag(darray, is_onesided=False, f_dim=_FREQUENCY_DIM):
+def freq2lag(darray: xr.DataArray, is_onesided: bool = False, f_dim: str = _FREQUENCY_DIM) -> xr.DataArray:
     """
     Calculate the inverse FFT along the frequency dimension into lag-space
 
@@ -305,21 +309,22 @@ def freq2lag(darray, is_onesided=False, f_dim=_FREQUENCY_DIM):
     return ret.swap_dims({f_dim: "lag"}).isel(lag=lag.argsort().values)
 
 
+# noinspection PyIncorrectDocstring
 @_add2docstring_common_params
 def xcorrelation(
-    darray,
-    other_darray,
-    normalize=True,
-    fs=None,
-    seglen=None,
-    overlap_ratio=0.5,
-    window="hann",
-    nperseg=256,
-    noverlap=None,
-    nfft=None,
-    detrend="constant",
-    dim=None,
-):
+    darray: xr.DataArray,
+    other_darray: xr.DataArray,
+    normalize: bool = True,
+    fs: float = None,
+    seglen: float = None,
+    overlap_ratio: float = 0.5,
+    window: str | tuple | ArrayLike = "hann",
+    nperseg: int = 256,
+    noverlap: int = None,
+    nfft: int = None,
+    detrend: str | Callable | bool = "constant",
+    dim: str = None,
+) -> xr.DataArray:
     """
     Calculate the crosscorrelation.
 
@@ -380,22 +385,23 @@ def xcorrelation(
     return xcorr
 
 
+# noinspection PyIncorrectDocstring
 @_add2docstring_common_params
 def spectrogram(
-    darray,
-    fs=None,
-    seglen=None,
-    overlap_ratio=0.5,
-    window="hann",
-    nperseg=256,
-    noverlap=None,
-    nfft=None,
-    detrend="constant",
-    return_onesided=True,
-    dim=None,
-    scaling="density",
-    mode="psd",
-):
+    darray: xr.DataArray,
+    fs: float = None,
+    seglen: float = None,
+    overlap_ratio: float = 0.5,
+    window: str | tuple | ArrayLike = "hann",
+    nperseg: int = 256,
+    noverlap: int = None,
+    nfft: int = None,
+    detrend: str | Callable | bool = "constant",
+    return_onesided: bool = True,
+    dim: str = None,
+    scaling: Literal["density", "spectrum"] = "density",
+    mode: str = "psd",
+) -> xr.DataArray:
     """
     Calculate the spectrogram using crossspectrogram applied to the same data
 
@@ -432,22 +438,23 @@ def spectrogram(
     return Pxx
 
 
+# noinspection PyIncorrectDocstring
 @_add2docstring_common_params
 def psd(
-    darray,
-    fs=None,
-    seglen=None,
-    overlap_ratio=0.5,
-    window="hann",
-    nperseg=256,
-    noverlap=None,
-    nfft=None,
-    detrend="constant",
-    return_onesided=True,
-    scaling="density",
-    dim=None,
-    mode="psd",
-):
+    darray: xr.DataArray,
+    fs: float = None,
+    seglen: float = None,
+    overlap_ratio: float = 0.5,
+    window: str | tuple | ArrayLike = "hann",
+    nperseg: int = 256,
+    noverlap: int = None,
+    nfft: int = None,
+    detrend: str | Callable | bool = "constant",
+    return_onesided: bool = True,
+    dim: str = None,
+    scaling: Literal["density", "spectrum"] = "density",
+    mode: str = "psd",
+) -> xr.DataArray:
     """
     Calculate the power spectral density.
 
@@ -486,22 +493,23 @@ def psd(
 
 
 # TODO f_res
+# noinspection PyIncorrectDocstring
 @_add2docstring_common_params
 def coherogram(
-    darray,
-    other_darray,
-    fs=None,
-    seglen=None,
-    overlap_ratio=0.5,
+    darray: xr.DataArray,
+    other_darray: xr.DataArray,
+    fs: float = None,
+    seglen: float = None,
+    overlap_ratio: float = 0.5,
     nrolling=8,
-    window="hann",
-    nperseg=256,
-    noverlap=None,
-    nfft=None,
-    detrend="constant",
-    return_onesided=True,
-    dim=None,
-):
+    window: str | tuple | ArrayLike = "hann",
+    nperseg: int = 256,
+    noverlap: int = None,
+    nfft: int = None,
+    detrend: str | Callable | bool = "constant",
+    return_onesided: bool = True,
+    dim: str = None,
+) -> xr.DataArray:
     """
     Calculate the coherogram
 
@@ -573,20 +581,21 @@ def coherogram(
     return coh
 
 
+# noinspection PyIncorrectDocstring
 @_add2docstring_common_params
 def coherence(
-    darray,
-    other_darray,
-    fs=None,
-    seglen=None,
-    overlap_ratio=0.5,
-    window="hann",
-    nperseg=256,
-    noverlap=None,
-    nfft=None,
-    detrend="constant",
-    dim=None,
-):
+    darray: xr.DataArray,
+    other_darray: xr.DataArray,
+    fs: float = None,
+    seglen: float = None,
+    overlap_ratio: float = 0.5,
+    window: str | tuple | ArrayLike = "hann",
+    nperseg: int = 256,
+    noverlap: int = None,
+    nfft: int = None,
+    detrend: str | Callable | bool = "constant",
+    dim: str = None,
+) -> xr.DataArray:
     """
     Calculate the coherence as <CSD> / sqrt(<PSD1> * <PSD2>)
 
@@ -646,7 +655,7 @@ def coherence(
     return coh
 
 
-def hilbert(darray, N=None, dim=None):
+def hilbert(darray: xr.DataArray, N: int = None, dim: str = None) -> xr.DataArray:
     """
     Compute the analytic signal, using the Hilbert transform.
     The transformation is done along the selected dimension.
@@ -657,16 +666,16 @@ def hilbert(darray, N=None, dim=None):
         Signal data. Must be real.
     N : int, optional
         Number of Fourier components. Defaults to size along dim.
-    dim : string, optional
+    dim : int, optional
         Axis along which to do the transformation.
-        Uses the only dimension of darray is 1D.
+        Uses the only dimension if darray is 1D.
 
     Returns
     -------
     darray : xarray
         Analytic signal of the Hilbert transform of 'darray' along selected axis.
     """
-    dim = get_maybe_only_dim(darray, dim)
+    dim = get_maybe_only_dim(darray, dim)  # TODO wrong ! this isn't a dimension, this is an axis.....
     n_orig = darray.shape[dim]
     N_unspecified = N is None
     if N_unspecified:
@@ -680,7 +689,7 @@ def hilbert(darray, N=None, dim=None):
     )
 
 
-def _hilbert_wraper(darray, N, n_orig, N_unspecified, axis=-1):
+def _hilbert_wraper(darray: xr.DataArray, N: int, n_orig: int, N_unspecified: int, axis: int = -1) -> xr.DataArray:
     """
     Hilbert wraper used to keep the signal dimension length constant
     """

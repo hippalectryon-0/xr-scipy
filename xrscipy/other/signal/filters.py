@@ -1,3 +1,5 @@
+"""custom filters"""
+
 import warnings
 from typing import Any, TypeVar
 
@@ -5,6 +7,8 @@ import numpy as np
 import scipy.signal
 import xarray as xr
 from numpy import ndarray
+
+# noinspection PyProtectedMember
 from numpy._typing import ArrayLike
 from scipy.signal import sosfiltfilt
 

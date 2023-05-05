@@ -1,6 +1,6 @@
 """utils for signal"""
+import typing
 import warnings
-from typing import Hashable
 
 import xarray as xr
 
@@ -25,7 +25,7 @@ warnings.filterwarnings("always", category=FilteringNaNWarning)
 warnings.filterwarnings("always", category=UnevenSamplingWarning)
 
 
-def get_maybe_only_dim(darray: xr.DataArray, dim: str) -> Hashable:
+def get_maybe_only_dim(darray: xr.DataArray, dim: str) -> str:
     """
     Returns <dim>, or the only dimension of the array
 
@@ -38,10 +38,11 @@ def get_maybe_only_dim(darray: xr.DataArray, dim: str) -> Hashable:
     """
     if dim is not None:
         return dim
-    if len(darray.dims) == 1:
-        return darray.dims[0]
-    else:
+    if len(darray.dims) != 1:
         raise ValueError("Specify the dimension")
+    if not isinstance(res := darray.dims[0], str):
+        raise ValueError("Got unexpectedly many dims")
+    return typing.cast(res, str)
 
 
 def get_maybe_last_dim_axis(darray: xr.DataArray, dim: str = None) -> tuple[str, int | tuple[int, ...]]:
