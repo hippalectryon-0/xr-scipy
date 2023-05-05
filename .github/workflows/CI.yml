@@ -37,7 +37,7 @@ jobs:
 
       - name: Run Flake8
         run: |
-          poetry run flake8 xrscipy --count --ignore=E203,E501 --show-source --statistics --exclude=**/__init__.py
+          poetry run flake8 xrscipy --count --ignore=E203,E501,W503 --show-source --statistics --exclude=**/__init__.py
 
       - name: Run Tests
         run: |

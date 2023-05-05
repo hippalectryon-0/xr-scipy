@@ -1,5 +1,6 @@
 import numpy as np
 import scipy.signal
+import scipy.signal.spectral
 import xarray as xr
 
 try:

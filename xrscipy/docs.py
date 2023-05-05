@@ -57,9 +57,7 @@ class DocParser:
         else:
             self.parsed_doc.short_description = string
             self.parsed_doc.long_description = (
-                f"{self.parsed_doc.short_description}\n{self.parsed_doc.long_description}"
-                if self.parsed_doc.long_description
-                else self.parsed_doc.short_description
+                f"{sd}\n{ld}" if self.parsed_doc.long_description else self.parsed_doc.short_description
             )
 
     def replace_params(self, **kwargs: CDParam) -> None:
