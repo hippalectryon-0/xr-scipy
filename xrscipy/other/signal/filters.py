@@ -8,7 +8,7 @@ from numpy import ndarray
 from numpy._typing import ArrayLike
 from scipy.signal import sosfiltfilt
 
-from xrscipy.other.signal.utils import get_maybe_only_dim, get_sampling_step
+from xrscipy.other.signal.utils import DecimationWarning, FilteringNaNWarning, get_maybe_only_dim, get_sampling_step
 
 
 def _firwin_ba(*args, **kwargs) -> tuple[np.ndarray, ndarray]:
@@ -26,14 +26,6 @@ _ORDER_DEFAULTS = {
     "iir": 4,
     "fir": 29,
 }
-
-
-class FilteringNaNWarning(Warning):
-    pass
-
-
-# always (not just once) show filtering NaN warnings to see the responsible signal
-warnings.filterwarnings("always", category=FilteringNaNWarning)
 
 
 def frequency_filter(
@@ -285,14 +277,6 @@ def bandstop(darray: xr.DataArray, f_low: ArrayLike, f_high: ArrayLike, *args, *
     """
     kwargs = _update_ftype_kwargs(kwargs, "bandstop", True)
     return frequency_filter(darray, [f_low, f_high], *args, **kwargs)
-
-
-class DecimationWarning(Warning):
-    pass
-
-
-# always (not just once) show decimation warnings to see the responsible signal
-warnings.filterwarnings("always", category=DecimationWarning)
 
 
 def decimate(

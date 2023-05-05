@@ -1,17 +1,33 @@
+"""utils for signal"""
 import warnings
+from typing import Hashable
+
+import xarray as xr
 
 
 class UnevenSamplingWarning(Warning):
     pass
 
 
+class FilteringNaNWarning(Warning):
+    pass
+
+
+class DecimationWarning(Warning):
+    pass
+
+
+# always (not just once) show decimation warnings to see the responsible signal
+warnings.filterwarnings("always", category=DecimationWarning)
+# always (not just once) show filtering NaN warnings to see the responsible signal
+warnings.filterwarnings("always", category=FilteringNaNWarning)
 # always (not just once) show decimation warnings to see the responsible signal
 warnings.filterwarnings("always", category=UnevenSamplingWarning)
 
 
-def get_maybe_only_dim(darray, dim):
+def get_maybe_only_dim(darray: xr.DataArray, dim: str) -> Hashable:
     """
-    Check the dimension of the signal.
+    Returns <dim>, or the only dimension of the array
 
     Parameters
     ----------
@@ -28,7 +44,8 @@ def get_maybe_only_dim(darray, dim):
         raise ValueError("Specify the dimension")
 
 
-def get_maybe_last_dim_axis(darray, dim=None):
+def get_maybe_last_dim_axis(darray: xr.DataArray, dim: str = None) -> tuple[str, int | tuple[int, ...]]:
+    """get the axis associated with dim, where by default dim is the dimension of the last axis"""
     if dim is None:
         axis = darray.ndim - 1
         dim = darray.dims[axis]
@@ -37,18 +54,19 @@ def get_maybe_last_dim_axis(darray, dim=None):
     return dim, axis
 
 
-def get_sampling_step(darray, dim=None, rtol=1e-3):
+def get_sampling_step(darray: xr.DataArray, dim: str = None, rtol: float = 1e-3) -> float:
+    """get avg step along dimension"""
     dim = get_maybe_only_dim(darray, dim)
 
     coord = darray.coords[dim]
-    dt_avg = float(coord[-1] - coord[0]) / (len(coord) - 1)  # N-1 segments
-    dt_first = float(coord[1] - coord[0])
+    step_avg = (coord[-1] - coord[0]) / (len(coord) - 1)  # N-1 segments
+    step_first = coord[1] - coord[0]
 
-    if abs(dt_avg - dt_first) > rtol * min(dt_first, dt_avg):
+    if abs(step_avg - step_first) > rtol * min(step_first, step_avg):
         # show warning at caller level to see which signal it is related to
         warnings.warn(
-            "Average sampling {:.3g} != first sampling step {:.3g}".format(dt_avg, dt_first),
+            f"Average sampling {step_avg:.3g} != first sampling step {step_first:.3g}",
             UnevenSamplingWarning,
             stacklevel=2,
         )
-    return dt_avg  # should be more precise
+    return step_avg  # should be more precise
