@@ -46,4 +46,4 @@ jobs:
       - name: Build docs
         run: |
           . .venv/bin/activate
-          sphinx-build -n -b html -d _build/doctrees docs docs/_build/html
+          sphinx-build -n -b html -d source build

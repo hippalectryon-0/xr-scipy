@@ -18,7 +18,7 @@ Documentation
 
 **Examples**
 
-* :doc:`grad_integ`
+* :doc:`integrate`
 * :doc:`fft`
 * :doc:`filters`
 * :doc:`spectral`
@@ -28,7 +28,7 @@ Documentation
    :hidden:
    :caption: Examples
 
-   grad_integ
+   integrate
    fft
    filters
    spectral

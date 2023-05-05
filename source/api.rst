@@ -57,14 +57,14 @@ Spectral (FFT) analysis
 .. autosummary::
    :toctree: generated/
 
-   signal.csd
-   signal.psd
-   signal.coherence
-   signal.xcorrelation
-   signal.crossspectrogram
-   signal.spectrogram
-   signal.coherogram
-   signal.hilbert
+   other.signal.csd
+   other.signal.psd
+   other.signal.coherence
+   other.signal.xcorrelation
+   other.signal.crossspectrogram
+   other.signal.spectrogram
+   other.signal.coherogram
+   other.signal.hilbert
 
 Digital filters
 ===============
@@ -72,10 +72,10 @@ Digital filters
 .. autosummary::
    :toctree: generated/
 
-   signal.frequency_filter
-   signal.lowpass
-   signal.highpass
-   signal.bandpass
-   signal.bandstop
-   signal.decimate
-   signal.savgol_filter
+   other.signal.frequency_filter
+   other.signal.lowpass
+   other.signal.highpass
+   other.signal.bandpass
+   other.signal.bandstop
+   other.signal.decimate
+   other.signal.savgol_filter

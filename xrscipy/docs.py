@@ -47,6 +47,11 @@ class DocParser:
 
         self.parsed_doc = docstring_parser.parse(docstring) if docstring else docstring_parser.parse_from_object(fun)
 
+        # Fix snippets
+        for e in self.parsed_doc.meta:
+            if isinstance(e, docstring_parser.common.DocstringExample):
+                e.description = f"{e.snippet}\n{e.description}"
+
     def insert_description(self, string: str | None) -> None:
         """insert a description describing the function's new signature"""
         if string is None:
@@ -70,11 +75,14 @@ class DocParser:
 
     def remove_params(self, *keys: str) -> None:
         """remove params from docstring"""
-        for i, e in enumerate(self.parsed_doc.meta):
+        to_remove = []
+        for i, e in enumerate(list(self.parsed_doc.meta)):
             if not isinstance(e, docstring_parser.DocstringParam):
                 continue
             if e.arg_name in keys:
-                del self.parsed_doc.meta[i]
+                to_remove.append(i)
+        for i in sorted(to_remove, reverse=True):
+            del self.parsed_doc.meta[i]
 
     def remove_sections(self, *keys: str) -> None:
         """remove sections from docstring"""
@@ -110,7 +118,9 @@ class DocParser:
 
     def __repr__(self) -> str:
         """print this docstrings"""
-        return docstring_parser.compose(self.parsed_doc)
+        return (
+            docstring_parser.compose(self.parsed_doc).replace("Seealso\n--------", "See Also\n----------------") + "\n"
+        )
 
     def replace_strings_returns(self, *replacements: tuple[str, str]) -> None:
         """replaces strings in returns"""

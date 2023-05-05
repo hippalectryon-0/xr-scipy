@@ -39,6 +39,7 @@ extensions = [
 extlinks = {
     "issue": ("https://github.com/hippalectryon-0/xr-scipy/issues/%s", "GH"),
     "pull": ("https://github.com/hippalectryon-0/xr-scipy/pull/%s", "PR"),
+    "doi": ("https://dx.doi.org/%s", "doi:%s"),
 }
 
 autosummary_generate = True

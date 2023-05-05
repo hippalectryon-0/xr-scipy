@@ -42,7 +42,7 @@ def get_maybe_only_dim(darray: xr.DataArray, dim: str) -> str:
         raise ValueError("Specify the dimension")
     if not isinstance(res := darray.dims[0], str):
         raise ValueError("Got unexpectedly many dims")
-    return typing.cast(res, str)
+    return typing.cast(str, res)
 
 
 def get_maybe_last_dim_axis(darray: xr.DataArray, dim: str = None) -> tuple[str, int | tuple[int, ...]]:
@@ -58,8 +58,7 @@ def get_maybe_last_dim_axis(darray: xr.DataArray, dim: str = None) -> tuple[str,
 def get_sampling_step(darray: xr.DataArray, dim: str = None, rtol: float = 1e-3) -> float:
     """get avg step along dimension"""
     dim = get_maybe_only_dim(darray, dim)
-
-    coord = darray.coords[dim]
+    coord = darray.coords[dim].data
     step_avg = (coord[-1] - coord[0]) / (len(coord) - 1)  # N-1 segments
     step_first = coord[1] - coord[0]
 
