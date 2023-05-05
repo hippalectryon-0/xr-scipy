@@ -31,7 +31,7 @@ jobs:
 
       - name: Run pre-commit
         run: |
-          . venv/bin/activate
+          . .venv/bin/activate
           pre-commit run --all-files --show-diff-on-failure
 
       - name: Run Flake8
