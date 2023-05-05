@@ -82,7 +82,6 @@ coordinates.
 from typing import Callable
 
 import numpy as np
-import pyperclip
 import xarray as xr
 from scipy import fft as sp_fft
 
@@ -229,11 +228,6 @@ def _inject_docs(func: Callable, description: str = None, nd: bool = False) -> N
 
 fft = partial(_wrap1d, sp_fft.fft, sp_fft.fftfreq)
 _inject_docs(fft, description="fft(a, coord, n=None, norm=None)")
-pyperclip.copy(sp_fft.fft.__doc__)
-# print("1")
-# time.sleep(2)
-pyperclip.copy(fft.__doc__)
-
 
 ifft = partial(_wrap1d, sp_fft.ifft, sp_fft.fftfreq)
 _inject_docs(ifft, description="ifft(a, coord, n=None, norm=None)")
