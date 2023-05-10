@@ -145,24 +145,16 @@ def _wrap(func: Callable, freq_func: Callable, x: _DAS, *coords: str, **kwargs) 
         exclude_dims={*input_core_dims},
     )
 
-    # attach frequency coordinate  # TODO merge those two ugly if branches
-    if nd:
-        dxs = [get_1D_spacing(x) for x in coords_da]
-        for coord, dim, dx in zip(coords, dims, dxs):
-            size = sizes[dim]
-            freq = (
-                freq_func((size - 1) * 2 if func.__name__ == "irfftn" and dim == dims[-1] else size, dx)
-                if dim == dims[-1]
-                else _fftfreq(size, dx)
-            )  # /!\ in n dims, rfftn does fft over all axis except last one where it does rfft + irfftn changes output dims n -> ~2*n
-            ds[coord] = (dim,), freq
-    else:
-        coord, dim, coord_da = coords[0], dims[0], coords_da[0]
-        size = kwargs.get("n", None) or len(ds[dim])
-        freq = freq_func(size, get_1D_spacing(coord_da))
-        if freq.size != ds[dim].size:  # functions such as rfft, hfft, irfft, ihfft in scipy.fft modify the output shape
+    # attach frequency coordinate
+    dxs = [get_1D_spacing(x) for x in coords_da]
+    for coord, dim, dx in zip(coords, dims, dxs):
+        size = sizes[dim] if nd else (kwargs.get("n", None) or len(ds[dim]))
+        freq = freq_func(size, dx)
+        if (
+            freq.size != ds[dim].size
+        ):  # functions such as rfft, hfft, irfft, ihfft in scipy.fft modify the output shape # /!\ in n dims, rfftn does fft over all axis except last one where it does rfft + irfftn changes output dims n -> ~2*n
             size = (len(ds[dim]) - 1) * 2
-            freq = freq_func(size, get_1D_spacing(coord_da))
+            freq = freq_func(size, dx)
         ds[coord] = (dim,), freq
     return ds
 

@@ -9,7 +9,7 @@ from xrscipy.utils import _DAS, partial
 
 
 def _wrapfftpack(func: Callable, freq_func: Callable, x: _DAS, *coords: str, **kwargs) -> _DAS:
-    """wrapper around _wrapnd that changes s<->shape"""
+    """wrapper around _wrap that changes s<->shape"""
     kwargs["s"] = kwargs.pop("shape", None)
 
     # noinspection PyMissingOrEmptyDocstring

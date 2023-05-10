@@ -9,11 +9,11 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
-- Refactor some inner functions in `fft`
+- Refactor some inner functions in `fft, fftpack`
 
 ### Fixed
 
-- COrrectly rename `shape` to `s` in the docs
+- Correctly rename `shape` to `s` in the docs for `fft`
 
 ## [1.0.0]
 
