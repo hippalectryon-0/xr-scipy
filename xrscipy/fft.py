@@ -173,23 +173,17 @@ def _inject_docs(func: Callable, description: str = None, nd: bool = False) -> N
     func_name = func.__name__
     doc = DocParser(fun=getattr(sp_fft, func_name))
 
-    if not nd:
+    doc.replace_params(
+        x=CDParam("a", "The data to transform.", "xarray object"),
+        axis=CDParam(
+            "coord",
+            "The axis along which the transform is applied. The coordinate must be evenly spaced.",
+            "string",
+        ),
+    )
+
+    if nd:
         doc.replace_params(
-            x=CDParam("a", "The data to transform.", "xarray object"),
-            axis=CDParam(
-                "coord",
-                "The axis along which the transform is applied. The coordinate must be evenly spaced.",
-                "string",
-            ),
-        )
-    else:
-        doc.replace_params(
-            x=CDParam("a", "Object which the transform is applied.", "xarray object"),
-            axes=CDParam(
-                "coord",
-                "The axis along which the transform is applied. The coordinate must be evenly spaced.",
-                "string",
-            ),
             s=CDParam("s", "the shape of the result.", "mapping from coords to size", optional=True),
         )
 
@@ -206,32 +200,46 @@ def _inject_docs(func: Callable, description: str = None, nd: bool = False) -> N
     func.__name__ = func_name
 
 
-fft = partial(_wrap, sp_fft.fft, sp_fft.fftfreq)
-_inject_docs(fft, description="fft(a, coord, n=None, norm=None)")
+def _partial_and_doc(*args, description: str = "", **kwargs) -> Callable:
+    f = partial(_wrap, *args, **kwargs)
+    _inject_docs(f, description=description)
+    return f
 
-ifft = partial(_wrap, sp_fft.ifft, sp_fft.fftfreq)
-_inject_docs(ifft, description="ifft(a, coord, n=None, norm=None)")
 
-rfft = partial(_wrap, sp_fft.rfft, sp_fft.rfftfreq)
-_inject_docs(rfft, description="rfft(a, coord, n=None, norm=None)")
+fft = _partial_and_doc(sp_fft.fft, sp_fft.fftfreq, description="fft(a, coord, n=None, norm=None)")
 
-irfft = partial(_wrap, sp_fft.irfft, sp_fft.rfftfreq)
-_inject_docs(irfft, description="irfft(a, coord, n=None, norm=None)")
+ifft = _partial_and_doc(sp_fft.ifft, sp_fft.fftfreq, description="ifft(a, coord, n=None, norm=None)")
 
-fftn = partial(_wrap, sp_fft.fftn, sp_fft.fftfreq, _nd=True)
-_inject_docs(fftn, nd=True, description="fftn(a, *coords, s=None, norm=None)")
+rfft = _partial_and_doc(sp_fft.rfft, sp_fft.rfftfreq, description="rfft(a, coord, n=None, norm=None)")
 
-ifftn = partial(_wrap, sp_fft.ifftn, sp_fft.fftfreq, _nd=True)
-_inject_docs(ifftn, nd=True, description="ifftn(a, *coords, s=None, norm=None)")
+irfft = _partial_and_doc(sp_fft.irfft, sp_fft.rfftfreq, description="irfft(a, coord, n=None, norm=None)")
 
-rfftn = partial(_wrap, sp_fft.rfftn, sp_fft.rfftfreq, _nd=True, _fftfreq=sp_fft.fftfreq)
-_inject_docs(rfftn, nd=True, description="rfftn(a, *coords, s=None, norm=None)")
+fftn = _partial_and_doc(
+    sp_fft.fftn, sp_fft.fftfreq, _nd=True, nd=True, description="fftn(a, *coords, s=None, norm=None)"
+)
 
-irfftn = partial(_wrap, sp_fft.irfftn, sp_fft.rfftfreq, _nd=True, _fftfreq=sp_fft.fftfreq)
-_inject_docs(irfftn, nd=True, description="irfftn(a, *coords, s=None, norm=None)")
+ifftn = _partial_and_doc(
+    sp_fft.ifftn, sp_fft.fftfreq, _nd=True, nd=True, description="ifftn(a, *coords, s=None, norm=None)"
+)
 
-hfft = partial(_wrap, sp_fft.hfft, sp_fft.rfftfreq)
-_inject_docs(hfft, description="hfft(a, coord, n=None, norm=None)")
+rfftn = _partial_and_doc(
+    sp_fft.rfftn,
+    sp_fft.rfftfreq,
+    _nd=True,
+    _fftfreq=sp_fft.fftfreq,
+    nd=True,
+    description="rfftn(a, *coords, s=None, norm=None)",
+)
 
-ihfft = partial(_wrap, sp_fft.ihfft, sp_fft.rfftfreq)
-_inject_docs(ihfft, description="ihfft(a, coord, n=None, norm=None)")
+irfftn = _partial_and_doc(
+    sp_fft.irfftn,
+    sp_fft.rfftfreq,
+    _nd=True,
+    _fftfreq=sp_fft.fftfreq,
+    nd=True,
+    description="irfftn(a, *coords, s=None, norm=None)",
+)
+
+hfft = _partial_and_doc(sp_fft.hfft, sp_fft.rfftfreq, description="hfft(a, coord, n=None, norm=None)")
+
+ihfft = _partial_and_doc(sp_fft.ihfft, sp_fft.rfftfreq, description="ihfft(a, coord, n=None, norm=None)")
