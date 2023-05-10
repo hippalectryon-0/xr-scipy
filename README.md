@@ -1,4 +1,3 @@
-[![Build Status](https://travis-ci.org/fujiisoup/xr-scipy.svg?branch=master)](https://travis-ci.org/fujiisoup/xr-scipy)
 [![Documentation Status](https://readthedocs.org/projects/xr-scipy/badge/?version=latest)](http://xr-scipy.readthedocs.io/en/latest/?badge=latest)
 
 # scipy for xarray
