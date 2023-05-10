@@ -1,10 +1,9 @@
-
 Scipy for Xarray
 ================
 
 xr-scipy is a thin wrapper of scipy for `xarray <http://xarray.pydata.org>`_ eco-system.
 
-Many scipy functions, such as `scipy.integrate.trapz`, requires coordinate
+Many scipy functions, such as `scipy.integrate.trapezoid`, requires coordinate
 array as an argument.
 Since xarray objects possess their coordinate values in it,
 there must be simpler api for such functions.
@@ -19,9 +18,8 @@ Documentation
 
 **Examples**
 
-* :doc:`grad_integ`
+* :doc:`integrate`
 * :doc:`fft`
-* :doc:`interpolate`
 * :doc:`filters`
 * :doc:`spectral`
 
@@ -30,9 +28,8 @@ Documentation
    :hidden:
    :caption: Examples
 
-   grad_integ
+   integrate
    fft
-   interpolate
    filters
    spectral
 
@@ -54,4 +51,4 @@ License
 
 xr-scipy is available under the open source `Apache License`__.
 
-__ http://www.apache.org/licenses/LICENSE-2.0.html
+__ https://www.apache.org/licenses/LICENSE-2.0.html

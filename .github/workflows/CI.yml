@@ -1,0 +1,49 @@
+name: xrscipy CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [ '3.11' ]  # TODO add 3.9, 3.10 once CI stable
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+          architecture: 'x64'
+
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python -
+          poetry config virtualenvs.in-project true
+
+      - name: Install dependencies
+        run: |
+          poetry install
+
+      - name: Run pre-commit
+        run: |
+          . .venv/bin/activate
+          pre-commit run --all-files --show-diff-on-failure
+
+      - name: Run Flake8
+        run: |
+          poetry run flake8 xrscipy --count --ignore=E203,E501,W503,W605 --show-source --statistics --exclude=**/__init__.py
+
+      - name: Run Tests
+        run: |
+          poetry run pytest tests --cov=xrscipy --cov-config=.coveragerc --cov-report=xml --cov-report=term-missing
+
+      - name: Build docs
+        run: |
+          . .venv/bin/activate
+          sphinx-build -n -b html source build

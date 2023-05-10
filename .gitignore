@@ -62,3 +62,5 @@ xrscipy/version.py
 Icon*
 
 .ipynb_checkpoints
+/source/generated/
+/source/savefig/

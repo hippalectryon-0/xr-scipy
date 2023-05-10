@@ -1,0 +1,56 @@
+[tool.poetry]
+name = "xrscipy"
+version = "1.0.0"
+authors = ["xarray Developers <xarray@googlegroups.com>"]
+license = "Apache"
+description = "Scipy integrated into xarray"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+    "Intended Audience :: Science/Research",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Scientific/Engineering",
+]
+
+[tool.poetry.dependencies]
+python = ">=3.9,<3.12"
+xarray = ">=2023"
+scipy = ">=1.9"
+docstring-parser = "^0.15"
+urllib3 = ">2"  # poetry bug !!
+
+[tool.poetry.group.dev.dependencies]
+pytest-cov = "^4.0.0"
+flake8 = "^6.0.0"
+sphinx = "^6.0.0"
+sphinx-rtd-theme = "^1.2.0"
+pre-commit = "^3.3.1"
+isort = "5.12.0"
+black = "23.3.00"
+pycln = "2.1.3"
+ipython = "^8.13.2"
+matplotlib = "^3.7.0"  # used in docs
+myst-parser = "1.0.0"  # used in docs
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+# pre-commit config
+[tool.black]
+line-length = 120
+
+[tool.pycln]
+all = true
+
+[tool.isort]
+line_length = 120
+multi_line_output = 3
+include_trailing_comma = true
+force_grid_wrap = 0
+use_parentheses = true
+ensure_newline_before_comments = true
+split_on_trailing_comma = true

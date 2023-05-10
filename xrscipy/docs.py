@@ -1,157 +1,142 @@
-from __future__ import absolute_import, division, print_function
-from collections import OrderedDict
-from textwrap import dedent as dedent_
+"""Tools for interacting with docstrings"""
+from typing import Any, Callable
 
-from . import errors
+import docstring_parser
+
+SECTIONS = [
+    "Args",
+    "Arguments",
+    "Attributes",
+    "Example",
+    "Examples",
+    "Keyword Args",
+    "Keyword Arguments",
+    "Note",
+    "Notes",
+    "Methods",
+    "Other Parameters",
+    "Parameters",
+    "Return",
+    "Returns",
+    "Raises",
+    "References",
+    "See Also",
+    "See also",
+    "Warning",
+    "Warnings",
+    "Warns",
+    "Yield",
+    "Yields",
+]
+
+ALIASES = {"Return": "Returns", "See also": "See Also"}
 
 
-SECTIONS = ['Args', 'Arguments', 'Attributes', 'Example', 'Examples',
-            'Keyword Args', 'Keyword Arguments', 'Note', 'Notes', 'Methods',
-            'Other Parameters', 'Parameters', 'Return', 'Returns', 'Raises',
-            'References', 'See Also', 'See also', 'Warning', 'Warnings',
-            'Warns', 'Yield', 'Yields']
+class CDParam(docstring_parser.DocstringParam):
+    """wrapper around DocstringParam"""
 
-ALIASES = {'Return': 'Returns', 'See also': 'See Also'}
+    def __init__(self, name: str, description: str, argtype: str = None, optional: bool = False, default: Any = None):
+        super().__init__(["param", name], description, name, argtype, optional, default)
 
 
-def dedent(string):
-    """ Similar to textwrap.dedent but neglect the indent of the first
-    line. """
-    if string is None:
-        return string
-    first_line = string.split('\n')[0]
-    from_second = dedent_(string[len(first_line)+1:])
-    return dedent_(first_line) + '\n' + from_second
+class DocParser:
+    """A simple parser for sectioning docstrings."""
 
+    def __init__(self, docstring: str = None, fun: Callable = None):
+        assert docstring is not None or fun is not None
 
-class DocParser(object):
-    def __init__(self, docstring):
-        """ A simple parser for sectioning docstrings. """
-        if docstring is None:
-            raise errors.NoDocstringError
-        docstring = dedent(docstring)
-        self.description = []
-        key = None
-        self.sections = OrderedDict()
+        self.parsed_doc = docstring_parser.parse(docstring) if docstring else docstring_parser.parse_from_object(fun)
 
-        # parse
-        docstring = docstring.split('\n')
-        for doc in docstring:
-            if doc.strip() in SECTIONS:
-                key = doc.strip()
-                if key in ALIASES:
-                    key = ALIASES[key]
-                if key not in self.sections:
-                    self.sections[key] = []
-            else:
-                if key is None:
-                    self.description.append(doc + '\n')
-                else:
-                    self.sections[key].append(doc + '\n')
-        self.parameters = self._parser_subsection('Parameters')
-        self.returns = self._parser_subsection('Returns')
-        self.see_also = self._parser_subsection('See Also')
+        # Fix snippets
+        for e in self.parsed_doc.meta:
+            if isinstance(e, docstring_parser.common.DocstringExample):
+                e.description = f"{e.snippet}\n{e.description}"
 
-    def _parser_subsection(self, section):
-        subsections = OrderedDict()
-        if section not in self.sections:
-            return subsections
+    def insert_description(self, string: str | None) -> None:
+        """insert a description describing the function's new signature"""
+        if string is None:
+            return
+        sd, ld = self.parsed_doc.short_description, self.parsed_doc.long_description
+        if string.split("(")[0] == sd.split("(")[0]:  # if original doc already has a description, update
+            self.parsed_doc.short_description = string
+        else:
+            self.parsed_doc.short_description = string
+            self.parsed_doc.long_description = (
+                f"{sd}\n\n{ld}" if self.parsed_doc.long_description else self.parsed_doc.short_description
+            )
 
-        key = None
-        for line in self.sections[section]:
-            if len(line) > 0 and line[0] != ' ' and ':' in line:  # title
-                key = line.split(':')[0].strip()
-                subsections[key] = []
-                subsections[key].append(line)
-            elif key is not None:
-                subsections[key].append(line)
+    def replace_params(self, **kwargs: CDParam) -> None:
+        """replace parameters in the docstring"""
+        for i, e in enumerate(self.parsed_doc.meta):
+            if not isinstance(e, docstring_parser.DocstringParam):
+                continue
+            if e.arg_name in kwargs:
+                self.parsed_doc.meta[i] = kwargs[e.arg_name]
 
-        del self.sections[section]
+    def remove_params(self, *keys: str) -> None:
+        """remove params from docstring"""
+        to_remove = []
+        for i, e in enumerate(list(self.parsed_doc.meta)):
+            if not isinstance(e, docstring_parser.DocstringParam):
+                continue
+            if e.arg_name in keys:
+                to_remove.append(i)
+        for i in sorted(to_remove, reverse=True):
+            del self.parsed_doc.meta[i]
 
-        return subsections
+    def remove_sections(self, *keys: str) -> None:
+        """remove sections from docstring"""
+        for i, e in enumerate(list(self.parsed_doc.meta)):
+            if e.args[0] in keys:
+                del self.parsed_doc.meta[i]
 
-    def insert_description(self, string):
-        if self.description[0] != '\n':
-            string = string + '\n'
+    def add_params(self, **kwargs: CDParam) -> None:
+        """add params to the docstring"""
+        self.parsed_doc.meta.append(*kwargs)
 
-        funcname = string.split('(')[0]
-        # if original doc already has a description, remove this.
-        for i in range(min(4, len(self.description))):
-            if funcname + '(' in self.description[i]:
-                self.description.pop(i)
-                self.description.pop(i)
-
-        self.description.insert(0, string + '\n')
-
-    def replace_params(self, **kwargs):
-        self.parameters = self._replace_subsections(self.parameters, **kwargs)
-
-    def replace_returns(self, **kwargs):
-        self.returns = self._replace_subsections(self.returns, **kwargs)
-
-    def _replace_subsections(self, subsection, **kwargs):
-        new_subsec = OrderedDict()
-        for key, item in subsection.items():
-            if key in kwargs.keys():
-                new_key = kwargs[key].split(':')[0].strip()
-                new_subsec[new_key] = kwargs[key]
-            else:
-                new_subsec[key] = item
-        return new_subsec
-
-    def remove_params(self, *keys):
+    def reorder_params(self, *keys: str) -> None:
+        """reorder params so that the keys in <args> appear first, in the order provided"""
+        new_meta, old_meta = [], list(self.parsed_doc.meta)
         for k in keys:
-            if k in self.parameters:
-                del self.parameters[k]
+            new_meta.extend(
+                old_meta.pop(i)
+                for i, e in enumerate(list(old_meta))
+                if isinstance(e, docstring_parser.DocstringParam) and e.arg_name == k
+            )
+        self.parsed_doc.meta = new_meta + old_meta
 
-    def remove_sections(self, *keys):
-        for k in keys:
-            if k in self.sections:
-                del self.sections[k]
+    def insert_see_also(self, string: str) -> None:
+        """insert an element in see_also"""
+        contains_isalso = False
+        for e in self.parsed_doc.meta:
+            if isinstance(e, docstring_parser.DocstringMeta) and e.args[0] == "see_also":
+                e.description += f"\n{string}"
+                contains_isalso = True
+                continue
+        if not contains_isalso:
+            self.parsed_doc.meta.append(docstring_parser.DocstringMeta(description=string, args=["see_also"]))
 
-    def add_params(self, **kwargs):
-        self.parameters.update(kwargs)
+    def __repr__(self) -> str:
+        """print this docstrings"""
+        return (
+            docstring_parser.compose(self.parsed_doc).replace("Seealso\n--------", "See Also\n----------------") + "\n"
+        )
 
-    def reorder_params(self, *args):
-        params = OrderedDict()
-        for k in args:
-            if k in self.parameters:
-                params[k] = self.parameters.pop(k)
-        params.update(self.parameters)
-        self.parameters = params
+    def replace_strings_returns(self, *replacements: tuple[str, str]) -> None:
+        """replaces strings in returns"""
+        for e in self.parsed_doc.meta:
+            if not isinstance(e, docstring_parser.DocstringReturns):
+                continue
+            for rep_from, rep_to in replacements:
+                if e.description:
+                    e.description.replace(rep_from, rep_to)
 
-    def insert_see_also(self, **kwargs):
-        new_see_also = OrderedDict()
-        for k, item in kwargs.items():
-            new_see_also[k] = item
-        new_see_also.update(self.see_also)
-        self.see_also = new_see_also
+    def get_parameter(self, name: str) -> docstring_parser.DocstringParam | None:
+        """get parameter from name"""
+        return next((e for e in self.parsed_doc.params if e.arg_name == name), None)
 
-    def __repr__(self):
-        """ print this docstrings """
-        docs = ''.join(self.description)
-        docs += ''.join(['Parameters\n', '----------\n'])
-        for key, item in self.parameters.items():
-            docs += ''.join(item)
-        if docs[-2] != '\n':
-            docs += '\n'
-
-        if len(self.returns) > 0:
-            docs += ''.join(['Returns\n', '-------\n'])
-            for key, item in self.returns.items():
-                docs += ''.join(item)
-            if docs[-2] != '\n':
-                docs += '\n'
-
-        if len(self.see_also) > 0:
-            docs += ''.join(['See Also\n', '--------\n'])
-            for key, item in self.see_also.items():
-                docs += ''.join(item)
-            if docs[-2] != '\n':
-                docs += '\n'
-
-        for key, item in self.sections.items():
-            docs += key + '\n'
-            docs += ''.join(item)
-
-        return docs[:-1]  # remove the last \n
+    def replace_strings_description(self, *replacements: tuple[str, str]) -> None:
+        """replaces strings in description"""
+        for rep_from, rep_to in replacements:
+            self.parsed_doc.long_description = self.parsed_doc.long_description.replace(rep_from, rep_to)
+            self.parsed_doc.short_description = self.parsed_doc.short_description.replace(rep_from, rep_to)
