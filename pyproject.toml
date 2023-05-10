@@ -33,6 +33,7 @@ black = "23.3.00"
 pycln = "2.1.3"
 ipython = "^8.13.2"
 matplotlib = "^3.7.0"  # used in docs
+myst-parser = "1.0.0"  # used in docs
 
 [build-system]
 requires = ["poetry-core"]
