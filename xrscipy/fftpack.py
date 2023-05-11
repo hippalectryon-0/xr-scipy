@@ -70,6 +70,7 @@ def _inject_docs(func: Callable, description: str = None, _nd: bool = False) -> 
 def _partial_and_doc(
     f_orig: Callable, *args, description: str = "(x, coord, n=None)", wrap: Callable = _wrap, **kwargs
 ) -> Callable:
+    """apply partial and docs"""
     f = partial(wrap, f_orig, *args, **kwargs)
 
     _inject_docs(f, description=f"{f_orig.__name__}{description}", _nd=wrap == _wrapfftpack)

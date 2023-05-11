@@ -105,8 +105,6 @@ def _wrap(func: Callable, freq_func: Callable, x: _DAS, *coords: str, **kwargs) 
         the coords along which to do the transform. Each coord must map to a single dimension.
     _nd: bool
         If the function is 1D or n-dimensional
-    _fftfreq: Callable
-        Alternative fftfreq function to use in some special cases
     """
     nd = kwargs.pop("_nd", False)
     axes_arg = "axes" if nd else "axis"
@@ -114,7 +112,6 @@ def _wrap(func: Callable, freq_func: Callable, x: _DAS, *coords: str, **kwargs) 
     errors.raise_invalid_args(["overwrite_x", "workers", "plan", axes_arg], kwargs)
 
     sizes = kwargs.pop(size_arg, None)
-    _fftfreq = kwargs.pop("_fftfreq", freq_func)
 
     for c in coords:
         errors.raise_not_sorted(x[c])
@@ -201,6 +198,7 @@ def _inject_docs(func: Callable, description: str = None, _nd: bool = False) -> 
 
 
 def _partial_and_doc(f_orig: Callable, *args, description: str = "(x, coord, n=None, norm=None)", **kwargs) -> Callable:
+    """apply partial and docs"""
     f = partial(_wrap, f_orig, *args, **kwargs)
 
     _inject_docs(f, description=f"{f_orig.__name__}{description}", _nd=kwargs.get("_nd"))
@@ -213,17 +211,7 @@ rfft = _partial_and_doc(sp_fft.rfft, sp_fft.rfftfreq)
 irfft = _partial_and_doc(sp_fft.irfft, sp_fft.rfftfreq)
 fftn = _partial_and_doc(sp_fft.fftn, sp_fft.fftfreq, _nd=True)
 ifftn = _partial_and_doc(sp_fft.ifftn, sp_fft.fftfreq, _nd=True)
-rfftn = _partial_and_doc(
-    sp_fft.rfftn,
-    sp_fft.rfftfreq,
-    _nd=True,
-    _fftfreq=sp_fft.fftfreq,
-)
-irfftn = _partial_and_doc(
-    sp_fft.irfftn,
-    sp_fft.rfftfreq,
-    _nd=True,
-    _fftfreq=sp_fft.fftfreq,
-)
+rfftn = _partial_and_doc(sp_fft.rfftn, sp_fft.rfftfreq, _nd=True)
+irfftn = _partial_and_doc(sp_fft.irfftn, sp_fft.rfftfreq, _nd=True)
 hfft = _partial_and_doc(sp_fft.hfft, sp_fft.rfftfreq)
 ihfft = _partial_and_doc(sp_fft.ihfft, sp_fft.rfftfreq)
