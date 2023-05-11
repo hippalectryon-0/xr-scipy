@@ -16,7 +16,7 @@ classifiers = [
 ]
 
 [tool.poetry.dependencies]
-python = ">=3.9,<3.12"
+python = ">=3.10,<3.12"
 xarray = ">=2023"
 scipy = ">=1.9"
 docstring-parser = "^0.15"

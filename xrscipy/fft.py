@@ -174,7 +174,7 @@ def _inject_docs(func: Callable, description: str = None, _nd: bool = False) -> 
     doc = DocParser(fun=getattr(sp_fft, func_name))
 
     doc.replace_params(
-        x=CDParam("a", "The data to transform.", "xarray object"),
+        x=CDParam("x", "The data to transform.", "xarray object"),
         axis=CDParam(
             "coord",
             "The axis along which the transform is applied. The coordinate must be evenly spaced.",
@@ -187,7 +187,7 @@ def _inject_docs(func: Callable, description: str = None, _nd: bool = False) -> 
             s=CDParam("s", "the shape of the result.", "mapping from coords to size", optional=True),
         )
 
-    doc.reorder_params("a", "n", "coord")
+    doc.reorder_params("x", "coord", "n", "s")
     doc.remove_params("overwrite_x", "workers", "plan")
     doc.remove_sections("Notes", "Examples")
     doc.replace_strings_returns(("array_like", "xarray object"), ("axes", "coords"), ("axis", "coord"))
@@ -200,11 +200,10 @@ def _inject_docs(func: Callable, description: str = None, _nd: bool = False) -> 
     func.__name__ = func_name
 
 
-def _partial_and_doc(f_orig: Callable, *args, description: str = None, **kwargs) -> Callable:
+def _partial_and_doc(f_orig: Callable, *args, description: str = "(x, coord, n=None, norm=None)", **kwargs) -> Callable:
     f = partial(_wrap, f_orig, *args, **kwargs)
-    if description is None:
-        description = f"{f_orig.__name__}(a, coord, n=None, norm=None)"
-    _inject_docs(f, description=description)
+
+    _inject_docs(f, description=f"{f_orig.__name__}{description}", _nd=kwargs.get("_nd"))
     return f
 
 
@@ -220,14 +219,11 @@ rfftn = _partial_and_doc(
     _nd=True,
     _fftfreq=sp_fft.fftfreq,
 )
-
 irfftn = _partial_and_doc(
     sp_fft.irfftn,
     sp_fft.rfftfreq,
     _nd=True,
     _fftfreq=sp_fft.fftfreq,
 )
-
 hfft = _partial_and_doc(sp_fft.hfft, sp_fft.rfftfreq)
-
 ihfft = _partial_and_doc(sp_fft.ihfft, sp_fft.rfftfreq)
