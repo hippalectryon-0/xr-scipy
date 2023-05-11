@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "xrscipy"
-version = "1.0.0"
+version = "1.1.0"
 authors = ["xarray Developers <xarray@googlegroups.com>"]
 license = "Apache"
 description = "Scipy integrated into xarray"
@@ -9,7 +9,6 @@ classifiers = [
     "License :: OSI Approved :: Apache Software License",
     "Operating System :: OS Independent",
     "Intended Audience :: Science/Research",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Topic :: Scientific/Engineering",

@@ -12,6 +12,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Refactor some inner functions in `fft, fftpack`
 - Bumped minimum python version to 3.10 to support pipes `|` in typing.
 - Change arg `a` to `x` in scipy.fftpack to match the scipy signature
+- Add package to pipy
 
 ### Fixed
 
