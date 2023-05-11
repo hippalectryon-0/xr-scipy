@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0]
+
+### Changed
+
+- Refactor some inner functions in `fft, fftpack`
+- Bump minimum python version to 3.10 to support pipes `|` in typing.
+- Change arg `a` to `x` in scipy.fftpack to match the scipy signature
+- Add package to pipy
+
+### Fixed
+
+- Correctly rename `shape` to `s` in the docs for `fft`
+
 ## [1.0.0]
 
 ### Added
