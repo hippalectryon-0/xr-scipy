@@ -48,3 +48,7 @@ jobs:
         run: |
           . .venv/bin/activate
           sphinx-build -n -b html source build
+
+      - name: publish to pypi
+        if: github.ref == 'refs/heads/master'
+        run: poetry publish --build --username __token__ --password ${{ secrets.PYPI_API_TOKEN }}
