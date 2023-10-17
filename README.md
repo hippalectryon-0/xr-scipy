@@ -32,3 +32,7 @@ array([0.   , 0.375, 1.   , 1.75 , 3.   ])
 Coordinates:
   * x        (x) float64 0.0 0.25 0.5 0.75 1.0
 ```
+
+# Installation
+
+`pip install xrscipy`
