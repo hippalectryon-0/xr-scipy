@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "xrscipy"
-version = "1.1.1"
+version = "1.1.1.dev0"
 authors = ["xarray Developers <xarray@googlegroups.com>"]
 license = "Apache"
 description = "Scipy integrated into xarray"
@@ -13,6 +13,9 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Topic :: Scientific/Engineering",
 ]
+readme = "README.md"
+repository = "https://github.com/hippalectryon-0/xr-scipy"
+documentation = "https://xr-scipy.readthedocs.io"
 
 [tool.poetry.dependencies]
 python = ">=3.10,<3.12"
