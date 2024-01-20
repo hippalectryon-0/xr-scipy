@@ -9,23 +9,25 @@ Digital filters
     import numpy as np
     import matplotlib.pyplot as plt
     import xarray as xr
-    import xrscipy.other.signal as dsp
+    import xrscipy.signal as dsp
+    import xrscipy.signal.extra as dsp_extra
 
 
-``xr-scipy`` wraps some of SciPy functions for constructing  frequency filters using functions such as :py:func:`scipy.signal.firwin` and  :py:func:`scipy.signal.iirfilter`. Wrappers for convenient functions such as  :py:func:`scipy.signal.decimate` and :py:func:`scipy.signal.savgol_filter` are also provided.
-For convenience, the ``xrscipy.other.signal`` namespace will be imported under the alias ``dsp``
+``xr-scipy`` wraps some of SciPy functions for constructing frequency filters using functions such as :py:func:`scipy.signal.firwin` and  :py:func:`scipy.signal.iirfilter`. Wrappers for convenient functions such as  :py:func:`scipy.signal.decimate` and :py:func:`scipy.signal.savgol_filter` are also provided.
+For convenience, the ``xrscipy.signal`` namespace will be imported under the alias ``dsp``:
 
 .. ipython:: python
 
-    import xrscipy.other.signal as dsp
+    import xrscipy.signal as dsp
+    import xrscipy.signal.extra as dsp_extra
 
 
 Frequency filters
 ^^^^^^^^^^^^^^^^^
 
-The main wrapper for frequency filters is the :py:func:`~xrscipy.other.signal.frequency_filter` wrapper. It's many arguments enable one to specify the type of filter, e.g. frequency band, FIR or IIR, response type family, filter order, forward-backward filtering, etc. By default a Butterworth IIR 4-th order filter with second-order-series (numerically stable even for high orders) forward-backward application (zero phase shift, but double order) is used, because such a filter typically offers a good performance for most time-series analysis applications.
+The main wrapper for frequency filters is the :py:func:`~xrscipy.signal.extra.frequency_filter` wrapper. Its many arguments enable one to specify the type of filter, e.g. frequency band, FIR or IIR, response type family, filter order, forward-backward filtering, etc. By default a Butterworth IIR 4-th order filter with second-order-series (numerically stable even for high orders) forward-backward application (zero phase shift, but double order) is used, because such a filter typically offers a good performance for most time-series analysis applications.
 
-Convenience functions such as :py:func:`~xrscipy.other.signal.lowpass`, :py:func:`~xrscipy.other.signal.highpass` and :py:func:`~xrscipy.other.signal.bandpass` are provided which wrap :py:func:`~xrscipy.other.signal.frequency_filter` with a predefined response type and offer a more convenient interface for the cutoff frequency specification.
+Convenience functions such as :py:func:`~xrscipy.signal.extra.lowpass`, :py:func:`~xrscipy.signal.extra.highpass` and :py:func:`~xrscipy.signal.extra.bandpass` are provided which wrap :py:func:`~xrscipy.signal.extra.frequency_filter` with a predefined response type and offer a more convenient interface for the cutoff frequency specification.
 
 The cutoff frequency is specified in the inverse usint to the filtered dimension's coordinates (typically time). The wrapper automatically checks the sampling of those coordinates and normalizes the supplied frequency by the Nyquist frequency.
 
@@ -39,7 +41,7 @@ In the following example a simple low-pass filter is applied to a noisy signal. 
     sig = xr.DataArray(np.sin(16*t) + np.random.normal(0, 0.1, t.size),
                        coords=[('time', t)], name='signal')
     sig.plot(label='noisy')
-    low = dsp.lowpass(sig, 20, order=8)  # cutoff at 20 Hz
+    low = dsp_extra.lowpass(sig, 20, order=8)  # cutoff at 20 Hz
     low.plot(label='lowpass', linewidth=5)
     plt.legend()
     @savefig freq_filters.png width=4in
@@ -50,7 +52,7 @@ Decimation
 ^^^^^^^^^^
 
 
-To demonstrate basic functionality of :py:func:`~xrscipy.other.signal.decimate`, let's create a simple example DataArray:
+To demonstrate basic functionality of :py:func:`~xrscipy.signal.decimate`, let's create a simple example DataArray:
 
 .. ipython:: python
 
@@ -58,7 +60,7 @@ To demonstrate basic functionality of :py:func:`~xrscipy.other.signal.decimate`,
                        dims=('x'), coords={'x': np.linspace(0, 5, 300)})
     arr
 
-Our :py:func:`~xrscipy.other.signal.decimate` takes an xarray object
+Our :py:func:`~xrscipy.signal.decimate` takes an xarray object
 (possibly high dimensional) and a dimension name (if not 1D)
 along which the signal should be decimated. Decimation means
 
@@ -83,7 +85,7 @@ The return type is also a DataArray with coordinates.
     @savefig decimated_signal.png width=4in
     plt.show()
 
-The other keyword arguments are passed on to :py:func:`~xrscipy.other.signal.lowpass`.
+The other keyword arguments are passed on to :py:func:`~xrscipy.signal.extra.lowpass`.
 
 
 Savitzky-Golay LSQ filtering
@@ -93,7 +95,7 @@ The Savitzky-Golay filter as a special type of a FIR filter which is equivalent 
 
 .. _`their Wikipedia page`: https://en.wikipedia.org/wiki/Savitzky%E2%80%93Golay_filter
 
-To demonstrate basic functionality of :py:func:`~xrscipy.other.signal.savgol_filter`, let's create a simple example DataArray of the quadratic shape and add some noise:
+To demonstrate basic functionality of :py:func:`~xrscipy.signal.savgol_filter`, let's create a simple example DataArray of the quadratic shape and add some noise:
 
 .. ipython:: python
 
@@ -103,7 +105,7 @@ To demonstrate basic functionality of :py:func:`~xrscipy.other.signal.savgol_fil
     arr_noisy = arr + noise
     arr
 
-Our :py:func:`~xrscipy.other.signal.savgol_filter` takes an xarray object
+Our :py:func:`~xrscipy.signal.savgol_filter` takes an xarray object
 (possibly high dimensional) and a dimension name (if not 1D)
 along which the signal should be filtered.
 The window length is given in the units of the dimension coordinates.
@@ -128,7 +130,7 @@ The return type is also a DataArray with coordinates.
     @savefig savgol_signal.png width=4in
     plt.show()
 
-The other options (polynomial and derivative order) are the same as for :py:func:`scipy.signal.savgol_filter`, see :py:func:`~xrscipy.other.signal.savgol_filter` for details.
+The other options (polynomial and derivative order) are the same as for :py:func:`scipy.signal.savgol_filter`, see :py:func:`~xrscipy.signal.savgol_filter` for details.
 """
 
 import warnings
@@ -143,7 +145,7 @@ from numpy import ndarray
 from numpy._typing import ArrayLike
 from scipy.signal import sosfiltfilt
 
-from xrscipy.other.signal.utils import DecimationWarning, FilteringNaNWarning, get_maybe_only_dim, get_sampling_step
+from xrscipy.signal.utils import DecimationWarning, FilteringNaNWarning, get_maybe_only_dim, get_sampling_step
 
 
 def _firwin_ba(*args, **kwargs) -> tuple[np.ndarray, ndarray]:

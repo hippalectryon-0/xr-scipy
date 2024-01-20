@@ -1,1 +1,1 @@
-.. automodule:: xrscipy.other.signal.spectral
+.. automodule:: xrscipy.signal.spectral
