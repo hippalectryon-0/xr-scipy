@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.1.pre]
+
+### Changed
+
+- Remove `urllib` dependency (not relevant anymore)
+
 ## [2.0.0.pre]
 
 ### Added
@@ -13,7 +19,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
-- Moved `other.signal` into `signal` and `signal.extra` to better mirror `scipy`'s namespace (thanks @smartass101)
+- Move `other.signal` into `signal` and `signal.extra` to better mirror `scipy`'s namespace (thanks @smartass101)
 
 ## [1.1.2]
 
