@@ -1,1 +1,1 @@
-.. automodule:: xrscipy.other.signal.filters
+.. automodule:: xrscipy.signal.filters

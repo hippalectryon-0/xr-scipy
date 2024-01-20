@@ -9,14 +9,16 @@ Spectral (FFT) analysis
     import numpy as np
     import matplotlib.pyplot as plt
     import xarray as xr
-    import xrscipy.other.signal as dsp
+    import xrscipy.signal as dsp
+    import xrscipy.signal.extra as dsp_extra
 
 
-xr-scipy wraps some of scipy spectral analysis functions such as :py:func:`scipy.signal.spectrogram`, :py:func:`scipy.signal.csd` etc. For convenience, the ``xrscipy.other.signal`` namespace will be imported under the alias ``dsp``
+xr-scipy wraps some of scipy spectral analysis functions such as :py:func:`scipy.signal.spectrogram`, :py:func:`scipy.signal.csd` etc. For convenience, the ``xrscipy.signal`` namespace will be imported under the alias ``dsp``
 
 .. ipython:: python
 
-    import xrscipy.other.signal as dsp
+    import xrscipy.signal as dsp
+    import xrscipy.signal.extra as dsp_extra
 
 To demonstrate the basic functionality, let's create two simple example DataArray at a similar frequency but one with a frequency drift and some noise:
 
@@ -33,7 +35,7 @@ To demonstrate the basic functionality, let's create two simple example DataArra
 Power spectra
 ^^^^^^^^^^^^^
 
-The :py:func:`~xrscipy.other.signal.spectrogram` function can be used directly on an xarray
+The :py:func:`~xrscipy.signal.spectrogram` function can be used directly on an xarray
 DataArray object. The returned object is again an ``xarray.DataArray`` object.
 
 .. ipython:: python
@@ -87,7 +89,7 @@ All the functions can be calculated on N-dimensional signals if the dimension is
 Cross-coherence and correlation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The same windowed FFT approach is also used to calculate the cross-spectral density :math:`P_{xy}` (using :py:func:`xrscipy.other.signal.csd`) and from it coherency :math:`\gamma` as
+The same windowed FFT approach is also used to calculate the cross-spectral density :math:`P_{xy}` (using :py:func:`xrscipy.signal.csd`) and from it coherency :math:`\gamma` as
 
 .. math::
 
@@ -131,7 +133,7 @@ The cross-correlation is calculated similarly as :math:`\gamma`, but with :math:
     plt.show()
 
 
-A partially averaged counterpart to :py:func:`~xrscipy.other.signal.coherence` is :py:func:`~xrscipy.other.signal.coherogram` which uses a running average over ``nrolling`` FFT windows.
+A partially averaged counterpart to :py:func:`~xrscipy.signal.coherence` is :py:func:`~xrscipy.signal.coherogram` which uses a running average over ``nrolling`` FFT windows.
 """
 from typing import Callable, Literal, TypeVar
 
@@ -145,7 +147,7 @@ from numpy._typing import ArrayLike
 from scipy.fftpack import next_fast_len
 from scipy.signal._spectral_py import _spectral_helper
 
-from xrscipy.other.signal.utils import get_maybe_only_dim, get_sampling_step
+from xrscipy.signal.utils import get_maybe_only_dim, get_sampling_step
 
 _FREQUENCY_DIM = "frequency"
 
