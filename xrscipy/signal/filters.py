@@ -27,7 +27,7 @@ Frequency filters
 
 The main wrapper for frequency filters is the :py:func:`~xrscipy.signal.extra.frequency_filter` wrapper. Its many arguments enable one to specify the type of filter, e.g. frequency band, FIR or IIR, response type family, filter order, forward-backward filtering, etc. By default a Butterworth IIR 4-th order filter with second-order-series (numerically stable even for high orders) forward-backward application (zero phase shift, but double order) is used, because such a filter typically offers a good performance for most time-series analysis applications.
 
-Convenience functions such as :py:func:`~xrscipy.signal.extra.lowpass`, :py:func:`~xrscipy.other.signal.highpass` and :py:func:`~xrscipy.other.signal.bandpass` are provided which wrap :py:func:`~xrscipy.other.signal.frequency_filter` with a predefined response type and offer a more convenient interface for the cutoff frequency specification.
+Convenience functions such as :py:func:`~xrscipy.signal.extra.lowpass`, :py:func:`~xrscipy.signal.extra.highpass` and :py:func:`~xrscipy.signal.extra.bandpass` are provided which wrap :py:func:`~xrscipy.signal.extra.frequency_filter` with a predefined response type and offer a more convenient interface for the cutoff frequency specification.
 
 The cutoff frequency is specified in the inverse usint to the filtered dimension's coordinates (typically time). The wrapper automatically checks the sampling of those coordinates and normalizes the supplied frequency by the Nyquist frequency.
 

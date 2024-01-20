@@ -3,7 +3,7 @@ Scipy for Xarray
 
 xr-scipy is a thin wrapper of scipy for `xarray <http://xarray.pydata.org>`_ eco-system.
 
-Many scipy functions, such as `scipy.integrate.trapezoid`, requires coordinate
+Many scipy functions, such as :py:func:`scipy.integrate.trapezoid`, requires coordinate
 array as an argument.
 Since xarray objects possess their coordinate values in it,
 there must be simpler api for such functions.

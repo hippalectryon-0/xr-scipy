@@ -36,6 +36,7 @@ pycln = "2.1.3"
 ipython = "^8.13.2"
 matplotlib = "^3.7.0"  # used in docs
 myst-parser = "1.0.0"  # used in docs
+pickleshare = "^0.7.5"
 
 [build-system]
 requires = ["poetry-core"]

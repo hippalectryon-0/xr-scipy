@@ -75,7 +75,7 @@ All the functions can be calculated on N-dimensional signals if the dimension is
 .. ipython:: python
 
     sig_2D = xr.concat([sig_1,sig_2], dim="sigs")
-    psd_2D = dsp.psd(sig_2D, dim="time")
+    psd_2D = dsp_extra.psd(sig_2D, dim="time")
 
 .. ipython:: python
     :okwarning:
@@ -126,7 +126,7 @@ The cross-correlation is calculated similarly as :math:`\gamma`, but with :math:
 .. ipython:: python
     :okwarning:
 
-    xcorr_12 = dsp.xcorrelation(sig_1, sig_2)
+    xcorr_12 = dsp_extra.xcorrelation(sig_1, sig_2)
     xcorr_12.loc[-0.1:0.1].plot()
     plt.grid()
     @savefig xcorr.png width=4in
