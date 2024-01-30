@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "xrscipy"
-version = "1.1.2"
+version = "2.0.0"
 authors = ["xarray Developers <xarray@googlegroups.com>"]
 license = "Apache"
 description = "Scipy integrated into xarray"
