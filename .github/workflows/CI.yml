@@ -3,6 +3,7 @@ name: xrscipy CI
 on:
   push:
   pull_request:
+  release:
 
 jobs:
   build:
@@ -50,5 +51,5 @@ jobs:
           sphinx-build -n -b html source build
 
       - name: publish to pypi
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push' && github.ref_type == 'tag' && matrix.python-version == '3.11'
+        if: github.event_name == 'release' && github.event.release.target_commitish == 'main' && matrix.python-version == '3.11'
         run: poetry publish --build --username __token__ --password ${{ secrets.PYPI_API_TOKEN }}

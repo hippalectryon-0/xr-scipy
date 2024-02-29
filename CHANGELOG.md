@@ -16,6 +16,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Move `other.signal` into `signal` and `signal.extra` to better mirror `scipy`'s namespace (thanks @smartass101)
 - Remove `urllib` dependency (not relevant anymore)
 
+### Fixed
+
+- Fix publishing CI
+
 ## [1.1.2]
 
 ### Changed
