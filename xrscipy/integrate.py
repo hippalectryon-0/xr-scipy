@@ -52,6 +52,7 @@ See :py:func:`~xrscipy.integrate.trapezoid` for other options.
   There are slight difference from the original implementations.
   Our :py:func:`~xrscipy.integrate.cumulative_trapezoid` always assume ``initial=0``.
 """
+
 from typing import Callable
 
 import xarray as xr

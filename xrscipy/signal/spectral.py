@@ -135,6 +135,9 @@ The cross-correlation is calculated similarly as :math:`\gamma`, but with :math:
 
 A partially averaged counterpart to :py:func:`~xrscipy.signal.coherence` is :py:func:`~xrscipy.signal.coherogram` which uses a running average over ``nrolling`` FFT windows.
 """
+
+from __future__ import annotations
+
 from typing import Callable, Literal, TypeVar
 
 import numpy as np

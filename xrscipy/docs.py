@@ -1,4 +1,7 @@
 """Tools for interacting with docstrings"""
+
+from __future__ import annotations
+
 from typing import Any, Callable
 
 import docstring_parser
