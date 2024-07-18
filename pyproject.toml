@@ -9,8 +9,10 @@ classifiers = [
     "License :: OSI Approved :: Apache Software License",
     "Operating System :: OS Independent",
     "Intended Audience :: Science/Research",
+    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "Topic :: Scientific/Engineering",
 ]
 readme = "README.md"
@@ -18,7 +20,7 @@ repository = "https://github.com/hippalectryon-0/xr-scipy"
 documentation = "https://xr-scipy.readthedocs.io"
 
 [tool.poetry.dependencies]
-python = ">=3.10,<3.12"
+python = ">=3.9,<4"
 xarray = ">=2023"
 scipy = ">=1.9"
 docstring-parser = "^0.15"
