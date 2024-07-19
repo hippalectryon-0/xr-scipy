@@ -79,6 +79,7 @@ coordinates.
     @savefig fftn.png width=4in
     plt.show()
 """
+
 from typing import Callable
 
 import numpy as np
