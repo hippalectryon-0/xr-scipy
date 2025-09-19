@@ -42,7 +42,7 @@ jobs:
       - name: Build docs
         if: matrix.python-version == '3.11'
         run: |
-          uv run sphinx-build -n -b html source build
+          PYTHONPATH=. uv run sphinx-build -n -b html source build
 
       - name: publish to pypi
         if: github.event_name == 'release' && github.event.release.target_commitish == 'main' && matrix.python-version == '3.11'

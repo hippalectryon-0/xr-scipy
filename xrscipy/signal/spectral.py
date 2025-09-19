@@ -154,45 +154,45 @@ from xrscipy.signal.utils import get_maybe_only_dim, get_sampling_step
 
 _FREQUENCY_DIM = "frequency"
 
-_DOCSTRING_COMMON_PARAMS = """    fs : float, optional
+_DOCSTRING_COMMON_PARAMS = """fs : float, optional
         Sampling frequency of the `darray` and `other_darray` (time) series.
         If not specified, will be calculated it from the sampling step
         of the specified (or only) dimension.
-    window : str or tuple or array_like, optional
-        Desired window to use. If `window` is a string or tuple, it is
-        passed to `get_window` to generate the window values, which are
-        DFT-even by default. See `get_window` for a list of windows and
-        required parameters. If `window` is array_like it will be used
-        directly as the window and its length must be nperseg. Defaults
-        to a Hann window.
-    seglen : float, optional
-        Segment length (i.e. nperseg) in units of the used (e.g. time) dimension.
-    nperseg : int, optional
-        Length of each segment. Defaults to None, but if window is str or
-        tuple, is set to 256, and if window is array_like, is set to the
-        length of the window.
-    noverlap: int, optional
-        Number of points to overlap between segments. If `None`,
-        ``noverlap = np.rint(nperseg * overlap_ratio)``. Defaults to `None`.
-    overlap_ratio : float, optional
-        Used to calculate noverlap, if it is not specified (see above).
-        Defaults to 0.5.
-    nfft : int, optional
-        Length of the FFT used, if a zero padded FFT is desired. If
-        `None`, the FFT length is `nperseg`. Defaults to `None`.
-    detrend : str or function or `False`, optional
-        Specifies how to detrend each segment. If `detrend` is a
-        string, it is passed as the `type` argument to the `detrend`
-        function. If it is a function, it takes a segment and returns a
-        detrended segment. If `detrend` is `False`, no detrending is
-        done. Defaults to 'constant'.
-    return_onesided : bool, optional
-        If `True`, return a one-sided spectrum for real data. If
-        `False` return a two-sided spectrum. Defaults to `True`, but for
-        complex data, a two-sided spectrum is always returned.
-    dim : str, optional
-        Dimension along which the FFT is computed and sampling step calculated.
-        If the signal is 1D, uses the only dimension, otherwise must be specified."""
+window : str or tuple or array_like, optional
+    Desired window to use. If `window` is a string or tuple, it is
+    passed to `get_window` to generate the window values, which are
+    DFT-even by default. See `get_window` for a list of windows and
+    required parameters. If `window` is array_like it will be used
+    directly as the window and its length must be nperseg. Defaults
+    to a Hann window.
+seglen : float, optional
+    Segment length (i.e. nperseg) in units of the used (e.g. time) dimension.
+nperseg : int, optional
+    Length of each segment. Defaults to None, but if window is str or
+    tuple, is set to 256, and if window is array_like, is set to the
+    length of the window.
+noverlap: int, optional
+    Number of points to overlap between segments. If `None`,
+    ``noverlap = np.rint(nperseg * overlap_ratio)``. Defaults to `None`.
+overlap_ratio : float, optional
+    Used to calculate noverlap, if it is not specified (see above).
+    Defaults to 0.5.
+nfft : int, optional
+    Length of the FFT used, if a zero padded FFT is desired. If
+    `None`, the FFT length is `nperseg`. Defaults to `None`.
+detrend : str or function or `False`, optional
+    Specifies how to detrend each segment. If `detrend` is a
+    string, it is passed as the `type` argument to the `detrend`
+    function. If it is a function, it takes a segment and returns a
+    detrended segment. If `detrend` is `False`, no detrending is
+    done. Defaults to 'constant'.
+return_onesided : bool, optional
+    If `True`, return a one-sided spectrum for real data. If
+    `False` return a two-sided spectrum. Defaults to `True`, but for
+    complex data, a two-sided spectrum is always returned.
+dim : str, optional
+    Dimension along which the FFT is computed and sampling step calculated.
+    If the signal is 1D, uses the only dimension, otherwise must be specified."""
 
 _DOCSTRING_MODE_PARAM = """mode : str
         Defines what kind of return values are expected. Options are
@@ -736,8 +736,8 @@ def coherence(
     detrend: str | Callable | bool = "constant",
     dim: str = None,
 ) -> xr.DataArray:
-    """
-    Calculate the coherence as <CSD> / sqrt(<PSD1> * <PSD2>)
+    r"""
+    Calculate the coherence as :math:`CSD / \sqrt{{PSD_1 * PSD_2}}`
 
     Parameters
     ----------
@@ -751,7 +751,7 @@ def coherence(
     -------
     coh : xarray.DataArray, complex
         Coherence of 'darray' and 'other_darray'.
-        It is complex and abs(coh)**2 is the squared magnitude coherohram.
+        It is complex and :code:`abs(coh)**2` is the squared magnitude coherohram
     """
     Pxx = psd(
         darray,

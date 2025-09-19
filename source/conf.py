@@ -78,6 +78,7 @@ texinfo_documents = [
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3/", None),
     "pandas": ("https://pandas.pydata.org/pandas-docs/stable/", None),
-    "xarray": ("https://xarray.pydata.org/en/stable", None),
-    "scipy": ("https://docs.scipy.org/doc/scipy/reference", None),
+    "xarray": ("https://docs.xarray.dev/en/stable/", None),
+    "scipy": ("https://docs.scipy.org/doc/scipy/", None),
+    "numpy": ("https://numpy.org/doc/stable/", None),
 }

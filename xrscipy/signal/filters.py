@@ -487,6 +487,7 @@ def savgol_filter(
 
     This is a 1-d filter.  If `darray` has dimension greater than 1, `dim`
     determines the dimension along which the filter is applied.
+
     Parameters
     ----------
     darray : DataArray
