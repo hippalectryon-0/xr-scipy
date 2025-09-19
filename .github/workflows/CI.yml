@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [ '3.9', '3.10', '3.11', '3.12']
+        python-version: [ '3.9', '3.10', '3.11', '3.12', '3.13']
 
     steps:
       - name: Checkout code
@@ -23,33 +23,26 @@ jobs:
           python-version: ${{ matrix.python-version }}
           architecture: 'x64'
 
-      - name: Install Poetry
+      - name: Install uv
         run: |
-          curl -sSL https://install.python-poetry.org | python -
-          poetry config virtualenvs.in-project true
+          curl -LsSf https://astral.sh/uv/install.sh | sh
 
       - name: Install dependencies
         run: |
-          poetry install
+          uv sync
 
       - name: Run pre-commit
         run: |
-          . .venv/bin/activate
-          pre-commit run --all-files --show-diff-on-failure
-
-      - name: Run Flake8
-        run: |
-          poetry run flake8 xrscipy --count --ignore=E203,E501,W503,W605 --show-source --statistics --exclude=**/__init__.py
+          uv run pre-commit run --all-files --show-diff-on-failure
 
       - name: Run Tests
         run: |
-          poetry run pytest tests --cov=xrscipy --cov-config=.coveragerc --cov-report=xml --cov-report=term-missing
+          uv run pytest tests --cov=xrscipy --cov-config=.coveragerc --cov-report=xml --cov-report=term-missing
 
       - name: Build docs
         if: matrix.python-version == '3.11'
         run: |
-          . .venv/bin/activate
-          sphinx-build -n -b html source build
+          uv run sphinx-build -n -b html source build
 
       - name: publish to pypi
         if: github.event_name == 'release' && github.event.release.target_commitish == 'main' && matrix.python-version == '3.11'
