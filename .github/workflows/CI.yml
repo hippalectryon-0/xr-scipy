@@ -40,10 +40,10 @@ jobs:
           uv run pytest tests --cov=xrscipy --cov-config=.coveragerc --cov-report=xml --cov-report=term-missing
 
       - name: Build docs
-        if: matrix.python-version == '3.11'
+        if: matrix.python-version == '3.13'
         run: |
           PYTHONPATH=. uv run sphinx-build -n -b html source build
 
       - name: publish to pypi
-        if: github.event_name == 'release' && github.event.release.target_commitish == 'main' && matrix.python-version == '3.11'
+        if: github.event_name == 'release' && github.event.release.target_commitish == 'main' && matrix.python-version == '3.13'
         run: uv build && uv run twine upload --username __token__ --password ${{ secrets.PYPI_API_TOKEN }} dist/*
