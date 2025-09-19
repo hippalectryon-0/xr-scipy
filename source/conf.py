@@ -5,7 +5,7 @@ from datetime import datetime
 sys.path.insert(0, "..")
 
 with open("../pyproject.toml", "rb") as f:
-    toml_data = tomllib.load(f)["tool"]["poetry"]
+    toml_data = tomllib.load(f)["project"]
 
 # Configuration file for the Sphinx documentation builder.
 #

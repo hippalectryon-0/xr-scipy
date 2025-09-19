@@ -6,9 +6,8 @@ build:
       python: "3.12"
     jobs:
       post_install:
-        - pip install poetry
-        - python -m pip install --upgrade --no-cache-dir pip setuptools
-        - python -m pip install --upgrade --no-cache-dir sphinx readthedocs-sphinx-ext
-        - VIRTUAL_ENV=$READTHEDOCS_VIRTUALENV_PATH poetry install
+        - curl -LsSf https://astral.sh/uv/install.sh | sh
+        - uv add --dev sphinx readthedocs-sphinx-ext
+        - VIRTUAL_ENV=$READTHEDOCS_VIRTUALENV_PATH uv sync
 sphinx:
   configuration: source/conf.py
