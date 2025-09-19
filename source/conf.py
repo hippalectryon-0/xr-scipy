@@ -20,7 +20,7 @@ project = toml_data["name"]
 # noinspection PyShadowingBuiltins
 copyright = f"2014-{datetime.now().year}, xrscipy Developers"
 # noinspection PyUnresolvedReferences
-author = ", ".join(toml_data["authors"])
+author = ", ".join(f"{e['name']} <{e['email']}>" for e in toml_data["authors"])
 # noinspection PyUnresolvedReferences
 release = toml_data["version"]
 
