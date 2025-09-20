@@ -26,7 +26,7 @@ def _check_metadata_preservation(original_da, result_da, dim):
 
 @pytest.mark.parametrize("mode", [0, 1])
 @pytest.mark.parametrize("dim", ["x"])
-@pytest.mark.parametrize("func_name", ["csd", "welch", "coherence", "spectrogram"])
+@pytest.mark.parametrize("func_name", ["csd", "welch", "coherence", "spectrogram", "hilbert"])
 def test_spectral_functions(mode, dim, func_name):
     """Test spectral analysis functions.
 
@@ -53,8 +53,30 @@ def test_spectral_functions(mode, dim, func_name):
     if dim not in da1.dims:
         pytest.skip("dimension not available in test object")
 
-    if func_name != "spectrogram" and dim not in da2.dims:
+    if func_name not in ["spectrogram", "hilbert"] and dim not in da2.dims:
         pytest.skip("dimension not available in test object")
+
+    if func_name == "hilbert":
+        # Hilbert transform is simpler, test it separately
+        # Calculate using xrscipy
+        actual = dsp.hilbert(da1, dim=dim)
+
+        # Calculate using scipy
+        axis = da1.get_axis_num(dim)
+        expected_result = sp.signal.hilbert(da1.values, axis=axis)
+
+        # Check that result values match
+        # Note: xarray's apply_ufunc moves the core dimension to the end
+        # So we need to transpose the scipy result to match
+        if da1.ndim > 1:
+            expected_transposed = np.moveaxis(expected_result, axis, -1)
+            np.testing.assert_allclose(actual.values, expected_transposed)
+        else:
+            np.testing.assert_allclose(actual.values, expected_result)
+
+        # Check metadata preservation
+        _check_metadata_preservation(da1, actual, dim)
+        return  # Skip the rest of the function for hilbert
 
     # Get axis number for the specified dimension
     axis = da1.get_axis_num(dim)
@@ -138,8 +160,6 @@ def test_spectral_functions(mode, dim, func_name):
             axis=axis,
             mode="psd",
         )
-    else:
-        raise ValueError
 
     # Check that frequency values match
     np.testing.assert_allclose(actual.coords["frequency"].values, expected_f)

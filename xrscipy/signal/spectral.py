@@ -825,7 +825,7 @@ def hilbert(darray: xr.DataArray, N: int = None, dim: str = None) -> xr.DataArra
         darray,
         input_core_dims=[[dim]],
         output_core_dims=[[dim]],
-        kwargs=dict(N=N, n_orig=n_orig, N_unspecified=N_unspecified),
+        kwargs=dict(N=N, n_orig=n_orig, N_unspecified=N_unspecified, axis=axis),
     )
 
 
@@ -833,10 +833,12 @@ def _hilbert_wraper(darray: xr.DataArray, N: int, n_orig: int, N_unspecified: in
     """
     Hilbert wraper used to keep the signal dimension length constant
     """
-    out = scipy.signal.hilbert(np.asarray(darray), N, axis=axis)
+    # When using apply_ufunc with input_core_dims=[[dim]], the core dimension
+    # is moved to the last position, so we always use axis=-1
+    out = scipy.signal.hilbert(np.asarray(darray), N, axis=-1)
 
     if n_orig != N and N_unspecified:
         sl = [slice(None)] * out.ndim
-        sl[axis] = slice(None, n_orig)
+        sl[-1] = slice(None, n_orig)  # Use -1 instead of axis since core dim is last
         out = out[sl]
     return out
