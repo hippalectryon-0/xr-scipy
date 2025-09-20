@@ -1,4 +1,4 @@
-"""mirrors scipy.fftpack"""
+"""Tests for xrscipy.fft and xrscipy.fftpack modules."""
 
 import numpy as np
 import pytest
@@ -18,6 +18,14 @@ from .testings import get_obj
 @pytest.mark.parametrize("dim", ["x", "time"])
 @pytest.mark.parametrize("n", [None, 14])
 def test_fft1d(mode, module, func, dim, n):
+    """Test 1D FFT functions (fft, ifft, rfft, irfft, dct, dst, idct, idst).
+
+    Verifies that xrscipy FFT functions produce results strictly equal to scipy,
+    and that metadata is properly handled:
+    - Input DataArrays remain unmodified (shape preservation)
+    - Coordinates are propagated to output DataArrays
+    - Indexing works correctly on output DataArrays
+    """
     da = get_obj(mode)
     if module == "fft" and func in ["dct", "dst", "idct", "idst"]:
         pytest.skip("not implemented")
@@ -48,6 +56,15 @@ def test_fft1d(mode, module, func, dim, n):
 @pytest.mark.parametrize("coords", [["x"], ["time", "y"]])
 @pytest.mark.parametrize("shape", [None, {"time": 14}])
 def test_fftnd(mode, module, func, coords, shape):
+    """Test multidimensional FFT functions (fftn, ifftn, rfftn, irfftn).
+
+    Verifies that xrscipy ND FFT functions produce results strictly equal to scipy,
+    and that metadata is properly handled:
+    - Input DataArrays remain unmodified (shape preservation)
+    - Coordinates are propagated to output DataArrays
+    - Multiple axes are correctly handled
+    - Shape parameter is properly applied
+    """
     da = get_obj(mode)
 
     if module == "fftpack" and func in ["rfftn", "irfftn"]:

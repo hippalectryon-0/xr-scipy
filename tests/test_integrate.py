@@ -1,4 +1,4 @@
-"""tests for integrate"""
+"""Tests for xrscipy.integrate module."""
 
 import numpy as np
 import pytest
@@ -13,6 +13,14 @@ from .testings import get_obj
 @pytest.mark.parametrize("dx", [1, 0.1, 10])
 @pytest.mark.parametrize("dim", ["x", "time"])
 def test_integrate_romb(mode, dx, dim):
+    """Test romberg integration function.
+
+    Verifies that xrscipy.integrate.romb produces results strictly equal to scipy.integrate.romb,
+    and that metadata is properly handled:
+    - Input DataArrays remain unmodified (dimension preservation)
+    - Coordinates are propagated to output DataArrays
+    - The dx parameter is correctly applied
+    """
     da = get_obj(mode)
 
     axis = da.get_axis_num(da[dim].dims[0])
@@ -33,6 +41,15 @@ def test_integrate_romb(mode, dx, dim):
 @pytest.mark.parametrize("func", ["trapezoid", "cumulative_trapezoid", "simpson"])
 @pytest.mark.parametrize("dim", ["x", "time"])
 def test_integrate(mode, func, dim):
+    """Test integration functions (trapezoid, cumulative_trapezoid, simpson).
+
+    Verifies that xrscipy integration functions produce results strictly equal to scipy,
+    and that metadata is properly handled:
+    - Input DataArrays remain unmodified (dimension preservation)
+    - Coordinates are propagated to output DataArrays
+    - The initial parameter is correctly handled for cumulative_trapezoid
+    - Coordinate arrays are properly passed as the x parameter
+    """
     da = get_obj(mode)
 
     axis = da.get_axis_num(da[dim].dims[0])

@@ -1,6 +1,6 @@
 [project]
 name = "xrscipy"
-version = "2.2.0"
+version = "2.2.1"
 license = "Apache-2.0"
 description = "Scipy integrated into xarray"
 classifiers = [
@@ -15,10 +15,10 @@ classifiers = [
     "Topic :: Scientific/Engineering",
 ]
 readme = "README.md"
-#repository = "https://github.com/hippalectryon-0/xr-scipy"
-#documentation = "https://xr-scipy.readthedocs.io"
 requires-python = ">=3.9,<4"
 authors = [{ name = "xarray Developers", email = "xarray@googlegroups.com" }]
+
+urls = { Repository = "https://github.com/hippalectryon-0/xr-scipy", Documentation = "https://xr-scipy.readthedocs.io" }
 
 dependencies = [
     "scipy>=1.9",
