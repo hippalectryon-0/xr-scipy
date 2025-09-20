@@ -10,7 +10,6 @@ Spectral (FFT) analysis
     import matplotlib.pyplot as plt
     import xarray as xr
     import xrscipy.signal as dsp
-    import xrscipy.signal.extra as dsp_extra
 
 
 xr-scipy wraps some of scipy spectral analysis functions such as :py:func:`scipy.signal.spectrogram`, :py:func:`scipy.signal.csd` etc. For convenience, the ``xrscipy.signal`` namespace will be imported under the alias ``dsp``
@@ -18,7 +17,6 @@ xr-scipy wraps some of scipy spectral analysis functions such as :py:func:`scipy
 .. ipython:: python
 
     import xrscipy.signal as dsp
-    import xrscipy.signal.extra as dsp_extra
 
 To demonstrate the basic functionality, let's create two simple example DataArray at a similar frequency but one with a frequency drift and some noise:
 
@@ -75,7 +73,7 @@ All the functions can be calculated on N-dimensional signals if the dimension is
 .. ipython:: python
 
     sig_2D = xr.concat([sig_1,sig_2], dim="sigs")
-    psd_2D = dsp_extra.psd(sig_2D, dim="time")
+    psd_2D = dsp.welch(sig_2D, dim="time")
 
 .. ipython:: python
     :okwarning:
@@ -116,24 +114,6 @@ The returned :math:`\gamma` :py:class:`~xarray.DataArray` is complex (because so
     axs[1].set(yticks=[-1, -0.5, 0, 0.5, 1]);
     @savefig coher.png width=4in
     plt.show()
-
-
-In the future more convenient wrappers returning the coherence magnitude and cross-phase might be developed.
-
-The cross-correlation is calculated similarly as :math:`\gamma`, but with :math:`\mathcal{F}^{-1} [\langle P_*\rangle ]`, i.e. in the inverse-FFT domain. The ``lag`` coordinates are the inverse of the ``frequency`` coordinates.
-
-
-.. ipython:: python
-    :okwarning:
-
-    xcorr_12 = dsp_extra.xcorrelation(sig_1, sig_2)
-    xcorr_12.loc[-0.1:0.1].plot()
-    plt.grid()
-    @savefig xcorr.png width=4in
-    plt.show()
-
-
-A partially averaged counterpart to :py:func:`~xrscipy.signal.coherence` is :py:func:`~xrscipy.signal.coherogram` which uses a running average over ``nrolling`` FFT windows.
 """
 
 from __future__ import annotations
