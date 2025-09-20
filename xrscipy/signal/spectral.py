@@ -503,7 +503,7 @@ def xcorrelation(
         norm = 1
         for sig in (darray, other_darray):
             sig_std = (
-                psd(
+                welch(
                     sig,
                     fs,
                     seglen,
@@ -580,7 +580,7 @@ def spectrogram(
 
 # noinspection PyIncorrectDocstring
 @_add2docstring_common_params
-def psd(
+def welch(
     darray: xr.DataArray,
     fs: float = None,
     seglen: float = None,
@@ -737,7 +737,7 @@ def coherence(
     dim: str = None,
 ) -> xr.DataArray:
     r"""
-    Calculate the coherence as :math:`CSD / \sqrt{{PSD_1 * PSD_2}}`
+    Calculate the magnitude squared coherence as :math:`|CSD|^2 / (PSD_1 * PSD_2)`
 
     Parameters
     ----------
@@ -749,11 +749,10 @@ def coherence(
 
     Returns
     -------
-    coh : xarray.DataArray, complex
-        Coherence of 'darray' and 'other_darray'.
-        It is complex and :code:`abs(coh)**2` is the squared magnitude coherohram
+    coh : xarray.DataArray
+        Magnitude squared coherence of 'darray' and 'other_darray'.
     """
-    Pxx = psd(
+    Pxx = welch(
         darray,
         fs,
         seglen,
@@ -765,7 +764,7 @@ def coherence(
         detrend,
         dim=dim,
     )
-    Pyy = psd(
+    Pyy = welch(
         other_darray,
         fs,
         seglen,
@@ -790,7 +789,7 @@ def coherence(
         detrend,
         dim=dim,
     )
-    coh = Pxy / np.sqrt(Pxx * Pyy)  # magnitude squared coherence
+    coh = np.abs(Pxy) ** 2 / (Pxx * Pyy)  # magnitude squared coherence
     coh.name = f"coherence_{darray.name}_{other_darray.name}"
     return coh
 
