@@ -291,7 +291,7 @@ def crossspectrogram(
         nperseg = int(np.rint(seglen / dt))
         nfft = next_fast_len(nperseg)
     if noverlap is None:
-        noverlap = np.rint(nperseg * overlap_ratio)
+        noverlap = int(np.rint(nperseg * overlap_ratio))
     if darray is other_darray:
         d_val = od_val = darray.values
     else:
