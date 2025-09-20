@@ -61,11 +61,11 @@ Spectral (FFT) analysis
    signal.csd
    signal.extra.psd
    signal.coherence
+   signal.spectrogram
+   signal.hilbert
    signal.extra.xcorrelation
    signal.extra.crossspectrogram
-   signal.spectrogram
    signal.extra.coherogram
-   signal.hilbert
 
 Digital filters
 ===============
