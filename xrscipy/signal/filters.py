@@ -159,6 +159,10 @@ def _savgol_filter(
     # Reorder dimensions to match input order
     result = result.transpose(*darray.dims)
 
+    # Preserve the original coordinates along the filtered dimension
+    if dim in darray.coords:
+        result = result.assign_coords({dim: darray.coords[dim]})
+
     result.name = f"savgol_filtered_{darray.name}" if darray.name else "savgol_filtered"
     return result
 
