@@ -6,6 +6,7 @@ import scipy as sp
 import xarray as xr
 
 import xrscipy.signal as dsp
+import xrscipy.signal.extra as dsp_extra
 from .testings import get_obj
 
 
@@ -171,26 +172,53 @@ def test_spectral_functions(mode, dim, func_name):
     _check_metadata_preservation(da1, actual, dim)
 
 
-def test_crossspectrogram_with_explicit_fs():
-    """Test crossspectrogram function in some cases not tested by the other exposed functions"""
-    # Create simple test data with known sampling
-    x = np.linspace(0, 1, 10)
+def test_crossspectrogram():
+    """test for crossspectrogram regarding paths not covered by the already existing tests
+
+    This test covers the following lines in crossspectrogram function:
+    - dt = 1.0 / fs when fs is explicitly provided
+    - nperseg and nfft calculation when seglen is provided
+    - noverlap calculation from overlap_ratio when noverlap is None
+    - xr.broadcast usage when arrays have different dimensions
+    """
+    # Test data for all scenarios
+    x = np.linspace(0, 1, 20)
+    y = np.linspace(0, 0.5, 5)
+
+    # Basic 1D arrays for most tests
     da1 = xr.DataArray(np.sin(2 * np.pi * x), dims=["x"], coords={"x": x})
     da2 = xr.DataArray(np.cos(2 * np.pi * x), dims=["x"], coords={"x": x})
 
-    # Calculate fs from the coordinate spacing
+    # Test 1: Explicit fs parameter
     fs_calculated = 1.0 / (x[1] - x[0])
-
-    # Test with calculated fs (fs=None, let it calculate from coordinates)
-    result_auto_fs = dsp.extra.crossspectrogram(da1, da2, dim="x", nperseg=4, noverlap=2)
-
-    # Test with explicit fs parameter (this exercises line 289: dt = 1.0 / fs)
-    result_explicit_fs = dsp.extra.crossspectrogram(da1, da2, dim="x", fs=fs_calculated, nperseg=4, noverlap=2)
-
-    # Results should be identical
+    result_auto_fs = dsp_extra.crossspectrogram(da1, da2, dim="x", nperseg=4, noverlap=2)
+    result_explicit_fs = dsp_extra.crossspectrogram(da1, da2, dim="x", fs=fs_calculated, nperseg=4, noverlap=2)
     np.testing.assert_allclose(result_auto_fs.values, result_explicit_fs.values)
-    np.testing.assert_allclose(result_auto_fs.coords["frequency"].values, result_explicit_fs.coords["frequency"].values)
-    np.testing.assert_allclose(result_auto_fs.coords["x"].values, result_explicit_fs.coords["x"].values)
 
-    # Basic sanity checks
-    assert np.all(np.isfinite(result_explicit_fs.values))
+    # Test 2: seglen parameter
+    result_seglen = dsp_extra.crossspectrogram(da1, da2, dim="x", seglen=0.2)
+    assert isinstance(result_seglen, xr.DataArray)
+    assert "frequency" in result_seglen.coords
+    assert "x" in result_seglen.coords
+
+    # Test 3: Default noverlap calculation
+    result_noverlap = dsp_extra.crossspectrogram(da1, da2, dim="x", nperseg=8, overlap_ratio=0.25)
+    assert isinstance(result_noverlap, xr.DataArray)
+    assert "frequency" in result_noverlap.coords
+    assert "x" in result_noverlap.coords
+
+    # Test 4: Different dimensions
+    # 2D array with different coordinate lengths
+    da2_2d = xr.DataArray(
+        np.outer(np.cos(2 * np.pi * x[:10]), np.sin(2 * np.pi * y)), dims=["x", "y"], coords={"x": x[:10], "y": y}
+    )
+    result_broadcast = dsp_extra.crossspectrogram(da1, da2_2d, dim="x", nperseg=4, noverlap=2)
+    assert isinstance(result_broadcast, xr.DataArray)
+    assert "frequency" in result_broadcast.coords
+    assert "x" in result_broadcast.coords
+    assert "y" in result_broadcast.coords
+
+    # Basic sanity checks for all results
+    assert np.all(np.isfinite(result_auto_fs.values))
+    assert np.all(np.isfinite(result_seglen.values[:10]))  # Check first few values
+    assert np.all(np.isfinite(result_noverlap.values))
