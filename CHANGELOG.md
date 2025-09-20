@@ -41,6 +41,17 @@ This update re-affirms the goal of this library - to be a wrapper around `scipy`
 
 - Minor docs fixes
 
+## [2.2.0]
+
+### Changed
+
+- Transition from `poetry` to `uv` and `black/isort/pycln` to `ruff`
+- Updated dependencies
+
+### Fixed
+
+- Minor docs fixes
+
 ## [2.0.0]
 
 ### Added

@@ -2890,7 +2890,7 @@ wheels = [
 
 [[package]]
 name = "xrscipy"
-version = "2.2.1"
+version = "3.0.0"
 source = { editable = "." }
 dependencies = [
     { name = "scipy", version = "1.13.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
