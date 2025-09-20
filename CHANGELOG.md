@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.0]
+
+The main breaking change is the removal of custom filters that are not in the scipy API.
+This update re-affirms the goal of this library - to be a wrapper around `scipy` functions for easy use on xarrays, not to add additional functions.
+
+### Added
+
+- Add many tests, especially on `xrscipy.signal`
+- Add `integrate.cumulative_simpson`
+- Add tentative support for `xarray<2023,>0.16`
+
+### Changed
+
+- Rewrote `savgol_filter` and `decimate` to match the `scipy` implementation.
+- Renamed `psd` to `welch` to align with `scipy`
+- `welch` now returns `PSD**2`, as in `scipy`
+
+### Fixed
+
+- Fixed n-dimentional `hilbert`
+
+### Removed
+
+- Remove all filters that are not part of the `scipy` API
+
 ## [2.2.0]
 
 ### Changed
