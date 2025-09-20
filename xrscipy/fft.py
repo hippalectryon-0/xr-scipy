@@ -23,7 +23,7 @@ Let us consider an example DataArray
     arr
 
 Our :py:func:`~xrscipy.fft.fft` takes an xarray object
-(possibly high dimensional) and a coordinate name which direction we compute
+(possibly high dimensional) and a coordinate name along which we compute
 the Fourier transform.
 
 .. ipython:: python

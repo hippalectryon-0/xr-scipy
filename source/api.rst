@@ -18,6 +18,7 @@ integrate
    integrate.simpson
    integrate.romb
    integrate.cumulative_trapezoid
+   integrate.cumulative_simpson
 
 fft
 ===
