@@ -7,7 +7,7 @@ build:
     jobs:
       post_install:
         - curl -LsSf https://astral.sh/uv/install.sh | sh
-        - uv add --dev sphinx readthedocs-sphinx-ext
-        - VIRTUAL_ENV=$READTHEDOCS_VIRTUALENV_PATH uv sync
+        - $HOME/.local/bin/uv add --dev sphinx readthedocs-sphinx-ext
+        - VIRTUAL_ENV=$READTHEDOCS_VIRTUALENV_PATH $HOME/.local/bin/uv sync
 sphinx:
   configuration: source/conf.py
