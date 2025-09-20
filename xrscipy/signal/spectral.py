@@ -820,13 +820,20 @@ def hilbert(darray: xr.DataArray, N: int = None, dim: str = None) -> xr.DataArra
     N_unspecified = N is None
     if N_unspecified:
         N = next_fast_len(n_orig)
-    return xr.apply_ufunc(
+
+    result = xr.apply_ufunc(
         _hilbert_wraper,
         darray,
         input_core_dims=[[dim]],
         output_core_dims=[[dim]],
         kwargs=dict(N=N, n_orig=n_orig, N_unspecified=N_unspecified, axis=axis),
+        exclude_dims={dim},
     )
+
+    # Reorder dimensions to match input order
+    result = result.transpose(*darray.dims)
+
+    return result
 
 
 def _hilbert_wraper(darray: xr.DataArray, N: int, n_orig: int, N_unspecified: int, axis: int = -1) -> xr.DataArray:

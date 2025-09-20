@@ -66,13 +66,7 @@ def test_spectral_functions(mode, dim, func_name):
         expected_result = sp.signal.hilbert(da1.values, axis=axis)
 
         # Check that result values match
-        # Note: xarray's apply_ufunc moves the core dimension to the end
-        # So we need to transpose the scipy result to match
-        if da1.ndim > 1:
-            expected_transposed = np.moveaxis(expected_result, axis, -1)
-            np.testing.assert_allclose(actual.values, expected_transposed)
-        else:
-            np.testing.assert_allclose(actual.values, expected_result)
+        np.testing.assert_allclose(actual.values, expected_result)
 
         # Check metadata preservation
         _check_metadata_preservation(da1, actual, dim)
