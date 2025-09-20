@@ -6,7 +6,7 @@ import scipy as sp
 import xarray as xr
 
 import xrscipy.signal as dsp
-import xrscipy.signal.extra as dsp_extra
+from xrscipy.signal.spectral import _crossspectrogram
 from .testings import get_obj
 
 
@@ -191,18 +191,18 @@ def test_crossspectrogram():
 
     # Test 1: Explicit fs parameter
     fs_calculated = 1.0 / (x[1] - x[0])
-    result_auto_fs = dsp_extra.crossspectrogram(da1, da2, dim="x", nperseg=4, noverlap=2)
-    result_explicit_fs = dsp_extra.crossspectrogram(da1, da2, dim="x", fs=fs_calculated, nperseg=4, noverlap=2)
+    result_auto_fs = _crossspectrogram(da1, da2, dim="x", nperseg=4, noverlap=2)
+    result_explicit_fs = _crossspectrogram(da1, da2, dim="x", fs=fs_calculated, nperseg=4, noverlap=2)
     np.testing.assert_allclose(result_auto_fs.values, result_explicit_fs.values)
 
     # Test 2: seglen parameter
-    result_seglen = dsp_extra.crossspectrogram(da1, da2, dim="x", seglen=0.2)
+    result_seglen = _crossspectrogram(da1, da2, dim="x", seglen=0.2)
     assert isinstance(result_seglen, xr.DataArray)
     assert "frequency" in result_seglen.coords
     assert "x" in result_seglen.coords
 
     # Test 3: Default noverlap calculation
-    result_noverlap = dsp_extra.crossspectrogram(da1, da2, dim="x", nperseg=8, overlap_ratio=0.25)
+    result_noverlap = _crossspectrogram(da1, da2, dim="x", nperseg=8, overlap_ratio=0.25)
     assert isinstance(result_noverlap, xr.DataArray)
     assert "frequency" in result_noverlap.coords
     assert "x" in result_noverlap.coords
@@ -212,7 +212,7 @@ def test_crossspectrogram():
     da2_2d = xr.DataArray(
         np.outer(np.cos(2 * np.pi * x[:10]), np.sin(2 * np.pi * y)), dims=["x", "y"], coords={"x": x[:10], "y": y}
     )
-    result_broadcast = dsp_extra.crossspectrogram(da1, da2_2d, dim="x", nperseg=4, noverlap=2)
+    result_broadcast = _crossspectrogram(da1, da2_2d, dim="x", nperseg=4, noverlap=2)
     assert isinstance(result_broadcast, xr.DataArray)
     assert "frequency" in result_broadcast.coords
     assert "x" in result_broadcast.coords
