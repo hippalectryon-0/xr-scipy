@@ -3,6 +3,7 @@
 import numpy as np
 import pytest
 import scipy as sp
+import xarray as xr
 
 import xrscipy.signal as dsp
 from .testings import get_obj
@@ -168,3 +169,28 @@ def test_spectral_functions(mode, dim, func_name):
 
     # Check metadata preservation
     _check_metadata_preservation(da1, actual, dim)
+
+
+def test_crossspectrogram_with_explicit_fs():
+    """Test crossspectrogram function in some cases not tested by the other exposed functions"""
+    # Create simple test data with known sampling
+    x = np.linspace(0, 1, 10)
+    da1 = xr.DataArray(np.sin(2 * np.pi * x), dims=["x"], coords={"x": x})
+    da2 = xr.DataArray(np.cos(2 * np.pi * x), dims=["x"], coords={"x": x})
+
+    # Calculate fs from the coordinate spacing
+    fs_calculated = 1.0 / (x[1] - x[0])
+
+    # Test with calculated fs (fs=None, let it calculate from coordinates)
+    result_auto_fs = dsp.extra.crossspectrogram(da1, da2, dim="x", nperseg=4, noverlap=2)
+
+    # Test with explicit fs parameter (this exercises line 289: dt = 1.0 / fs)
+    result_explicit_fs = dsp.extra.crossspectrogram(da1, da2, dim="x", fs=fs_calculated, nperseg=4, noverlap=2)
+
+    # Results should be identical
+    np.testing.assert_allclose(result_auto_fs.values, result_explicit_fs.values)
+    np.testing.assert_allclose(result_auto_fs.coords["frequency"].values, result_explicit_fs.coords["frequency"].values)
+    np.testing.assert_allclose(result_auto_fs.coords["x"].values, result_explicit_fs.coords["x"].values)
+
+    # Basic sanity checks
+    assert np.all(np.isfinite(result_explicit_fs.values))
