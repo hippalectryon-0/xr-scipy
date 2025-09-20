@@ -78,8 +78,6 @@ def _wrap_integrate(func: Callable, reduces: bool, y: _DAS, coord: str, **kwargs
 
     # In case of dim is a non-dimensional coordinate.
     coord_da = y[coord]
-    if len(coord_da.dims) > 1:
-        raise ValueError(f"coord {coord} coresponds to more than one dimension: {coord_da.dims}")
     dim = coord_da.dims[0]
     output_core_dim = [] if reduces else [dim]
 

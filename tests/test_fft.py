@@ -6,8 +6,8 @@ import scipy as sp
 import xarray as xr
 
 from xrscipy import fft, fftpack
-
 from .testings import get_obj
+
 
 # TODO utest iftt(fft) to make sure we haven't messed up the freqs too badly
 
@@ -93,3 +93,13 @@ def test_fftnd(mode, module, func, coords, shape):
     for key, v in da.coords.items():
         if "x" not in v.dims:
             assert da[key].identical(actual[key])
+
+
+@pytest.mark.parametrize("func", ["fftn", "ifftn", "rfftn", "irfftn"])
+def test_fftnd_invalid_shape_type(func):
+    """Test that ND FFT functions raise TypeError when shape/s parameter is not a dict."""
+    da = get_obj(1)
+
+    # TypeError when sizes is not a dict for ND functions
+    with pytest.raises(TypeError, match="s should be a dict mapping from coord name to size"):
+        getattr(fft, func)(da, "x", "y", s=[10, 20])  # Should be a dict, not a list
