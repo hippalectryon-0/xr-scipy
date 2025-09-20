@@ -145,3 +145,9 @@ _inject_docs(
 
 simpson = partial(_wrap_integrate_trapz, integrate.simpson, True)
 _inject_docs(simpson, description="simpson(obj, coord, even='avg')")
+
+cumulative_simpson = partial(_wrap_integrate_trapz, integrate.cumulative_simpson, False, initial=0)
+_inject_docs(
+    cumulative_simpson,
+    description="cumulative_simpson(obj, coord)",
+)

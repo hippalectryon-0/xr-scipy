@@ -38,16 +38,16 @@ def test_integrate_romb(mode, dx, dim):
 
 
 @pytest.mark.parametrize("mode", [1])
-@pytest.mark.parametrize("func", ["trapezoid", "cumulative_trapezoid", "simpson"])
+@pytest.mark.parametrize("func", ["trapezoid", "cumulative_trapezoid", "simpson", "cumulative_simpson"])
 @pytest.mark.parametrize("dim", ["x", "time"])
 def test_integrate(mode, func, dim):
-    """Test integration functions (trapezoid, cumulative_trapezoid, simpson).
+    """Test integration functions (trapezoid, cumulative_trapezoid, simpson, cumulative_simpson).
 
     Verifies that xrscipy integration functions produce results strictly equal to scipy,
     and that metadata is properly handled:
     - Input DataArrays remain unmodified (dimension preservation)
     - Coordinates are propagated to output DataArrays
-    - The initial parameter is correctly handled for cumulative_trapezoid
+    - The initial parameter is correctly handled for cumulative functions
     - Coordinate arrays are properly passed as the x parameter
     """
     da = get_obj(mode)
@@ -55,7 +55,7 @@ def test_integrate(mode, func, dim):
     axis = da.get_axis_num(da[dim].dims[0])
     actual = getattr(integrate, func)(da, dim)
     kwargs = {}
-    if func == "cumulative_trapezoid":
+    if func in ["cumulative_trapezoid", "cumulative_simpson"]:
         kwargs["initial"] = 0
         actual = actual.transpose(*da.dims)
     expected: np.ndarray = getattr(sp.integrate, func)(da.values, x=da[dim].values, axis=axis, **kwargs)
