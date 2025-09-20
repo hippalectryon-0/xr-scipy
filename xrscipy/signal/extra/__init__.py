@@ -9,10 +9,10 @@ __all__ = [
     "coherogram",
     "crossspectrogram",
     "freq2lag",
-    "psd",
+    "welch",
     "xcorrelation",
 ]
 
 
 from xrscipy.signal.filters import bandpass, bandstop, frequency_filter, highpass, lowpass
-from xrscipy.signal.spectral import coherogram, crossspectrogram, freq2lag, psd, xcorrelation
+from xrscipy.signal.spectral import coherogram, crossspectrogram, freq2lag, welch, xcorrelation
