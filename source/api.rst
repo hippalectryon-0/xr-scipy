@@ -59,13 +59,9 @@ Spectral (FFT) analysis
    :toctree: generated/
 
    signal.csd
-   signal.extra.psd
    signal.coherence
    signal.spectrogram
    signal.hilbert
-   signal.extra.xcorrelation
-   signal.extra.crossspectrogram
-   signal.extra.coherogram
 
 Digital filters
 ===============
@@ -73,10 +69,4 @@ Digital filters
 .. autosummary::
    :toctree: generated/
 
-   signal.extra.frequency_filter
-   signal.extra.lowpass
-   signal.extra.highpass
-   signal.extra.bandpass
-   signal.extra.bandstop
-   signal.decimate
    signal.savgol_filter

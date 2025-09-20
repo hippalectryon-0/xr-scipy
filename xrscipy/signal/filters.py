@@ -139,10 +139,12 @@ import numpy as np
 import xarray as xr
 from scipy.signal import savgol_filter as sp_savgol_filter
 
+import xrscipy.docs as docs
+from xrscipy.docs import CDParam
 from xrscipy.signal.utils import get_maybe_only_dim, get_sampling_step
 
 
-def savgol_filter(
+def _savgol_filter(
     darray: xr.DataArray,
     window_length: float,
     polyorder: int,
@@ -152,45 +154,7 @@ def savgol_filter(
     mode: str = "interp",
     cval: float = 0.0,
 ) -> xr.DataArray:
-    """
-    Apply a Savitzky-Golay filter to an array.
-
-    This is a 1-D filter. If `darray` has dimension greater than 1, `dim`
-    determines the axis along which the filter is applied.
-
-    Parameters
-    ----------
-    darray : xarray.DataArray
-        The data to be filtered.
-    window_length : float
-        The length of the filter window in the units of the specified dimension.
-        This will be converted to the number of samples based on the coordinate spacing.
-    polyorder : int
-        The order of the polynomial used to fit the samples.
-        `polyorder` must be less than `window_length`.
-    deriv : int, optional
-        The order of the derivative to compute. This must be a
-        nonnegative integer. The default is 0, which means to filter
-        the data without differentiating.
-    delta : float, optional
-        The spacing of the samples to which the filter will be applied.
-        This is only used if deriv > 0. Default is 1.0.
-    dim : str, optional
-        The dimension of the array `darray` along which the filter is to be applied.
-        Default is the only dimension if 1D, otherwise must be specified.
-    mode : str, optional
-        Must be 'mirror', 'constant', 'nearest', 'wrap' or 'interp'. This
-        determines the type of extension to use for the padded signal to
-        which the filter is applied.
-    cval : scalar, optional
-        Value to fill past the edges of the input if `mode` is 'constant'.
-        Default is 0.0.
-
-    Returns
-    -------
-    y : xarray.DataArray
-        The filtered data with the same coordinates as the input.
-    """
+    """Apply a Savitzky-Golay filter to an array."""
     dim = get_maybe_only_dim(darray, dim)
 
     # Convert window_length from coordinate units to samples
@@ -228,3 +192,36 @@ def savgol_filter(
 
     result.name = f"savgol_filtered_{darray.name}" if darray.name else "savgol_filtered"
     return result
+
+
+def _inject_docs(func) -> None:
+    """Inject xr docs into savgol_filter docs."""
+    doc = docs.DocParser(fun=sp_savgol_filter)
+
+    doc.replace_params(
+        x=CDParam("darray", "The data to be filtered.", "xarray.DataArray"),
+        window_length=CDParam(
+            "window_length",
+            "The length of the filter window in the units of the specified dimension. This will be converted to the number of samples based on the coordinate spacing.",
+            "float",
+        ),
+        axis=CDParam(
+            "dim",
+            "The dimension of the array `darray` along which the filter is to be applied. Default is the only dimension if 1D, otherwise must be specified.",
+            "str, optional",
+        ),
+    )
+
+    doc.replace_strings_returns(("ndarray", "xarray.DataArray"))
+    doc.replace_strings_description(("axis", "dim"))
+
+    doc.insert_see_also("scipy.signal.savgol_filter : Original scipy implementation")
+
+    # inject
+    func.__doc__ = str(doc)
+    func.__name__ = "savgol_filter"
+
+
+# Create the public function with proper docs
+savgol_filter = _savgol_filter
+_inject_docs(savgol_filter)
