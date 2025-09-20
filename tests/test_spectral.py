@@ -8,278 +8,129 @@ import xrscipy.signal as dsp
 from .testings import get_obj
 
 
-@pytest.mark.parametrize("mode", [0, 1])
-@pytest.mark.parametrize("dim", ["x"])
-def test_csd(mode, dim):
-    """Test cross power spectral density function.
+def _get_sampling_frequency(da, dim):
+    """Calculate sampling frequency from coordinate spacing."""
+    return 1.0 / (da.coords[dim][1] - da.coords[dim][0]).values
 
-    Verifies that xrscipy.signal.csd produces results strictly equal to scipy.signal.csd,
-    and that metadata is properly handled:
-    - Input DataArrays remain unmodified (shape preservation)
-    - Coordinates are propagated to output DataArrays
-    - Frequency dimension is correctly created
-    """
-    da1 = get_obj(mode)
-    da2 = get_obj(mode)
 
-    # For 1D case with mode=0, we need to make sure we have the right dimension
-    if mode == 0 and dim not in da1.dims:
-        pytest.skip("dimension not available in 1D test object")
-
-    if dim not in da1.dims or dim not in da2.dims:
-        pytest.skip("dimension not available in test object")
-
-    # Get axis number for the specified dimension
-    axis = da1.get_axis_num(dim)
-
-    # Use appropriate parameters for the signal length
-    if mode == 0:
-        # For short signals, use smaller nperseg
-        actual = dsp.csd(da1, da2, dim=dim, nperseg=4, noverlap=2)
-
-        # Calculate using scipy with matching parameters
-        fs = 1.0 / (da1.coords[dim][1] - da1.coords[dim][0]).values  # Calculate sampling frequency
-        expected_f, expected_csd = sp.signal.csd(
-            da1.values,
-            da2.values,
-            fs=fs,
-            window="hann",
-            nperseg=4,
-            noverlap=2,
-            nfft=None,
-            detrend="constant",
-            return_onesided=True,
-            scaling="density",
-            axis=axis,
-            average="mean",
-        )
-    else:
-        # For longer signals along the x dimension (which has size 9), use appropriate parameters
-        actual = dsp.csd(da1, da2, dim=dim, nperseg=4, noverlap=2)
-
-        # Calculate using scipy with matching parameters
-        fs = 1.0 / (da1.coords[dim][1] - da1.coords[dim][0]).values  # Calculate sampling frequency
-        expected_f, expected_csd = sp.signal.csd(
-            da1.values,
-            da2.values,
-            fs=fs,
-            window="hann",
-            nperseg=4,
-            noverlap=2,
-            nfft=None,
-            detrend="constant",
-            return_onesided=True,
-            scaling="density",
-            axis=axis,
-            average="mean",
-        )
-
-    # Check that frequency values match
-    np.testing.assert_allclose(actual.coords["frequency"].values, expected_f)
-
-    # Check that csd values match
-    np.testing.assert_allclose(actual.values, expected_csd)
-
+def _check_metadata_preservation(original_da, result_da, dim):
+    """Check that metadata is properly preserved."""
     # Make sure the original data does not change
-    assert da1.values.shape == get_obj(mode).shape
-    assert da2.values.shape == get_obj(mode).shape
+    assert original_da.values.shape == original_da.shape
 
     # Make sure the coordinate (except the transformed one) is propagated
-    for key, v in da1.coords.items():
+    for key, v in original_da.coords.items():
         if dim not in v.dims and key != dim:
-            assert da1[key].identical(actual[key])
+            assert original_da[key].identical(result_da[key])
 
 
 @pytest.mark.parametrize("mode", [0, 1])
 @pytest.mark.parametrize("dim", ["x"])
-def test_welch(mode, dim):
-    """Test power spectral density function.
+@pytest.mark.parametrize("func_name", ["csd", "welch", "coherence", "spectrogram"])
+def test_spectral_functions(mode, dim, func_name):
+    """Test spectral analysis functions.
 
-    Verifies that xrscipy.signal.welch produces results strictly equal to scipy.signal.welch,
-    and that metadata is properly handled:
-    - Input DataArrays remain unmodified (shape preservation)
-    - Coordinates are propagated to output DataArrays
-    - Frequency dimension is correctly created
-    """
-    da = get_obj(mode)
-
-    # For 1D case with mode=0, we need to make sure we have the right dimension
-    if mode == 0 and dim not in da.dims:
-        pytest.skip("dimension not available in 1D test object")
-
-    if dim not in da.dims:
-        pytest.skip("dimension not available in test object")
-
-    # Get axis number for the specified dimension
-    axis = da.get_axis_num(dim)
-
-    # Use appropriate parameters for the signal length to avoid the noverlap issue
-    if mode == 0:
-        # For short signals, use smaller nperseg
-        actual = dsp.welch(da, dim=dim, nperseg=4, noverlap=2)
-
-        # Calculate using scipy with matching parameters
-        fs = 1.0 / (da.coords[dim][1] - da.coords[dim][0]).values  # Calculate sampling frequency
-        expected_f, expected_psd = sp.signal.welch(
-            da.values,
-            fs=fs,
-            window="hann",
-            nperseg=4,
-            noverlap=2,
-            nfft=None,
-            detrend="constant",
-            return_onesided=True,
-            scaling="density",
-            axis=axis,
-            average="mean",
-        )
-    else:
-        # For longer signals along the x dimension (which has size 9), use appropriate parameters
-        actual = dsp.welch(da, dim=dim, nperseg=4, noverlap=2)
-
-        # Calculate using scipy with matching parameters
-        fs = 1.0 / (da.coords[dim][1] - da.coords[dim][0]).values  # Calculate sampling frequency
-        expected_f, expected_psd = sp.signal.welch(
-            da.values,
-            fs=fs,
-            window="hann",
-            nperseg=4,
-            noverlap=2,
-            nfft=None,
-            detrend="constant",
-            return_onesided=True,
-            scaling="density",
-            axis=axis,
-            average="mean",
-        )
-
-    # Check that frequency values match
-    np.testing.assert_allclose(actual.coords["frequency"].values, expected_f)
-
-    # Check that psd values match
-    np.testing.assert_allclose(actual.values, expected_psd)
-
-    # Make sure the original data does not change
-    assert da.values.shape == get_obj(mode).shape
-
-    # Make sure the coordinate (except the transformed one) is propagated
-    for key, v in da.coords.items():
-        if dim not in v.dims and key != dim:
-            assert da[key].identical(actual[key])
-
-
-@pytest.mark.parametrize("mode", [0, 1])
-@pytest.mark.parametrize("dim", ["x"])
-def test_coherence(mode, dim):
-    """Test coherence function.
-
-    Verifies that xrscipy.signal.coherence produces results that match scipy.signal.coherence,
-    and that metadata is properly handled:
-    - Input DataArrays remain unmodified (shape preservation)
-    - Coordinates are propagated to output DataArrays
-    - Frequency dimension is correctly created
-    """
-    da1 = get_obj(mode)
-    da2 = get_obj(mode)
-
-    # For 1D case with mode=0, we need to make sure we have the right dimension
-    if mode == 0 and dim not in da1.dims:
-        pytest.skip("dimension not available in 1D test object")
-
-    if dim not in da1.dims or dim not in da2.dims:
-        pytest.skip("dimension not available in test object")
-
-    # Get axis number for the specified dimension
-    axis = da1.get_axis_num(dim)
-
-    # Use appropriate parameters for the signal length
-    if mode == 0:
-        # For short signals, use smaller nperseg
-        actual = dsp.coherence(da1, da2, dim=dim, nperseg=4, noverlap=2)
-
-        # Calculate using scipy with matching parameters
-        fs = 1.0 / (da1.coords[dim][1] - da1.coords[dim][0]).values  # Calculate sampling frequency
-        expected_f, expected_coherence = sp.signal.coherence(
-            da1.values,
-            da2.values,
-            fs=fs,
-            window="hann",
-            nperseg=4,
-            noverlap=2,
-            nfft=None,
-            detrend="constant",
-            axis=axis,
-        )
-    else:
-        # For longer signals along the x dimension (which has size 9), use appropriate parameters
-        actual = dsp.coherence(da1, da2, dim=dim, nperseg=4, noverlap=2)
-
-        # Calculate using scipy with matching parameters
-        fs = 1.0 / (da1.coords[dim][1] - da1.coords[dim][0]).values  # Calculate sampling frequency
-        expected_f, expected_coherence = sp.signal.coherence(
-            da1.values,
-            da2.values,
-            fs=fs,
-            window="hann",
-            nperseg=4,
-            noverlap=2,
-            nfft=None,
-            detrend="constant",
-            axis=axis,
-        )
-
-    # Check that frequency values match
-    np.testing.assert_allclose(actual.coords["frequency"].values, expected_f)
-
-    # Check that coherence values match scipy
-    np.testing.assert_allclose(actual.values, expected_coherence)
-
-    # Make sure the original data does not change
-    assert da1.values.shape == get_obj(mode).shape
-    assert da2.values.shape == get_obj(mode).shape
-
-    # Make sure the coordinate (except the transformed one) is propagated
-    for key, v in da1.coords.items():
-        if dim not in v.dims and key != dim:
-            assert da1[key].identical(actual[key])
-
-
-@pytest.mark.parametrize("mode", [0, 1])
-@pytest.mark.parametrize("dim", ["x"])
-def test_spectrogram(mode, dim):
-    """Test spectrogram function.
-
-    Verifies that xrscipy.signal.spectrogram produces results strictly equal to scipy.signal.spectrogram,
+    Verifies that xrscipy.signal functions produce results strictly equal to scipy,
     and that metadata is properly handled:
     - Input DataArrays remain unmodified (shape preservation)
     - Coordinates are propagated to output DataArrays
     - Frequency and time dimensions are correctly created
     """
-    da = get_obj(mode)
+    # Common test parameters
+    NPERSEG = 4
+    NOVERLAP = 2
+    HANN_WINDOW = "hann"
+    TUKEY_WINDOW = ("tukey", 0.25)
+
+    # Get test data
+    da1 = get_obj(mode)
+    da2 = get_obj(mode)  # Only used for 2-argument functions
 
     # For 1D case with mode=0, we need to make sure we have the right dimension
-    if mode == 0 and dim not in da.dims:
+    if mode == 0 and dim not in da1.dims:
         pytest.skip("dimension not available in 1D test object")
 
-    if dim not in da.dims:
+    if dim not in da1.dims:
+        pytest.skip("dimension not available in test object")
+
+    if func_name != "spectrogram" and dim not in da2.dims:
         pytest.skip("dimension not available in test object")
 
     # Get axis number for the specified dimension
-    axis = da.get_axis_num(dim)
+    axis = da1.get_axis_num(dim)
 
-    # Use appropriate parameters for the signal length
-    if mode == 0:
-        # For short signals, use smaller nperseg
-        actual = dsp.spectrogram(da, dim=dim, nperseg=4, noverlap=2, window=("tukey", 0.25))
+    # Common parameters
+    nperseg = NPERSEG
+    noverlap = NOVERLAP
+    fs = _get_sampling_frequency(da1, dim)
 
-        # Calculate using scipy with matching parameters
-        fs = 1.0 / (da.coords[dim][1] - da.coords[dim][0]).values  # Calculate sampling frequency
-        expected_f, expected_t, expected_spect = sp.signal.spectrogram(
-            da.values,
+    if func_name == "csd":
+        # Calculate using xrscipy
+        actual = dsp.csd(da1, da2, dim=dim, nperseg=nperseg, noverlap=noverlap)
+
+        # Calculate using scipy
+        expected_f, expected_result = sp.signal.csd(
+            da1.values,
+            da2.values,
             fs=fs,
-            window=("tukey", 0.25),
-            nperseg=4,
-            noverlap=2,
+            window=HANN_WINDOW,
+            nperseg=nperseg,
+            noverlap=noverlap,
+            nfft=None,
+            detrend="constant",
+            return_onesided=True,
+            scaling="density",
+            axis=axis,
+            average="mean",
+        )
+
+    elif func_name == "welch":
+        # Calculate using xrscipy
+        actual = dsp.welch(da1, dim=dim, nperseg=nperseg, noverlap=noverlap)
+
+        # Calculate using scipy
+        expected_f, expected_result = sp.signal.welch(
+            da1.values,
+            fs=fs,
+            window=HANN_WINDOW,
+            nperseg=nperseg,
+            noverlap=noverlap,
+            nfft=None,
+            detrend="constant",
+            return_onesided=True,
+            scaling="density",
+            axis=axis,
+            average="mean",
+        )
+
+    elif func_name == "coherence":
+        # Calculate using xrscipy
+        actual = dsp.coherence(da1, da2, dim=dim, nperseg=nperseg, noverlap=noverlap)
+
+        # Calculate using scipy
+        expected_f, expected_result = sp.signal.coherence(
+            da1.values,
+            da2.values,
+            fs=fs,
+            window=HANN_WINDOW,
+            nperseg=nperseg,
+            noverlap=noverlap,
+            nfft=None,
+            detrend="constant",
+            axis=axis,
+        )
+
+    elif func_name == "spectrogram":
+        # Calculate using xrscipy
+        actual = dsp.spectrogram(da1, dim=dim, nperseg=nperseg, noverlap=noverlap, window=TUKEY_WINDOW)
+
+        # Calculate using scipy
+        expected_f, expected_t, expected_result = sp.signal.spectrogram(
+            da1.values,
+            fs=fs,
+            window=TUKEY_WINDOW,
+            nperseg=nperseg,
+            noverlap=noverlap,
             nfft=None,
             detrend="constant",
             return_onesided=True,
@@ -288,38 +139,18 @@ def test_spectrogram(mode, dim):
             mode="psd",
         )
     else:
-        # For longer signals along the x dimension (which has size 9), use appropriate parameters
-        actual = dsp.spectrogram(da, dim=dim, nperseg=4, noverlap=2, window=("tukey", 0.25))
-
-        # Calculate using scipy with matching parameters
-        fs = 1.0 / (da.coords[dim][1] - da.coords[dim][0]).values  # Calculate sampling frequency
-        expected_f, expected_t, expected_spect = sp.signal.spectrogram(
-            da.values,
-            fs=fs,
-            window=("tukey", 0.25),
-            nperseg=4,
-            noverlap=2,
-            nfft=None,
-            detrend="constant",
-            return_onesided=True,
-            scaling="density",
-            axis=axis,
-            mode="psd",
-        )
+        raise ValueError
 
     # Check that frequency values match
     np.testing.assert_allclose(actual.coords["frequency"].values, expected_f)
 
-    # Check that time values match (time coordinate is stored in the original dimension)
-    np.testing.assert_allclose(actual.coords[dim].values, expected_t)
+    # Check that result values match
+    if func_name == "spectrogram":
+        # For spectrogram, also check time values
+        np.testing.assert_allclose(actual.coords[dim].values, expected_t)
+        np.testing.assert_allclose(actual.values, expected_result)
+    else:
+        np.testing.assert_allclose(actual.values, expected_result)
 
-    # Check that spectrogram values match
-    np.testing.assert_allclose(actual.values, expected_spect)
-
-    # Make sure the original data does not change
-    assert da.values.shape == get_obj(mode).shape
-
-    # Make sure the coordinate (except the transformed ones) is propagated
-    for key, v in da.coords.items():
-        if dim not in v.dims and key != dim:
-            assert da[key].identical(actual[key])
+    # Check metadata preservation
+    _check_metadata_preservation(da1, actual, dim)
