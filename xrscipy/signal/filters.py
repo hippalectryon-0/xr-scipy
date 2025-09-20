@@ -13,7 +13,7 @@ Digital filters
     import xrscipy.signal.extra as dsp_extra
 
 
-``xr-scipy`` wraps some of SciPy functions for constructing frequency filters using functions such as :py:func:`scipy.signal.firwin` and  :py:func:`scipy.signal.iirfilter`. Wrappers for convenient functions such as  :py:func:`scipy.signal.decimate` and :py:func:`scipy.signal.savgol_filter` are also provided.
+``xr-scipy`` wraps some of SciPy functions for constructing frequency filters using functions such as :py:func:`scipy.signal.firwin` and  :py:func:`scipy.signal.iirfilter`. Wrappers for convenient functions such as :py:func:`scipy.signal.decimate` and :py:func:`scipy.signal.savgol_filter` are also provided.
 For convenience, the ``xrscipy.signal`` namespace will be imported under the alias ``dsp``:
 
 .. ipython:: python
@@ -132,3 +132,99 @@ The return type is also a DataArray with coordinates.
 
 The other options (polynomial and derivative order) are the same as for :py:func:`scipy.signal.savgol_filter`, see :py:func:`~xrscipy.signal.savgol_filter` for details.
 """
+
+from __future__ import annotations
+
+import numpy as np
+import xarray as xr
+from scipy.signal import savgol_filter as sp_savgol_filter
+
+from xrscipy.signal.utils import get_maybe_only_dim, get_sampling_step
+
+
+def savgol_filter(
+    darray: xr.DataArray,
+    window_length: float,
+    polyorder: int,
+    deriv: int = 0,
+    delta: float = 1.0,
+    dim: str = None,
+    mode: str = "interp",
+    cval: float = 0.0,
+) -> xr.DataArray:
+    """
+    Apply a Savitzky-Golay filter to an array.
+
+    This is a 1-D filter. If `darray` has dimension greater than 1, `dim`
+    determines the axis along which the filter is applied.
+
+    Parameters
+    ----------
+    darray : xarray.DataArray
+        The data to be filtered.
+    window_length : float
+        The length of the filter window in the units of the specified dimension.
+        This will be converted to the number of samples based on the coordinate spacing.
+    polyorder : int
+        The order of the polynomial used to fit the samples.
+        `polyorder` must be less than `window_length`.
+    deriv : int, optional
+        The order of the derivative to compute. This must be a
+        nonnegative integer. The default is 0, which means to filter
+        the data without differentiating.
+    delta : float, optional
+        The spacing of the samples to which the filter will be applied.
+        This is only used if deriv > 0. Default is 1.0.
+    dim : str, optional
+        The dimension of the array `darray` along which the filter is to be applied.
+        Default is the only dimension if 1D, otherwise must be specified.
+    mode : str, optional
+        Must be 'mirror', 'constant', 'nearest', 'wrap' or 'interp'. This
+        determines the type of extension to use for the padded signal to
+        which the filter is applied.
+    cval : scalar, optional
+        Value to fill past the edges of the input if `mode` is 'constant'.
+        Default is 0.0.
+
+    Returns
+    -------
+    y : xarray.DataArray
+        The filtered data with the same coordinates as the input.
+    """
+    dim = get_maybe_only_dim(darray, dim)
+
+    # Convert window_length from coordinate units to samples
+    dt = get_sampling_step(darray, dim)
+    window_length_samples = int(np.rint(window_length / dt))
+
+    # Ensure window_length is odd and positive
+    if window_length_samples % 2 == 0:
+        window_length_samples += 1
+    window_length_samples = max(window_length_samples, 3)
+
+    # Ensure polyorder is less than window_length
+    polyorder = min(polyorder, window_length_samples - 1)
+
+    # Apply the filter
+    result = xr.apply_ufunc(
+        sp_savgol_filter,
+        darray,
+        input_core_dims=[[dim]],
+        output_core_dims=[[dim]],
+        kwargs=dict(
+            window_length=window_length_samples,
+            polyorder=polyorder,
+            deriv=deriv,
+            delta=delta,
+            axis=-1,
+            mode=mode,
+            cval=cval,
+        ),
+        exclude_dims={dim},
+    )
+
+    # Reorder dimensions to match input order
+    result = result.transpose(*darray.dims)
+
+    result.name = f"savgol_filtered_{darray.name}" if darray.name else "savgol_filtered"
+    return result
