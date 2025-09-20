@@ -1874,15 +1874,6 @@ wheels = [
 ]
 
 [[package]]
-name = "pickleshare"
-version = "0.7.5"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/d8/b6/df3c1c9b616e9c0edbc4fbab6ddd09df9535849c64ba51fcb6531c32d4d8/pickleshare-0.7.5.tar.gz", hash = "sha256:87683d47965c1da65cdacaf31c8441d12b8044cdec9aca500cd78fc2c683afca", size = 6161 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/9a/41/220f49aaea88bc6fa6cba8d05ecf24676326156c23b991e80b3f2fc24c77/pickleshare-0.7.5-py2.py3-none-any.whl", hash = "sha256:9649af414d74d4df115d5d718f82acb59c9d418196b7b4290ed47a12ce62df56", size = 6877 },
-]
-
-[[package]]
 name = "pillow"
 version = "11.3.0"
 source = { registry = "https://pypi.org/simple" }
@@ -2920,7 +2911,6 @@ dev = [
     { name = "matplotlib", version = "3.10.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
     { name = "myst-parser", version = "3.0.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
     { name = "myst-parser", version = "4.0.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
-    { name = "pickleshare" },
     { name = "pre-commit" },
     { name = "pytest-cov" },
     { name = "ruff" },
@@ -2935,7 +2925,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "scipy", specifier = ">=1.9" },
-    { name = "xarray", specifier = ">=2023" },
+    { name = "xarray", specifier = ">=0.16" },
 ]
 
 [package.metadata.requires-dev]
@@ -2944,7 +2934,6 @@ dev = [
     { name = "ipython", specifier = ">=8.13.2" },
     { name = "matplotlib", specifier = ">=3.9.4" },
     { name = "myst-parser", specifier = ">=1.0.0" },
-    { name = "pickleshare", specifier = ">=0.7.5" },
     { name = "pre-commit", specifier = ">=4.3.0" },
     { name = "pytest-cov", specifier = ">=4.0.0" },
     { name = "ruff", specifier = ">=0.13.1" },
