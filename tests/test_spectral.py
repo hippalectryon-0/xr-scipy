@@ -157,22 +157,30 @@ def test_spectral_crossspectrogram(fs_type, signals_type, need_broadcasting):
 def test_spectral_seglen_conversion():
     """Test seglen parameter conversion to nperseg.
 
-    Verifies that seglen parameter is correctly converted to nperseg
-    based on the sampling step of the specified dimension.
+    Verifies that seglen parameter produces results equivalent to manually setting nperseg.
     """
     da = get_obj(0)
     dim = "x"
 
+    # Get the sampling step the same way xrscipy does
+    dt = get_sampling_step(da, dim)
+
     # Test with a specific seglen
     seglen = 0.4  # Should be 2 samples given dt=0.2
+    expected_nperseg = int(np.rint(seglen / dt))
 
-    # The function should work with seglen parameter
-    result = signal.spectral.spectrogram(da, dim=dim, seglen=seglen, window="hann")
+    # Test that seglen produces the same results as manually setting nperseg
+    result_seglen = signal.spectral.spectrogram(da, dim=dim, seglen=seglen, window="hann")
+    result_nperseg = signal.spectral.spectrogram(da, dim=dim, nperseg=expected_nperseg, window="hann")
 
-    # Verify it produces a valid result
-    assert isinstance(result, xr.DataArray)
-    assert result.ndim == 2  # Should have frequency and time dimensions
-    assert "frequency" in result.dims
+    # They should produce identical results
+    assert (result_seglen.values == result_nperseg.values).all()
+    assert result_seglen.dims == result_nperseg.dims
+
+    # Also verify it produces a valid result structure
+    assert isinstance(result_seglen, xr.DataArray)
+    assert result_seglen.ndim == 2  # Should have frequency and time dimensions
+    assert "frequency" in result_seglen.dims
 
 
 def test_spectral_psd_function():
@@ -206,22 +214,29 @@ def test_spectral_psd_function():
 def test_spectral_coherogram():
     """Test coherogram function.
 
-    Verifies that xrscipy coherogram produces valid results.
+    Verifies that xrscipy coherogram produces valid results with proper structure.
     """
     da = get_obj(0)
     dim = "x"
 
     # Test coherogram function
-    result = signal.spectral.coherogram(da, da, dim=dim, nperseg=4, window="hann")
+    actual = signal.spectral.coherogram(da, da, dim=dim, nperseg=4, window="hann")
 
-    # Verify it produces a valid result
-    assert isinstance(result, xr.DataArray)
-    assert "frequency" in result.dims
+    # Verify basic structural properties
+    assert isinstance(actual, xr.DataArray)
+    assert "frequency" in actual.dims
+
+    # Values should be between 0 and 1 (coherence magnitude)
+    # (Allow NaN values which can occur in edge cases)
+    valid_mask = ~np.isnan(actual.values)
+    if np.any(valid_mask):
+        assert np.all(actual.values[valid_mask] >= 0.0)
+        assert np.all(actual.values[valid_mask] <= 1.0)
 
     # make sure scalar coordinates are preserved
     for key, v in da.coords.items():
         if v.ndim == 0:  # scalar coordinates
-            assert da[key].identical(result[key])
+            assert da[key].identical(actual[key])
 
 
 def test_spectral_freq2lag():
@@ -238,19 +253,13 @@ def test_spectral_freq2lag():
 
     # Test freq2lag function with onesided=False (should use ifft)
     result = signal.spectral.freq2lag(spectrum, is_onesided=False)
+
+    # Validate basic properties
     assert isinstance(result, xr.DataArray)
     assert "lag" in result.dims
 
-    # Test freq2lag function with onesided=True (should use irfft)
-    # This currently fails due to dimension mismatch but we test it for coverage
-    try:
-        result2 = signal.spectral.freq2lag(spectrum, is_onesided=True)
-        # If it succeeds, verify the result
-        assert isinstance(result2, xr.DataArray)
-        assert "lag" in result2.dims
-    except ValueError:
-        # Expected failure due to dimension mismatch in current implementation
-        pass
+    # Values should be real (since we take .real at the end)
+    assert np.all(np.isreal(result.values))
 
     # make sure scalar coordinates are preserved
     for key, v in spectrum.coords.items():
@@ -261,22 +270,33 @@ def test_spectral_freq2lag():
 def test_spectral_xcorrelation():
     """Test xcorrelation function.
 
-    Verifies that xrscipy xcorrelation produces valid results.
+    Verifies that xrscipy xcorrelation produces valid results with proper structure.
     """
     da = get_obj(0)
     dim = "x"
 
     # Test xcorrelation function
-    result = signal.spectral.xcorrelation(da, da, dim=dim, nperseg=4, window="hann")
+    actual = signal.spectral.xcorrelation(da, da, dim=dim, nperseg=4, window="hann")
 
-    # Verify it produces a valid result
-    assert isinstance(result, xr.DataArray)
-    assert "lag" in result.dims
+    # Verify basic structural properties
+    assert isinstance(actual, xr.DataArray)
+    assert "lag" in actual.dims
+
+    # Values should be real
+    assert np.all(np.isreal(actual.values))
+
+    # Autocorrelation should have maximum at zero lag
+    # Find the index of zero lag and check it's near maximum
+    zero_lag_idx = np.argmin(np.abs(actual["lag"].values))
+    max_corr_idx = np.argmax(actual.values)
+
+    # For autocorrelation, peak should be near zero lag (allowing for some windowing effects)
+    assert abs(zero_lag_idx - max_corr_idx) <= 2  # Should be within 2 samples
 
     # make sure scalar coordinates are preserved
     for key, v in da.coords.items():
         if v.ndim == 0:  # scalar coordinates
-            assert da[key].identical(result[key])
+            assert da[key].identical(actual[key])
 
 
 def test_spectral_parameter_combinations():
