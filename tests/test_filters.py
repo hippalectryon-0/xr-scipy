@@ -148,3 +148,129 @@ def test_savgol_filter_edge_cases():
     da_named = xr.DataArray([1, 2, 3, 4, 5], dims=["x"], coords={"x": [0, 1, 2, 3, 4]}, name="test")
     result = dsp.savgol_filter(da_named, 1.5, 2, dim="x")
     assert result.name == "savgol_filtered_test"
+
+
+@pytest.mark.parametrize("q", [2, 5])
+def test_decimate(q):
+    """Test decimate function.
+
+    Verifies that xrscipy.signal.decimate produces results strictly equal to scipy,
+    and that metadata is properly handled.
+    """
+    # Create test data
+    x = np.linspace(0, 1, 100)
+    da = xr.DataArray(
+        np.sin(2 * np.pi * 5 * x) + 0.1 * np.random.RandomState(0).randn(100),
+        dims=["x"],
+        coords={"x": x},
+        name="test_signal",
+    )
+
+    # Calculate using xrscipy
+    actual = dsp.decimate(da, q=q, dim="x")
+
+    # Calculate using scipy
+    expected_result = sp.signal.decimate(
+        da.values,
+        q=q,
+        n=None,
+        ftype="iir",
+        axis=-1,
+        zero_phase=True,
+    )
+
+    # Check that result values match
+    np.testing.assert_allclose(actual.values, expected_result)
+
+    # Check metadata preservation
+    _check_metadata_preservation(da, actual, "x")
+
+    # Check that the result has the correct name
+    expected_name = f"decimated_{da.name}" if da.name else "decimated"
+    assert actual.name == expected_name
+
+    # Check that the dimension has been properly decimated
+    original_size = da.sizes["x"]
+    expected_size = original_size // q
+    assert actual.sizes["x"] == expected_size
+
+
+def test_decimate_with_target_fs():
+    """Test decimate function with target_fs parameter."""
+    # Create test data
+    x = np.linspace(0, 1, 100)
+    da = xr.DataArray(
+        np.sin(2 * np.pi * 5 * x) + 0.1 * np.random.RandomState(0).randn(100),
+        dims=["x"],
+        coords={"x": x},
+        name="test_signal",
+    )
+
+    # Test parameters
+    target_fs = 10.0
+
+    # Calculate using xrscipy
+    actual = dsp.decimate(da, target_fs=target_fs, dim="x")
+
+    # Calculate expected q value
+    coord = da.coords["x"]
+    dt = (coord[1] - coord[0]).values
+    current_fs = 1.0 / dt
+    expected_q = int(np.rint(current_fs / target_fs))
+
+    # Calculate using scipy with the same q
+    expected_result = sp.signal.decimate(
+        da.values,
+        q=expected_q,
+        n=None,
+        ftype="iir",
+        axis=-1,
+        zero_phase=True,
+    )
+
+    # Check that result values match
+    np.testing.assert_allclose(actual.values, expected_result)
+
+    # Check metadata preservation
+    _check_metadata_preservation(da, actual, "x")
+
+    # Verify that the function worked with target_fs
+    original_size = da.sizes["x"]
+    expected_size = original_size // expected_q
+    assert actual.sizes["x"] == expected_size
+
+    # Check that the result has the correct name
+    expected_name = f"decimated_{da.name}" if da.name else "decimated"
+    assert actual.name == expected_name
+
+
+def test_decimate_edge_cases():
+    """Test decimate function with edge cases."""
+    # Create a simple test case with known behavior
+    x = np.linspace(0, 1, 30)
+    da = xr.DataArray(
+        np.sin(2 * np.pi * x) + 0.1 * np.random.RandomState(0).randn(30),
+        dims=["x"],
+        coords={"x": x},
+        name="test_signal",
+    )
+
+    # Test with small q
+    result = dsp.decimate(da, q=2, dim="x")
+    expected = sp.signal.decimate(da.values, q=2, n=None, ftype="iir", axis=-1, zero_phase=True)
+    np.testing.assert_allclose(result.values, expected)
+    assert result.shape[0] == 15  # 30 // 2
+    assert result.name == "decimated_test_signal"
+
+    # Test with named data array (use FIR filter for short signals)
+    da_named = xr.DataArray([1, 2, 3, 4, 5, 6], dims=["x"], coords={"x": [0, 1, 2, 3, 4, 5]}, name="test")
+    result = dsp.decimate(da_named, q=2, dim="x")
+    # For the comparison, we need to use the same parameters that xrscipy uses internally
+    expected = sp.signal.decimate(da_named.values, q=2, n=4, ftype="fir", axis=-1, zero_phase=True)
+    np.testing.assert_allclose(result.values, expected)
+    assert result.name == "decimated_test"
+    assert result.shape[0] == 3  # 6 // 2
+
+    # Test error when neither q nor target_fs is provided
+    with pytest.raises(ValueError, match="Either 'q' or 'target_fs' must be specified"):
+        dsp.decimate(da, dim="x")

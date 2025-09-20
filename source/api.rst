@@ -70,3 +70,4 @@ Digital filters
    :toctree: generated/
 
    signal.savgol_filter
+   signal.decimate

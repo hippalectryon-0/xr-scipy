@@ -137,6 +137,7 @@ from __future__ import annotations
 
 import numpy as np
 import xarray as xr
+from scipy.signal import decimate as sp_decimate
 from scipy.signal import savgol_filter as sp_savgol_filter
 
 import xrscipy.docs as docs
@@ -194,7 +195,60 @@ def _savgol_filter(
     return result
 
 
-def _inject_docs(func) -> None:
+def _decimate(
+    darray: xr.DataArray,
+    q: int = None,
+    target_fs: float = None,
+    n: int = None,
+    ftype: str = "iir",
+    axis: int = -1,
+    zero_phase: bool = True,
+    dim: str = None,
+) -> xr.DataArray:
+    """Downsample the signal after applying an anti-aliasing filter."""
+    dim = get_maybe_only_dim(darray, dim)
+
+    # Calculate q from target_fs if needed
+    if q is None and target_fs is not None:
+        dt = get_sampling_step(darray, dim)
+        current_fs = 1.0 / dt
+        q = int(np.rint(current_fs / target_fs))
+    elif q is None:
+        raise ValueError("Either 'q' or 'target_fs' must be specified")
+
+    # For short signals, use a lower order filter or switch to FIR
+    if darray.sizes[dim] < 30:  # Empirical threshold
+        if n is None:
+            n = min(4, q * 2)  # Use a smaller order for short signals
+        if ftype == "iir":
+            ftype = "fir"  # FIR filters are more stable for short signals
+
+    # Apply the decimation
+    result = xr.apply_ufunc(
+        sp_decimate,
+        darray,
+        input_core_dims=[[dim]],
+        output_core_dims=[[dim]],
+        kwargs=dict(
+            q=q,
+            n=n,
+            ftype=ftype,
+            axis=-1,
+            zero_phase=zero_phase,
+        ),
+        exclude_dims={dim},
+    )
+
+    # Update coordinates to reflect decimation
+    coord = darray.coords[dim]
+    new_coord = coord[::q]
+    result = result.assign_coords({dim: new_coord})
+
+    result.name = f"decimated_{darray.name}" if darray.name else "decimated"
+    return result
+
+
+def _inject_docs_savgol(func) -> None:
     """Inject xr docs into savgol_filter docs."""
     doc = docs.DocParser(fun=sp_savgol_filter)
 
@@ -222,6 +276,43 @@ def _inject_docs(func) -> None:
     func.__name__ = "savgol_filter"
 
 
-# Create the public function with proper docs
+def _inject_docs_decimate(func) -> None:
+    """Inject xr docs into decimate docs."""
+    doc = docs.DocParser(fun=sp_decimate)
+
+    doc.replace_params(
+        x=CDParam("darray", "The input signal made up of equidistant samples.", "xarray.DataArray"),
+        q=CDParam(
+            "q",
+            "The downsampling factor, which is a postive integer. If not provided, will be calculated from target_fs.",
+            "int, optional",
+        ),
+        axis=CDParam("dim", "The dimension along which to decimate. Uses the only dimension if 1D.", "str, optional"),
+    )
+
+    # Add target_fs parameter which is xrscipy-specific
+    target_fs_param = CDParam(
+        "target_fs",
+        "The target sampling frequency. If provided, q will be calculated as q = np.rint(current_fs / target_fs).",
+        "float, optional",
+    )
+
+    # Insert the target_fs parameter
+    doc.parsed_doc.params.append(target_fs_param)
+
+    doc.replace_strings_returns(("ndarray", "xarray.DataArray"))
+    doc.replace_strings_description(("axis", "dim"))
+
+    doc.insert_see_also("scipy.signal.decimate : Original scipy implementation")
+
+    # inject
+    func.__doc__ = str(doc)
+    func.__name__ = "decimate"
+
+
+# Create the public functions with proper docs
 savgol_filter = _savgol_filter
-_inject_docs(savgol_filter)
+_inject_docs_savgol(savgol_filter)
+
+decimate = _decimate
+_inject_docs_decimate(decimate)
