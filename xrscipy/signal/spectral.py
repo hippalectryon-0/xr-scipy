@@ -814,8 +814,9 @@ def hilbert(darray: xr.DataArray, N: int = None, dim: str = None) -> xr.DataArra
     darray : xarray
         Analytic signal of the Hilbert transform of 'darray' along selected axis.
     """
-    dim = get_maybe_only_dim(darray, dim)  # TODO wrong ! this isn't a dimension, this is an axis.....
-    n_orig = darray.shape[dim]
+    dim = get_maybe_only_dim(darray, dim)
+    axis = darray.get_axis_num(dim)
+    n_orig = darray.shape[axis]
     N_unspecified = N is None
     if N_unspecified:
         N = next_fast_len(n_orig)
