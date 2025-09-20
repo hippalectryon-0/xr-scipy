@@ -9,14 +9,30 @@ import xrscipy.signal as dsp
 from .testings import get_obj
 
 
-def _check_metadata_preservation(original_da, result_da, dim):
-    """Check that metadata is properly preserved."""
+def _check_metadata_preservation(original_da, result_da, dim, preserve_filtered_dim=True):
+    """Check that metadata is properly preserved.
+
+    Parameters
+    ----------
+    original_da : xr.DataArray
+        Original data array
+    result_da : xr.DataArray
+        Result data array
+    dim : str
+        The dimension along which the operation was performed
+    preserve_filtered_dim : bool, optional
+        Whether the coordinates along the filtered dimension should be preserved.
+        For operations like FFT, this should be False. For operations like
+        savgol_filter and decimate, this should be True. Default is True.
+    """
     # Make sure the original data does not change
     assert original_da.values.shape == original_da.shape
 
-    # Make sure the coordinate (except the transformed one) is propagated
+    # Make sure coordinates are preserved
     for key, v in original_da.coords.items():
-        if dim not in v.dims and key != dim:
+        if dim not in v.dims:  # Check coordinates not along the processed dimension
+            assert original_da[key].identical(result_da[key])
+        elif preserve_filtered_dim and key == dim:  # Check the filtered dimension if it should be preserved
             assert original_da[key].identical(result_da[key])
 
 
@@ -73,8 +89,8 @@ def test_savgol_filter(mode, dim):
     # Check that result values match
     np.testing.assert_allclose(actual.values, expected_result)
 
-    # Check metadata preservation
-    _check_metadata_preservation(da, actual, dim)
+    # Check metadata preservation (coordinates along filtered dimension should be preserved)
+    _check_metadata_preservation(da, actual, dim, preserve_filtered_dim=True)
 
     # Check that the result has the correct name
     expected_name = f"savgol_filtered_{da.name}" if da.name else "savgol_filtered"
@@ -182,8 +198,13 @@ def test_decimate(q):
     # Check that result values match
     np.testing.assert_allclose(actual.values, expected_result)
 
-    # Check metadata preservation
-    _check_metadata_preservation(da, actual, "x")
+    # Check that coordinates are properly subsampled
+    expected_x_coords = da.coords["x"].values[::q]
+    actual_x_coords = actual.coords["x"].values
+    np.testing.assert_allclose(actual_x_coords, expected_x_coords)
+
+    # Check that non-filtered coordinates are preserved
+    _check_metadata_preservation(da, actual, "x", preserve_filtered_dim=False)
 
     # Check that the result has the correct name
     expected_name = f"decimated_{da.name}" if da.name else "decimated"
@@ -231,8 +252,13 @@ def test_decimate_with_target_fs():
     # Check that result values match
     np.testing.assert_allclose(actual.values, expected_result)
 
-    # Check metadata preservation
-    _check_metadata_preservation(da, actual, "x")
+    # Check that coordinates are properly subsampled
+    expected_x_coords = da.coords["x"].values[::expected_q]
+    actual_x_coords = actual.coords["x"].values
+    np.testing.assert_allclose(actual_x_coords, expected_x_coords)
+
+    # Check that non-filtered coordinates are preserved
+    _check_metadata_preservation(da, actual, "x", preserve_filtered_dim=False)
 
     # Verify that the function worked with target_fs
     original_size = da.sizes["x"]
