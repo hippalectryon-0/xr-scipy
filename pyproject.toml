@@ -1,6 +1,6 @@
 [project]
 name = "xrscipy"
-version = "3.0.2"
+version = "3.0.3"
 license = "Apache-2.0"
 description = "Scipy integrated into xarray"
 classifiers = [
@@ -23,11 +23,11 @@ urls = { Repository = "https://github.com/hippalectryon-0/xr-scipy", Documentati
 dependencies = [
     "scipy>=1.9",
     "xarray>=0.16",
+    "docstring-parser>=0.15",
 ]
 
 [dependency-groups]
 dev = [
-    "docstring-parser>=0.15",
     "ipython>=8.13.2",
     "matplotlib>=3.9.4",
     "myst-parser>=1.0.0",
