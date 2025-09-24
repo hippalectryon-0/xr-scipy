@@ -84,34 +84,24 @@ All the functions can be calculated on N-dimensional signals if the dimension is
     @savefig psd.png width=4in
     plt.show()
 
-Cross-coherence and correlation
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Coherence
+^^^^^^^^^
 
 The same windowed FFT approach is also used to calculate the cross-spectral density :math:`P_{xy}` (using :py:func:`xrscipy.signal.csd`) and from it coherency :math:`\gamma` as
 
 .. math::
 
-    \gamma = \frac{\langle P_{xy}\rangle}{\sqrt{\langle P_{xx} \rangle \langle P_{yy} \rangle}}
+    \gamma = \frac{\langle P_{xy}\rangle^2}{\sqrt{\langle P_{xx} \rangle \langle P_{yy} \rangle}}
 
 where :math:`\langle \dots \rangle` is an average over the FFT windows, i.e. ergodicity is assumed.
 
 .. ipython:: python
-
-    coher_12 = dsp.coherence(sig_1, sig_2)
-    coher_12[:10]
-
-The returned :math:`\gamma` :py:class:`~xarray.DataArray` is complex (because so is :math:`P_{xy}`) and the modulus is what is more commonly called coherence and the angle is the phase shift.
-
-
-.. ipython:: python
     :okwarning:
 
-    coh = np.abs(coher_12)
-    xphase = xr.apply_ufunc(np.angle, coher_12) / np.pi
-    fig, axs = plt.subplots(2, 1, sharex=True)
-    coh.plot(ax=axs[0])
-    xphase.where(coh > 0.6).plot.line('o--', ax=axs[1])
-    axs[1].set(yticks=[-1, -0.5, 0, 0.5, 1]);
+    coh = dsp.coherence(sig_1, sig_2)
+    coh[:10]
+
+    coh.plot()
     @savefig coher.png width=4in
     plt.show()
 """
