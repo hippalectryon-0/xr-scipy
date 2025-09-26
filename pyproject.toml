@@ -1,6 +1,6 @@
 [project]
 name = "xrscipy"
-version = "3.0.3"
+version = "3.1.0"
 license = "Apache-2.0"
 description = "Scipy integrated into xarray"
 classifiers = [
