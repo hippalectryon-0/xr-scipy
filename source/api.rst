@@ -69,5 +69,6 @@ Digital filters
 .. autosummary::
    :toctree: generated/
 
+   signal.sosfilt
    signal.savgol_filter
    signal.decimate

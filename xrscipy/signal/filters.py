@@ -12,7 +12,7 @@ Digital filters
     import xrscipy.signal as dsp
 
 
-``xr-scipy`` wraps SciPy functions for digital signal processing. Wrappers for convenient functions such as :py:func:`scipy.signal.decimate` and :py:func:`scipy.signal.savgol_filter` are provided.
+``xr-scipy`` wraps SciPy functions for digital signal processing. Wrappers for convenient functions such as :py:func:`scipy.signal.decimate`, :py:func:`scipy.signal.savgol_filter`, and :py:func:`scipy.signal.sosfilt` are provided.
 For convenience, the ``xrscipy.signal`` namespace will be imported under the alias ``dsp``:
 
 .. ipython:: python
@@ -99,6 +99,36 @@ The return type is also a DataArray with coordinates.
     plt.show()
 
 The other options (polynomial and derivative order) are the same as for :py:func:`scipy.signal.savgol_filter`, see :py:func:`~xrscipy.signal.savgol_filter` for details.
+
+
+Second-order sections (SOS) filtering
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The :py:func:`~xrscipy.signal.sosfilt` function provides a wrapper for :py:func:`scipy.signal.sosfilt` that applies a digital IIR filter in second-order sections format. This format is designed to minimize numerical precision errors for high-order filters by cascading second-order filter sections. The filter is defined by an array of second-order filter coefficients in the form (n_sections, 6), where each row corresponds to a second-order section with the first three columns providing the numerator coefficients and the last three providing the denominator coefficients.
+
+For convenience, SOS filters can be easily created using :py:func:`scipy.signal.butter`, :py:func:`scipy.signal.cheby1`, :py:func:`scipy.signal.cheby2`, :py:func:`scipy.signal.ellip`, or :py:func:`scipy.signal.bessel` with ``output='sos'``.
+
+To demonstrate basic functionality of :py:func:`~xrscipy.signal.sosfilt`, let's create a simple example with a 4th-order Butterworth low-pass filter:
+
+.. ipython:: python
+    :okwarning:
+
+    t = np.linspace(0, 1, 1000)  # seconds
+    sig = xr.DataArray(np.sin(16*t) + np.random.normal(0, 0.1, t.size),
+                       coords=[('time', t)], name='signal')
+
+    from scipy.signal import butter
+    # Create a 8th-order Butterworth low-pass filter with cuttoff 20Hz
+    sos = butter(8, 20, btype='low', fs=1/np.mean(np.diff(t)), output='sos')
+
+    # Apply the SOS filter along the 'time' dimension
+    filtered = dsp.sosfilt(sos, sig, dim='time')
+
+    sig.plot(label='noisy', alpha=0.7)
+    filtered.plot(label='sos filtered', linewidth=2)
+    plt.legend()
+    @savefig sosfilt_signal.png width=4in
+    plt.show()
 """
 
 from __future__ import annotations
