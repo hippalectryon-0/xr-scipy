@@ -361,3 +361,41 @@ def test_sosfilt(mode, dim, with_initial_conditions):
     # Check that the result has the correct name
     expected_name = f"sosfilt_{da.name}" if da.name else "sosfilt"
     assert actual.name == expected_name
+
+
+@pytest.mark.parametrize("mode", [0, 1])
+@pytest.mark.parametrize("dim", ["x"])
+def test_sosfiltfilt(mode, dim):
+    """Test sosfiltfilt function.
+
+    Verifies that xrscipy.signal.sosfiltfilt produces results strictly equal to scipy,
+    and that metadata is properly handled.
+    """
+    # Get test data
+    da = get_obj(mode)
+
+    # Skip if dimension not available
+    if dim not in da.dims:
+        pytest.skip("dimension not available in test object")
+
+    # Create a simple SOS filter (low-pass Butterworth filter)
+    from scipy.signal import butter
+
+    sos = butter(4, 0.1, btype="low", analog=False, output="sos")
+
+    # Calculate using xrscipy
+    actual = dsp.sosfiltfilt(sos, da, dim=dim, padlen=2)
+
+    # Calculate using scipy
+    axis = da.get_axis_num(dim)
+    expected_result = sp.signal.sosfiltfilt(sos, da.values, axis=axis, padlen=2)
+
+    # Check that result values match
+    np.testing.assert_allclose(actual.values, expected_result, rtol=1e-10)
+
+    # Check metadata preservation (coordinates along filtered dimension should be preserved)
+    _check_metadata_preservation(da, actual, dim, preserve_filtered_dim=True)
+
+    # Check that the result has the correct name
+    expected_name = f"sosfiltfilt_{da.name}" if da.name else "sosfiltfilt"
+    assert actual.name == expected_name
