@@ -107,6 +107,7 @@ import numpy as np
 import xarray as xr
 from scipy.signal import decimate as sp_decimate
 from scipy.signal import savgol_filter as sp_savgol_filter
+from scipy.signal import sosfilt as sp_sosfilt
 
 import xrscipy.docs as docs
 from xrscipy.docs import CDParam
@@ -220,6 +221,86 @@ def _decimate(
     return result
 
 
+def _sosfilt(
+    sos: np.ndarray,
+    darray: xr.DataArray,
+    dim: str = None,
+    zi: np.ndarray = None,
+) -> xr.DataArray | tuple[xr.DataArray, np.ndarray]:
+    """
+    Filter data along one dimension using cascaded second-order sections.
+
+    Filter a data sequence using a digital IIR filter defined by sos.
+
+    Parameters
+    ----------
+    sos : array_like
+        Array of second-order filter coefficients, must have shape (n_sections, 6).
+        Each row corresponds to a second-order section, with the first three columns
+        providing the numerator coefficients and the last three providing the
+        denominator coefficients.
+    darray : xarray.DataArray
+        The input data array to be filtered.
+    dim : str, optional
+        The dimension along which to apply the filter. Uses the only dimension if 1D.
+    zi : array_like, optional
+        Initial conditions for the cascaded filter delays. It is a (at least 2D)
+        vector of shape (n_sections, ..., 2, ...), where ..., 2, ... denotes the
+        shape of darray, but with darray.shape[dim] replaced by 2.
+
+    Returns
+    -------
+    y : xarray.DataArray
+        The output of the digital filter.
+    zf : ndarray, optional
+        If zi is None, this is not returned, otherwise, zf holds the final
+        filter delay values.
+    """
+    dim = get_maybe_only_dim(darray, dim)
+    axis = darray.get_axis_num(dim)
+
+    if zi is not None:
+        # When zi is provided, the result is a tuple (output, final conditions)
+        result_data, zf = sp_sosfilt(sos, darray.values, axis=axis, zi=zi)
+
+        # Create result DataArray
+        result = xr.DataArray(
+            result_data,
+            dims=darray.dims,
+            coords=darray.coords,
+            name=f"sosfilt_{darray.name}" if darray.name else "sosfilt",
+        )
+
+        # Preserve the original coordinates along the filtered dimension
+        if dim in darray.coords:
+            result = result.assign_coords({dim: darray.coords[dim]})
+
+        return result, zf
+    else:
+        # Apply sosfilt without initial conditions
+        result = xr.apply_ufunc(
+            sp_sosfilt,
+            sos,
+            darray,
+            input_core_dims=[[], [dim]],  # sos: no dimensions, darray: [dim]
+            output_core_dims=[[dim]],  # Output: [dim]
+            kwargs=dict(
+                axis=-1,  # Filter along the last axis
+            ),
+            exclude_dims={dim},
+        )
+
+        # Reorder dimensions to match input order (apply_ufunc should maintain this)
+        result = result.transpose(*darray.dims)
+
+        # Preserve the original coordinates along the filtered dimension
+        if dim in darray.coords:
+            result = result.assign_coords({dim: darray.coords[dim]})
+
+        result.name = f"sosfilt_{darray.name}" if darray.name else "sosfilt"
+        return result
+
+
 def _inject_docs_savgol(func) -> None:
     """Inject xr docs into savgol_filter docs."""
     doc = docs.DocParser(fun=sp_savgol_filter)
@@ -282,9 +363,36 @@ def _inject_docs_decimate(func) -> None:
     func.__name__ = "decimate"
 
 
+def _inject_docs_sosfilt(func) -> None:
+    """Inject xr docs into sosfilt docs."""
+    doc = docs.DocParser(fun=sp_sosfilt)
+
+    doc.replace_params(
+        x=CDParam("darray", "The data to be filtered.", "xarray.DataArray"),
+        axis=CDParam(
+            "dim",
+            "The dimension of the array `darray` along which the filter is to be applied. Default is the only dimension if 1D, otherwise must be specified.",
+            "str, optional",
+        ),
+    )
+
+    doc.replace_strings_returns(("ndarray", "xarray.DataArray"))
+    doc.replace_strings_description(("axis", "dim"))
+
+    doc.insert_see_also("scipy.signal.sosfilt : Original scipy implementation")
+
+    # inject
+    func.__doc__ = str(doc)
+    func.__name__ = "sosfilt"
+
+
 # Create the public functions with proper docs
 savgol_filter = _savgol_filter
 _inject_docs_savgol(savgol_filter)
 
 decimate = _decimate
 _inject_docs_decimate(decimate)
+
+# Add sosfilt function
+sosfilt = _sosfilt
+_inject_docs_sosfilt(sosfilt)
