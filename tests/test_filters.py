@@ -302,36 +302,58 @@ def test_decimate_edge_cases():
         dsp.decimate(da, dim="x")
 
 
+@pytest.mark.parametrize("mode", [0, 1])
 @pytest.mark.parametrize("dim", ["x"])
-def test_sosfilt(dim):
+@pytest.mark.parametrize("with_initial_conditions", [False, True])
+def test_sosfilt(mode, dim, with_initial_conditions):
     """Test sosfilt function.
 
     Verifies that xrscipy.signal.sosfilt produces results strictly equal to scipy,
     and that metadata is properly handled.
     """
-    # Create test data
-    x = np.linspace(0, 1, 100)
-    da = xr.DataArray(
-        np.sin(2 * np.pi * 5 * x) + 0.1 * np.random.RandomState(0).randn(100),
-        dims=[dim],
-        coords={dim: x},
-        name="test_signal",
-    )
+    # Get test data
+    da = get_obj(mode)
+
+    # Skip if dimension not available
+    if dim not in da.dims:
+        pytest.skip("dimension not available in test object")
 
     # Create a simple SOS filter (low-pass Butterworth filter)
     from scipy.signal import butter
 
     sos = butter(4, 0.1, btype="low", analog=False, output="sos")
 
-    # Calculate using xrscipy
-    actual = dsp.sosfilt(sos, da, dim=dim)
+    if with_initial_conditions:
+        # Create initial conditions
+        n_sections = sos.shape[0]
+        # zi should have shape (n_sections, ..., 2, ...) where ... represents
+        # the shape of the input array but with the axis to be filtered replaced by 2
+        axis = da.get_axis_num(dim)
+        zi_shape = list(da.shape)
+        zi_shape[axis] = 2  # Replace the filtered dimension with 2
+        zi_shape = (n_sections,) + tuple(zi_shape)  # Add n_sections at the front
+        zi = np.zeros(zi_shape)
 
-    # Calculate using scipy
-    axis = da.get_axis_num(dim)
-    expected_result = sp.signal.sosfilt(sos, da.values, axis=axis)
+        # Calculate using xrscipy with initial conditions
+        actual, zf = dsp.sosfilt(sos, da, dim=dim, zi=zi)
 
-    # Check that result values match
-    np.testing.assert_allclose(actual.values, expected_result, rtol=1e-10)
+        # Calculate using scipy with initial conditions
+        axis = da.get_axis_num(dim)
+        expected_result, expected_zf = sp.signal.sosfilt(sos, da.values, axis=axis, zi=zi)
+
+        # Check that result values match
+        np.testing.assert_allclose(actual.values, expected_result, rtol=1e-10)
+        np.testing.assert_allclose(zf, expected_zf, rtol=1e-10)
+    else:
+        # Calculate using xrscipy without initial conditions
+        actual = dsp.sosfilt(sos, da, dim=dim)
+
+        # Calculate using scipy without initial conditions
+        axis = da.get_axis_num(dim)
+        expected_result = sp.signal.sosfilt(sos, da.values, axis=axis)
+
+        # Check that result values match
+        np.testing.assert_allclose(actual.values, expected_result, rtol=1e-10)
 
     # Check metadata preservation (coordinates along filtered dimension should be preserved)
     _check_metadata_preservation(da, actual, dim, preserve_filtered_dim=True)
@@ -339,76 +361,3 @@ def test_sosfilt(dim):
     # Check that the result has the correct name
     expected_name = f"sosfilt_{da.name}" if da.name else "sosfilt"
     assert actual.name == expected_name
-
-
-def test_sosfilt_with_initial_conditions():
-    """Test sosfilt function with initial conditions."""
-    # Create test data
-    x = np.linspace(0, 1, 50)
-    da = xr.DataArray(
-        np.sin(2 * np.pi * 5 * x) + 0.1 * np.random.RandomState(0).randn(50),
-        dims=["x"],
-        coords={"x": x},
-        name="test_signal",
-    )
-
-    # Create a simple SOS filter
-    from scipy.signal import butter
-
-    sos = butter(2, 0.2, btype="low", analog=False, output="sos")
-
-    # For sosfilt, zi should have shape (n_sections, ..., 2, ...) where ... represents
-    # the shape of the input array but with the axis to be filtered replaced by 2
-    n_sections = sos.shape[0]
-    zi_shape = (n_sections,) + da.shape[:-1] + (2,)  # [n_sections, other_dims..., 2]
-    zi = np.zeros(zi_shape)
-
-    # Calculate using xrscipy
-    actual, zf = dsp.sosfilt(sos, da, dim="x", zi=zi)
-
-    # Calculate using scipy
-    expected_result, expected_zf = sp.signal.sosfilt(sos, da.values, axis=-1, zi=zi)
-
-    # Check that result values match
-    np.testing.assert_allclose(actual.values, expected_result, rtol=1e-10)
-    np.testing.assert_allclose(zf, expected_zf, rtol=1e-10)
-
-    # Check metadata preservation
-    _check_metadata_preservation(da, actual, "x", preserve_filtered_dim=True)
-
-    # Check that the result has the correct name
-    expected_name = f"sosfilt_{da.name}" if da.name else "sosfilt"
-    assert actual.name == expected_name
-
-
-def test_sosfilt_multidimensional():
-    """Test sosfilt function with multidimensional arrays."""
-    # Create multidimensional test data
-    x = np.linspace(0, 1, 50)
-    y = np.linspace(0, 2, 10)
-    da = xr.DataArray(
-        np.sin(2 * np.pi * 5 * x[np.newaxis, :]) * np.cos(y[:, np.newaxis]),
-        dims=["y", "x"],
-        coords={"x": x, "y": y},
-        name="test_signal_2d",
-    )
-
-    # Create a simple SOS filter
-    from scipy.signal import butter
-
-    sos = butter(2, 0.1, btype="low", analog=False, output="sos")
-
-    # Filter along the 'x' dimension
-    actual = dsp.sosfilt(sos, da, dim="x")
-
-    # Calculate using scipy (apply filter along axis=1 which is the 'x' dimension)
-    expected_result = sp.signal.sosfilt(sos, da.values, axis=-1)  # axis=-1 is last axis ('x')
-
-    # Check that result values match
-    np.testing.assert_allclose(actual.values, expected_result, rtol=1e-10)
-
-    # Check metadata preservation
-    _check_metadata_preservation(da, actual, "x", preserve_filtered_dim=True)
-
-    # Check that non-filtered coordinates are preserved
-    assert da["y"].identical(actual["y"])
