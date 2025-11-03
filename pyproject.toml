@@ -23,7 +23,7 @@ urls = { Repository = "https://github.com/hippalectryon-0/xr-scipy", Documentati
 dependencies = [
     "scipy>=1.9",
     "xarray>=0.16",
-    "docstring-parser>=0.15",
+    "docstring-parser>=0.16", # https://github.com/rr-/docstring_parser/issues/84
 ]
 
 [dependency-groups]
